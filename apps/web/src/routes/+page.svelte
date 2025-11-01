@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
   import { supabase } from '$lib/supabaseClient';
 
   let loading = false;
@@ -26,14 +25,6 @@
       loading = false;
     }
   }
-
-  onMount(() => {
-    supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) {
-        window.location.href = '/';
-      }
-    });
-  });
 </script>
 
 <div class="flex min-h-screen flex-col items-center justify-center bg-slate-950 text-slate-100">

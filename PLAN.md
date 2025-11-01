@@ -83,11 +83,11 @@ Notes:
   - Actions: Start ephemeral Postgres, perform `pgbackrest backup-fetch` and recovery to LATEST or target time
   - Verify: DB starts successfully from restored data; PITR proven
 
-- [ ] 8) Provision Supabase for Auth only; configure env in web
+- [x] 8) Provision Supabase for Auth only; configure env in web
   - Actions: Enable GitHub, Google, Magic Link; copy `apps/web/env.example` to `apps/web/.env` and fill `PUBLIC_SUPABASE_URL` + anon key
   - Verify: Dev server loads env without errors (`pnpm --filter apps/web dev`)
 
-- [ ] 9) Wire Supabase Auth (minimal OAuth button)
+- [x] 9) Wire Supabase Auth (minimal OAuth button)
   - Commands:
     ```bash
     pnpm -w add @supabase/supabase-js @supabase/auth-helpers-sveltekit
