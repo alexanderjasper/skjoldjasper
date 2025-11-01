@@ -29,10 +29,10 @@ Notes:
 
 ## Checklist
 
-- [ ] 0) Save PLAN.md (this file)
+- [x] 0) Save PLAN.md (this file)
   - Verify: PLAN.md committed at repo root
 
-- [ ] 1) Initialize repo tooling in current folder (skjoldjasper)
+- [x] 1) Initialize repo tooling in current folder (skjoldjasper)
   - Commands:
     ```bash
     corepack enable
