@@ -30,5 +30,25 @@ Stop services:
 docker compose -f infra/docker-compose.yml down -v
 ```
 
-Note: pgBackRest configuration for the repository (Cloudflare R2/S3) will be added in a later step.
+### Configure pgBackRest with Cloudflare R2
+
+1) Create `infra/.env` from `infra/env.example` and set:
+
+```
+PGBACKREST_REPO1_S3_BUCKET=...
+PGBACKREST_REPO1_S3_ENDPOINT=YOUR_ACCOUNT_ID.r2.cloudflarestorage.com
+PGBACKREST_REPO1_S3_KEY=...
+PGBACKREST_REPO1_S3_KEY_SECRET=...
+PGBACKREST_REPO1_S3_REGION=auto
+```
+
+2) Create stanza and verify (starts pgBackRest container only for the command):
+
+```
+docker compose -f infra/docker-compose.yml --env-file infra/.env run --rm pgbackrest pgbackrest --stanza=main stanza-create
+docker compose -f infra/docker-compose.yml --env-file infra/.env run --rm pgbackrest pgbackrest --stanza=main info
+```
+
+Expected: stanza-create completes successfully; `info` lists stanza `main`.
+Note: `check` may require a PostgreSQL local socket inside the same container. If desired, run `check` inside the DB container with pgBackRest installed.
 
