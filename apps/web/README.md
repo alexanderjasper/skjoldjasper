@@ -25,6 +25,21 @@ npm run dev
 npm run dev -- --open
 ```
 
+### Environment
+
+Copy `env.example` to `.env` and fill with your Supabase project values:
+
+```
+cp env.example .env
+```
+
+Required variables (public):
+
+```
+PUBLIC_SUPABASE_URL=
+PUBLIC_SUPABASE_ANON_KEY=
+```
+
 ## Building
 
 To create a production version of your app:
