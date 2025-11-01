@@ -1,0 +1,46 @@
+name: skjoldjasper
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: skjoldjasper-postgres
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-app}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-app-password-change-me}
+      - POSTGRES_DB=${POSTGRES_DB:-appdb}
+      - POSTGRES_INITDB_ARGS=-E UTF8 --locale=C
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - private
+    # Intentionally do not publish ports; DB remains private within the network
+
+  pgbackrest:
+    image: ghcr.io/pgbackrest/pgbackrest:latest
+    profiles: ["backup"]
+    container_name: skjoldjasper-pgbackrest
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - postgres-data:/var/lib/postgresql/data:ro
+      - pgbackrest-repo:/var/lib/pgbackrest
+      - ./pgbackrest/conf.d:/etc/pgbackrest/conf.d:ro
+    networks:
+      - private
+    # Configuration for repository (R2/S3) will be added in step 5
+
+volumes:
+  postgres-data:
+  pgbackrest-repo:
+
+networks:
+  private:
+    driver: bridge
+
+
