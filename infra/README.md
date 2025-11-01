@@ -49,6 +49,37 @@ docker compose -f infra/docker-compose.yml --env-file infra/.env run --rm pgback
 docker compose -f infra/docker-compose.yml --env-file infra/.env run --rm pgbackrest pgbackrest --stanza=main info
 ```
 
+
+### Restore smoke test (ephemeral)
+
+Prerequisites:
+- You have completed an initial FULL backup to R2 (`pgbackrest info` lists a backup)
+- `infra/.env` is populated with the S3/R2 credentials
+
+Run the smoke test:
+
+```
+./infra/scripts/pgbackrest-restore-smoke.sh
+```
+
+What it does:
+- Creates a throwaway Docker volume
+- Runs `pgbackrest restore` into that volume
+- Boots a temporary Postgres container using the restored data (with pgBackRest config mounted for WAL restore)
+- Waits for readiness, then cleans up the container and volume
+
+Expected output:
+- Ends with `Restore smoke test PASSED. Cleaning up...` and deletes temporary resources
+
+On failure:
+- The script prints the last container logs and leaves the container and volume for inspection
+- Clean up manually when done:
+
+```
+docker rm -f <container-name>
+docker volume rm <volume-name>
+```
+
 Expected: stanza-create completes successfully; `info` lists stanza `main`.
 Note: `check` may require a PostgreSQL local socket inside the same container. If desired, run `check` inside the DB container with pgBackRest installed.
 

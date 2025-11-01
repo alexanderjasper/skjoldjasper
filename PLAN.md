@@ -79,7 +79,7 @@ Notes:
     ```
   - Verify: Backup objects visible in R2; `pgbackrest info` shows repo and latest backup
 
-- [ ] 7) Restore smoke test (throwaway container)
+- [x] 7) Restore smoke test (throwaway container)
   - Actions: Start ephemeral Postgres, perform `pgbackrest backup-fetch` and recovery to LATEST or target time
   - Verify: DB starts successfully from restored data; PITR proven
 
