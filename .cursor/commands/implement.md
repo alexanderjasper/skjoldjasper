@@ -1,3 +1,3 @@
 - Implement the next missing step. You can find the updated plan progress at /PLAN.md in the project root.
 - After you have done a small step corresponding to a small, manageable commit, ask me for feedback before git committing and proceeding.
-- If you have completed a step in the plan, include in your commit of the code changes an edit of /PLAN.md that marks the step as completed.
+- If you have completed a step in the plan, include in your commit of the code changes an edit of /PLAN.md that marks the step as completed. Check git status first to see changed files. Add to .gitignore if necessary, then commit all the changed files.
