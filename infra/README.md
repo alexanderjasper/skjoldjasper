@@ -52,3 +52,29 @@ docker compose -f infra/docker-compose.yml --env-file infra/.env run --rm pgback
 Expected: stanza-create completes successfully; `info` lists stanza `main`.
 Note: `check` may require a PostgreSQL local socket inside the same container. If desired, run `check` inside the DB container with pgBackRest installed.
 
+### Backups (initial full + scheduling)
+
+1) Run initial FULL backup:
+
+```
+./infra/scripts/pgbackrest-backup.sh full
+```
+
+2) Optional: run DIFF backup manually to test:
+
+```
+./infra/scripts/pgbackrest-backup.sh diff
+```
+
+3) Install cron schedule (weekly FULL Sunday 02:00, daily DIFF Mon–Sat 02:00):
+
+```
+crontab infra/cron/pgbackrest.cron
+```
+
+4) Verify repo and latest backup metadata:
+
+```
+docker compose -f infra/docker-compose.yml --env-file infra/.env run --rm pgbackrest pgbackrest --stanza=main info
+```
+

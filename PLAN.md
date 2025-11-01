@@ -71,7 +71,7 @@ Notes:
   - Actions: Create R2 bucket + access keys; configure pgBackRest S3 settings; set Postgres GUCs (`wal_level=replica`, `archive_mode=on`, `archive_command='pgbackrest --stanza=main archive-push %p'`)
   - Verify: `pgbackrest --stanza=main info` shows stanza `main` (check may require DB socket; optional to run `check` inside the DB container)
 
-- [ ] 6) Initial full backup + scheduling
+- [x] 6) Initial full backup + scheduling
   - Commands:
     ```bash
     pgbackrest --stanza=main --type=full backup
