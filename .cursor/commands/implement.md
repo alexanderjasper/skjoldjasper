@@ -1,9 +1,7 @@
 - Cursor: implement the next missing step. The plan lives at /PLAN.md.
 - Cursor: after a small step (manageable commit), ask the user for feedback before committing.
 - Cursor: when a step is completed, include an edit to /PLAN.md marking it completed in the same commit. Check git status first; update .gitignore if necessary; commit all changed files.
-- Verification:
-  - App/dev servers: Cursor may start the process and tell the user what to look for; the user verifies and can stop it.
-  - Infra (Docker/external services): Cursor provides exact commands and expected output; the user runs and stops them locally.
+- Verification: Cursor runs the required commands/processes and tells the user what to look for; the user verifies and may stop long‑running processes.
 - Cursor: run lints on edited files and fix errors before asking for feedback.
 - Cursor: before committing, show a short status update and the proposed conventional commit message; commit only after the user approves.
 - Cursor: prefer non-interactive CLI flags and use absolute paths in tool calls when possible.

@@ -2,7 +2,7 @@
 
 This is the execution checklist. Steps are atomic, use CLI scaffolding where possible, and include a clear verification. Pause after each step for review before proceeding.
 
-Verification protocol: For app/dev servers, Cursor may start them and tell the user what to look for. For infra (Docker/external services), Cursor will provide the exact commands and expected output; the user runs and stops them locally, then Cursor proceeds.
+Verification protocol: Cursor runs the required commands/processes and tells the user what to look for; the user verifies and may stop long‑running processes. Cursor proceeds after user confirmation.
 
 ## Architecture (brief)
 - Frontend: SvelteKit + TypeScript + Tailwind
@@ -63,7 +63,7 @@ Notes:
     ```
   - Verify: Tailwind classes render (e.g., background colors)
 
-- [ ] 4) Docker Compose: Postgres + pgBackRest sidecar
+- [x] 4) Docker Compose: Postgres + pgBackRest sidecar
   - Actions: Add `infra/docker-compose.yml` with Postgres service and pgBackRest sidecar sharing data volume; Postgres NOT exposed to the internet
   - Verify: `docker compose up` shows Postgres healthy
 

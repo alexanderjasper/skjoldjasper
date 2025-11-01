@@ -9,6 +9,7 @@ build/
 .env
 .env.*
 !.env.example
+infra/.env
 
 # Logs and coverage
 pnpm-debug.log*
