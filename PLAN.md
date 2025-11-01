@@ -84,8 +84,8 @@ Notes:
   - Verify: DB starts successfully from restored data; PITR proven
 
 - [ ] 8) Provision Supabase for Auth only; configure env in web
-  - Actions: Enable GitHub, Google, Magic Link; add `PUBLIC_SUPABASE_URL` and anon key to `apps/web/.env`
-  - Verify: Dev server loads env without errors
+  - Actions: Enable GitHub, Google, Magic Link; copy `apps/web/env.example` to `apps/web/.env` and fill `PUBLIC_SUPABASE_URL` + anon key
+  - Verify: Dev server loads env without errors (`pnpm --filter apps/web dev`)
 
 - [ ] 9) Wire Supabase Auth (minimal OAuth button)
   - Commands:
