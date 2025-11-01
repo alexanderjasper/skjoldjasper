@@ -1,0 +1,19 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "SvelteKit Dev (inspect)",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--dir", "apps/web", "dev:inspect"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**"],
+      "env": {
+        "FORCE_COLOR": "1"
+      }
+    }
+  ]
+}
+
