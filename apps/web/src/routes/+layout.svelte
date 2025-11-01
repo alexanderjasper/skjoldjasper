@@ -1,6 +1,7 @@
 <script lang="ts">
   import favicon from '$lib/assets/favicon.svg';
   import { supabase } from '$lib/supabaseClient';
+  import { onMount } from 'svelte';
 
   let { children, data } = $props();
 
@@ -11,6 +12,17 @@
   $effect(() => {
     session = data.session ?? null;
     sessionError = data.sessionError ?? null;
+  });
+
+  onMount(async () => {
+    // Client-side fallback to ensure UI reflects current auth state
+    const { data: s } = await supabase.auth.getSession();
+    if (s.session) {
+      session = s.session;
+    }
+    supabase.auth.onAuthStateChange((_event, newSession) => {
+      session = newSession;
+    });
   });
 
   async function signOut() {
