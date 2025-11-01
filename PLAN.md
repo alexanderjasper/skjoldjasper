@@ -2,6 +2,8 @@
 
 This is the execution checklist. Steps are atomic, use CLI scaffolding where possible, and include a clear verification. Pause after each step for review before proceeding.
 
+Verification protocol: I will start the required command (and/or provide a URL) and tell you what to look for. You will verify and stop the command; then I will mark the step complete and proceed.
+
 ## Architecture (brief)
 - Frontend: SvelteKit + TypeScript + Tailwind
 - Auth: Supabase Auth (OAuth + magic links)
@@ -51,7 +53,7 @@ Notes:
     ```
   - Verify: `pnpm --filter apps/web dev` serves starter page
 
-- [ ] 3) Add Tailwind via svelte-add
+- [x] 3) Add Tailwind via svelte-add
   - Commands:
     ```bash
     cd apps/web
