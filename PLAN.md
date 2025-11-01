@@ -15,6 +15,18 @@ This is the execution checklist. Steps are atomic, use CLI scaffolding where pos
 
 ---
 
+## Prerequisites / Environment
+- Node.js ≥ 20 (current local: Node 22)
+- pnpm via Corepack (run `corepack enable` + prepare latest)
+- Orbstack (Docker engine + Docker Compose v2 compatible)
+- Cloudflare account (for R2 + Tunnel)
+- Supabase project (to be created for Auth-only)
+- OAuth providers: later, create GitHub and Google OAuth credentials (client ID/secret) and plug into Supabase when wiring Auth
+
+Notes:
+- We’ll use newest stable versions during setup.
+- Orbstack fully supports `docker compose` used below.
+
 ## Checklist
 
 - [ ] 0) Save PLAN.md (this file)
@@ -23,10 +35,13 @@ This is the execution checklist. Steps are atomic, use CLI scaffolding where pos
 - [ ] 1) Initialize repo tooling in current folder (skjoldjasper)
   - Commands:
     ```bash
-    pnpm init -y
-    npx turbo init --no-install
+    corepack enable
+    corepack prepare pnpm@latest --activate
+    npm init -y
+    pnpm add -D turbo
+    pnpm dlx turbo@latest init
     ```
-  - Verify: `turbo.json` exists; `pnpm -v` works
+  - Verify: `turbo.json` exists; `pnpm -v` works; `npx turbo -v` works; `package.json` has `packageManager`
 
 - [ ] 2) Scaffold SvelteKit app via CLI
   - Commands:
@@ -89,7 +104,7 @@ This is the execution checklist. Steps are atomic, use CLI scaffolding where pos
   - Commands:
     ```bash
     mkdir -p packages/db && cd packages/db
-    pnpm init -y
+    npm init -y
     pnpm add drizzle-orm drizzle-kit pg dotenv tsx typescript -D
     ```
   - Verify: `drizzle.config.ts` present; `pnpm drizzle-kit` shows help
@@ -122,7 +137,7 @@ This is the execution checklist. Steps are atomic, use CLI scaffolding where pos
   - Commands:
     ```bash
     mkdir -p apps/projector && cd apps/projector
-    pnpm init -y && pnpm add pg drizzle-orm tsx zod dotenv
+    npm init -y && pnpm add pg drizzle-orm tsx zod dotenv
     ```
   - Verify: `tsx src/index.ts` connects to DB
 
