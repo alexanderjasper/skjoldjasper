@@ -1,3 +1,8 @@
 - Implement the next missing step. You can find the updated plan progress at /PLAN.md in the project root.
 - After you have done a small step corresponding to a small, manageable commit, ask me for feedback before git committing and proceeding.
 - If you have completed a step in the plan, include in your commit of the code changes an edit of /PLAN.md that marks the step as completed. Check git status first to see changed files. Add to .gitignore if necessary, then commit all the changed files.
+ - Verify each step against the "Verify" criteria in /PLAN.md and include brief evidence (e.g., command output, URL responding, or created files). Stop any background processes started for verification.
+ - Run lints on edited files and fix errors before asking for feedback.
+ - Before committing, show a short status update and the proposed conventional commit message; commit only after I approve.
+ - Prefer non-interactive CLI flags and use absolute paths in tool calls when possible.
+ - For multi-step work, keep a lightweight TODO list with a single in-progress item and update it as you go.
