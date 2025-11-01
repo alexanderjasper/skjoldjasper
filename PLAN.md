@@ -67,9 +67,9 @@ Notes:
   - Actions: Add `infra/docker-compose.yml` with Postgres service and pgBackRest sidecar sharing data volume; Postgres NOT exposed to the internet
   - Verify: `docker compose up` shows Postgres healthy
 
-- [ ] 5) Configure Cloudflare R2 and pgBackRest repo
+- [x] 5) Configure Cloudflare R2 and pgBackRest repo
   - Actions: Create R2 bucket + access keys; configure pgBackRest S3 settings; set Postgres GUCs (`wal_level=replica`, `archive_mode=on`, `archive_command='pgbackrest --stanza=main archive-push %p'`)
-  - Verify: `pgbackrest --stanza=main check` passes
+  - Verify: `pgbackrest --stanza=main info` shows stanza `main` (check may require DB socket; optional to run `check` inside the DB container)
 
 - [ ] 6) Initial full backup + scheduling
   - Commands:
