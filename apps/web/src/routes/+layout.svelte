@@ -9,3 +9,5 @@
 </svelte:head>
 
 {@render children()}
+
+<style src="../app.css"></style>
