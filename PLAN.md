@@ -2,7 +2,7 @@
 
 This is the execution checklist. Steps are atomic, use CLI scaffolding where possible, and include a clear verification. Pause after each step for review before proceeding.
 
-Verification protocol: I will start the required command (and/or provide a URL) and tell you what to look for. You will verify and stop the command; then I will mark the step complete and proceed.
+Verification protocol: For app/dev servers, Cursor may start them and tell the user what to look for. For infra (Docker/external services), Cursor will provide the exact commands and expected output; the user runs and stops them locally, then Cursor proceeds.
 
 ## Architecture (brief)
 - Frontend: SvelteKit + TypeScript + Tailwind
