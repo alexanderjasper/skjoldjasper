@@ -43,7 +43,7 @@ Notes:
     ```
   - Verify: `turbo.json` exists; `pnpm -v` works; `npx turbo -v` works; `package.json` has `packageManager`
 
-- [ ] 2) Scaffold SvelteKit app via CLI
+- [x] 2) Scaffold SvelteKit app via CLI
   - Commands:
     ```bash
     pnpm create svelte@latest apps/web -- --template skeleton
