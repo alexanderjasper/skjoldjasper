@@ -1,12 +1,8 @@
 import { defineConfig } from 'drizzle-kit';
 import * as dotenv from 'dotenv';
-import { fileURLToPath } from 'node:url';
-import { dirname, resolve } from 'node:path';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-dotenv.config({ path: resolve(__dirname, '.env') });
+// Resolve relative to process.cwd() which is the package dir when using --dir
+dotenv.config({ path: '.env' });
 
 export default defineConfig({
   dialect: 'postgresql',
