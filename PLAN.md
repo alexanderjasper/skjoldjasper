@@ -94,13 +94,9 @@ Notes:
     ```
   - Verify: Clicking “Sign in with GitHub” completes OAuth and returns logged-in
 
-- [ ] 10) Create shared package for types/zod
-  - Commands:
-    ```bash
-    pnpm -w create vite@latest packages/shared -- --template vanilla-ts
-    pnpm -w add zod
-    ```
-  - Verify: `pnpm -w build` succeeds for `packages/shared`
+- [x] 10) Create shared package for types/zod
+  - Actions: Scaffold `packages/shared` with TypeScript + zod; `tsc` build
+  - Verify: `pnpm --dir packages/shared build` succeeds
 
 - [ ] 11) Initialize Drizzle in `packages/db`
   - Commands:
