@@ -126,7 +126,7 @@ Notes:
   - Actions: On valid move, append `MovePlaced`; create snapshot every 25 events; on room start, load snapshot then apply tail events
   - Verify: DB shows moves; room restart is fast and uses snapshot
 
-- [ ] 17) Projector worker scaffold
+- [x] 17) Projector worker scaffold
   - Commands:
     ```bash
     mkdir -p apps/projector && cd apps/projector
@@ -158,7 +158,7 @@ Notes:
   - Actions: Add Sentry DSN; set CORS allowlist; simple rate limiting on APIs/WS
   - Verify: Test error appears in Sentry; CORS blocks bad origins
 
-- [ ] 24) Final docs and scripts
+- [x] 24) Final docs and scripts
   - Actions: `README`, `pnpm dev` scripts, `.env.example`
   - Verify: Fresh clone can run dev with minimal steps
 
