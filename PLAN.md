@@ -122,7 +122,7 @@ Notes:
   - Actions: Implement join/turn/increment; server-authoritative state
   - Verify: Two browser tabs see synchronized counter and alternating turns
 
-- [ ] 16) Persist moves as events; restore via snapshot + tail
+- [x] 16) Persist moves as events; restore via snapshot + tail
   - Actions: On valid move, append `MovePlaced`; create snapshot every 25 events; on room start, load snapshot then apply tail events
   - Verify: DB shows moves; room restart is fast and uses snapshot
 
