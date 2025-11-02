@@ -37,6 +37,7 @@
     "@colyseus/playground": "^0.16.0",
     "@colyseus/schema": "^3.0.65",
     "@colyseus/tools": "^0.16.0",
+    "@sentry/node": "^10.22.0",
     "colyseus": "^0.16.0",
     "colyseus.js": "^0.16.22",
     "dotenv": "^17.2.3",

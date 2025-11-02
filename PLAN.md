@@ -154,7 +154,7 @@ Notes:
   - Actions: Map HTTP (web) and WS (game-server) to public routes; keep Postgres private
   - Verify: External access to site and WS works
 
-- [ ] 23) Telemetry + basic CORS/rate limits
+- [x] 23) Telemetry + basic CORS/rate limits
   - Actions: Add Sentry DSN; set CORS allowlist; simple rate limiting on APIs/WS
   - Verify: Test error appears in Sentry; CORS blocks bad origins
 
