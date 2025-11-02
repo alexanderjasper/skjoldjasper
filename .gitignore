@@ -3,6 +3,7 @@
 
 # Dependencies
 node_modules/
+.pnpm-store/
 
 # Build output
 dist/
@@ -16,6 +17,8 @@ build/
 !**/.env.example
 !.env.example
 infra/.env
+infra/cloudflared/*.json
+infra/cloudflared/config.yml
 
 # Logs and coverage
 pnpm-debug.log*
