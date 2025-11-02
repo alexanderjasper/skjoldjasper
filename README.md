@@ -28,6 +28,35 @@ pnpm --dir packages/db migrate:push
 pnpm --dir apps/web dev   # or use the "SvelteKit Dev (inspect)" launch config
 ```
 
+### Dev stack via Docker Compose
+
+```bash
+# 1) Database
+pnpm dev:db
+
+# 2) Set envs
+cp apps/web/env.example apps/web/.env
+cp apps/game-server/env.example apps/game-server/.env
+# Optional: Sentry
+# export SENTRY_DSN=...
+
+# For public WS through Cloudflare Tunnel (optional)
+# Set in apps/web/.env: PUBLIC_GAME_SERVER_WS=wss://ws.<your-domain>
+# Set in apps/web/.env: ALLOWED_ORIGINS=http://localhost:5173,https://app.<your-domain>
+
+# 3) Start web + game-server + projector
+pnpm dev:stack
+
+# 4) Optional: start Cloudflare Tunnel (token mode)
+# Put CLOUDFLARED_TUNNEL_TOKEN in infra/.env, then:
+pnpm tunnel:up
+```
+
+Endpoints:
+- Web: http://localhost:5173/rooms
+- Game server: http://localhost:2567/
+```
+
 ## Web (apps/web)
 
 Env: copy `apps/web/env.example` to `apps/web/.env` and set your Supabase values
@@ -105,6 +134,7 @@ What it does: restores latest backup into a throwaway volume, boots a temp Postg
 
 ## Scripts
 
+- Root: `dev:db`, `dev:stack`, `tunnel:up`, `compose:down`
 - `packages/db`: `migrate:push`, `test:roundtrip`
 - `infra/scripts/pgbackrest-backup.sh` — run full/diff backups
 - `infra/scripts/pgbackrest-restore-smoke.sh` — restore validation

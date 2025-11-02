@@ -3,7 +3,11 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev:db": "docker compose -f infra/docker-compose.yml up -d postgres",
+    "dev:stack": "docker compose -f infra/docker-compose.yml up -d web game-server projector",
+    "tunnel:up": "docker compose -f infra/docker-compose.yml up -d cloudflared",
+    "compose:down": "docker compose -f infra/docker-compose.yml down -v"
   },
   "repository": {
     "type": "git",
