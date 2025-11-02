@@ -106,7 +106,7 @@ Notes:
   - Actions: Define schemas in Drizzle; run `pnpm drizzle-kit generate` and apply via a small runner script
   - Verify: Tables exist in DB
 
-- [ ] 13) Minimal append-only event API in SvelteKit
+- [x] 13) Minimal append-only event API in SvelteKit
   - Actions: Endpoint with zod validation + Drizzle; optimistic concurrency on `(stream_id, version)`
   - Verify: `curl POST /api/events` returns 201; row appears in `events`
 
