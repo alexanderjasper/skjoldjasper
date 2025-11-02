@@ -40,7 +40,11 @@ services:
     image: node:22-alpine
     container_name: skjoldjasper-web
     working_dir: /workspace
-    command: sh -lc "corepack enable && pnpm -w install --no-frozen-lockfile && pnpm -w --filter @skjoldjasper/shared --filter @skjoldjasper/db build && pnpm --filter web dev -- --host 0.0.0.0 --port 5173 --strictPort"
+    command: sh -lc "corepack enable \
+      && pnpm -w --filter @skjoldjasper/shared --filter @skjoldjasper/db install --no-frozen-lockfile \
+      && pnpm -w --filter @skjoldjasper/shared --filter @skjoldjasper/db build \
+      && pnpm --dir apps/web install --no-frozen-lockfile \
+      && pnpm --filter web dev -- --host 0.0.0.0 --port 5173 --strictPort"
     env_file:
       - ../apps/web/.env
     environment:
@@ -63,7 +67,11 @@ services:
     image: node:22-alpine
     container_name: skjoldjasper-game-server
     working_dir: /workspace
-    command: sh -lc "corepack enable && pnpm -w install --no-frozen-lockfile && pnpm -w --filter @skjoldjasper/shared --filter @skjoldjasper/db build && pnpm --dir apps/game-server start"
+    command: sh -lc "corepack enable \
+      && pnpm -w --filter @skjoldjasper/shared --filter @skjoldjasper/db install --no-frozen-lockfile \
+      && pnpm -w --filter @skjoldjasper/shared --filter @skjoldjasper/db build \
+      && pnpm --dir apps/game-server install --no-frozen-lockfile \
+      && pnpm --dir apps/game-server start"
     environment:
       - DATABASE_URL=postgres://app:${POSTGRES_PASSWORD:-app-password-change-me}@postgres:5432/${POSTGRES_DB:-appdb}
       - CI=true
@@ -83,7 +91,11 @@ services:
     image: node:22-alpine
     container_name: skjoldjasper-projector
     working_dir: /workspace
-    command: sh -lc "corepack enable && pnpm -w install --no-frozen-lockfile && pnpm --dir apps/projector run"
+    command: sh -lc "corepack enable \
+      && pnpm -w --filter @skjoldjasper/shared --filter @skjoldjasper/db install --no-frozen-lockfile \
+      && pnpm -w --filter @skjoldjasper/shared --filter @skjoldjasper/db build \
+      && pnpm --dir apps/projector install --no-frozen-lockfile \
+      && pnpm --dir apps/projector run"
     environment:
       - DATABASE_URL=postgres://app:${POSTGRES_PASSWORD:-app-password-change-me}@postgres:5432/${POSTGRES_DB:-appdb}
       - CI=true
