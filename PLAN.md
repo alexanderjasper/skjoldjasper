@@ -134,7 +134,7 @@ Notes:
     ```
   - Verify: `tsx src/index.ts` connects to DB
 
-- [ ] 18) Implement projector for `game_room_view`
+- [x] 18) Implement projector for `game_room_view`
   - Actions: Poll new events; idempotently upsert `game_room_view`
   - Verify: View updates after moves; reruns don’t double-apply
 
