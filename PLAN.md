@@ -102,7 +102,7 @@ Notes:
   - Actions: Scaffold package; add `drizzle.config.ts`, `src/schema.ts`; install deps
   - Verify: `pnpm --dir packages/db drizzle-kit --help` succeeds
 
-- [ ] 12) Create migrations: `events` and `aggregate_snapshots`; apply to local Postgres
+- [x] 12) Create migrations: `events` and `aggregate_snapshots`; apply to local Postgres
   - Actions: Define schemas in Drizzle; run `pnpm drizzle-kit generate` and apply via a small runner script
   - Verify: Tables exist in DB
 
