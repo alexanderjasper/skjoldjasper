@@ -1,0 +1,19 @@
+{
+  "name": "@skjoldjasper/db",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "drizzle-kit": "drizzle-kit",
+    "build": "tsc -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@types/node": "^22.8.6",
+    "drizzle-kit": "^0.30.5",
+    "drizzle-orm": "^0.36.4",
+    "dotenv": "^16.4.5",
+    "pg": "^8.13.1",
+    "tsx": "^4.19.2",
+    "typescript": "^5.9.3"
+  }
+}

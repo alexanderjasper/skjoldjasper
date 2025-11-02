@@ -98,14 +98,9 @@ Notes:
   - Actions: Scaffold `packages/shared` with TypeScript + zod; `tsc` build
   - Verify: `pnpm --dir packages/shared build` succeeds
 
-- [ ] 11) Initialize Drizzle in `packages/db`
-  - Commands:
-    ```bash
-    mkdir -p packages/db && cd packages/db
-    npm init -y
-    pnpm add drizzle-orm drizzle-kit pg dotenv tsx typescript -D
-    ```
-  - Verify: `drizzle.config.ts` present; `pnpm drizzle-kit` shows help
+- [x] 11) Initialize Drizzle in `packages/db`
+  - Actions: Scaffold package; add `drizzle.config.ts`, `src/schema.ts`; install deps
+  - Verify: `pnpm --dir packages/db drizzle-kit --help` succeeds
 
 - [ ] 12) Create migrations: `events` and `aggregate_snapshots`; apply to local Postgres
   - Actions: Define schemas in Drizzle; run `pnpm drizzle-kit generate` and apply via a small runner script
