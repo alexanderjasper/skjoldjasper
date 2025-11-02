@@ -43,8 +43,8 @@ services:
     command: sh -lc "corepack enable \
       && pnpm -w --filter @skjoldjasper/shared --filter @skjoldjasper/db install --no-frozen-lockfile \
       && pnpm -w --filter @skjoldjasper/shared --filter @skjoldjasper/db build \
-      && pnpm --dir apps/web install --no-frozen-lockfile \
-      && pnpm --filter web dev -- --host 0.0.0.0 --port 5173 --strictPort"
+      && pnpm -w --filter web install --no-frozen-lockfile \
+      && pnpm -w --filter web dev -- --host 0.0.0.0 --port 5173 --strictPort"
     env_file:
       - ../apps/web/.env
     environment:
