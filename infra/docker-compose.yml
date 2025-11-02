@@ -40,14 +40,17 @@ services:
     image: node:22-alpine
     container_name: skjoldjasper-web
     working_dir: /workspace
-    command: sh -lc "corepack enable && pnpm install && pnpm --filter web dev --host 0.0.0.0"
+    command: sh -lc "corepack enable && pnpm install && pnpm --dir apps/web install && pnpm --filter web dev --host 0.0.0.0 --port 5173 --strictPort"
     env_file:
       - ../apps/web/.env
     environment:
       - DATABASE_URL=postgres://app:${POSTGRES_PASSWORD:-app-password-change-me}@postgres:5432/${POSTGRES_DB:-appdb}
       - PUBLIC_GAME_SERVER_WS=${PUBLIC_GAME_SERVER_WS:-ws://localhost:2567}
+      - CI=true
     volumes:
       - ../:/workspace
+      - /workspace/node_modules
+      - /workspace/apps/web/node_modules
     ports:
       - "5173:5173"
     depends_on:
@@ -60,11 +63,14 @@ services:
     image: node:22-alpine
     container_name: skjoldjasper-game-server
     working_dir: /workspace
-    command: sh -lc "corepack enable && pnpm install && pnpm --dir apps/game-server start"
+    command: sh -lc "corepack enable && pnpm install && pnpm --dir apps/game-server install && pnpm --dir apps/game-server start"
     environment:
       - DATABASE_URL=postgres://app:${POSTGRES_PASSWORD:-app-password-change-me}@postgres:5432/${POSTGRES_DB:-appdb}
+      - CI=true
     volumes:
       - ../:/workspace
+      - /workspace/node_modules
+      - /workspace/apps/game-server/node_modules
     ports:
       - "2567:2567"
     depends_on:
@@ -77,14 +83,35 @@ services:
     image: node:22-alpine
     container_name: skjoldjasper-projector
     working_dir: /workspace
-    command: sh -lc "corepack enable && pnpm install && pnpm --dir apps/projector run"
+    command: sh -lc "corepack enable && pnpm install && pnpm --dir apps/projector install && pnpm --dir apps/projector run"
     environment:
       - DATABASE_URL=postgres://app:${POSTGRES_PASSWORD:-app-password-change-me}@postgres:5432/${POSTGRES_DB:-appdb}
+      - CI=true
     volumes:
       - ../:/workspace
+      - /workspace/node_modules
+      - /workspace/apps/projector/node_modules
     depends_on:
       postgres:
         condition: service_healthy
+    networks:
+      - private
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: skjoldjasper-cloudflared
+    command: ["tunnel", "run", "--token", "${CLOUDFLARED_TUNNEL_TOKEN}"]
+    env_file:
+      - ./.env
+    volumes:
+      - ./cloudflared:/etc/cloudflared:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      web:
+        condition: service_started
+      game-server:
+        condition: service_started
     networks:
       - private
 

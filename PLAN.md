@@ -150,7 +150,7 @@ Notes:
   - Actions: Add Dockerfiles for each app; update `infra/docker-compose.yml` to run all services with a private network to Postgres
   - Verify: `docker compose up` shows all services healthy
 
-- [ ] 22) Cloudflare Tunnel config
+- [x] 22) Cloudflare Tunnel config
   - Actions: Map HTTP (web) and WS (game-server) to public routes; keep Postgres private
   - Verify: External access to site and WS works
 
