@@ -3,22 +3,21 @@ import { cli, Options } from "@colyseus/loadtest";
 
 export async function main(options: Options) {
     const client = new Client(options.endpoint);
-    const room: Room = await client.joinOrCreate(options.roomName, {
-        // your join options here...
+    const room: Room = await client.joinOrCreate(options.roomName, {});
+
+    console.log("joined successfully!", room.sessionId);
+
+    room.onStateChange((state: any) => {
+        console.log("counter:", state.counter, "players:", state.players, "currentIndex:", state.currentIndex);
     });
 
-    console.log("joined successfully!");
+    // try send increment every 1s; only takes effect on your turn
+    const interval = setInterval(() => {
+        room.send("increment");
+    }, 1000);
 
-    room.onMessage("message-type", (payload) => {
-        // logic
-    });
-
-    room.onStateChange((state) => {
-        console.log("state change:", state);
-    });
-
-    room.onLeave((code) => {
-        console.log("left");
+    room.onLeave(() => {
+        clearInterval(interval);
     });
 }
 

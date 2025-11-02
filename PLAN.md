@@ -118,7 +118,7 @@ Notes:
     ```
   - Verify: `pnpm --filter apps/game-server dev` exposes WS; health route OK
 
-- [ ] 15) Demo room (turn-based counter)
+- [x] 15) Demo room (turn-based counter)
   - Actions: Implement join/turn/increment; server-authoritative state
   - Verify: Two browser tabs see synchronized counter and alternating turns
 

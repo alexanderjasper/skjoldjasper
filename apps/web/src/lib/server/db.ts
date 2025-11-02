@@ -9,7 +9,7 @@ let dbSingleton: NodePgDatabase | undefined;
 export function getDb(): NodePgDatabase {
   if (!dbSingleton) {
     const databaseUrl = env.DATABASE_URL;
-    if (!databaseUrl) {
+    if (!databaseUrl) {http://localhost:2567/
       throw new Error('DATABASE_URL is not set');
     }
     poolSingleton = new Pool({ connectionString: databaseUrl });
