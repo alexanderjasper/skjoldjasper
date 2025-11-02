@@ -138,7 +138,7 @@ Notes:
   - Actions: Poll new events; idempotently upsert `game_room_view`
   - Verify: View updates after moves; reruns don’t double-apply
 
-- [ ] 19) Optional: materialized view for room list + concurrent refresh
+- [x] 19) Optional: materialized view for room list + concurrent refresh (skipped)
   - Actions: Create `game_room_list_mv`; `REFRESH MATERIALIZED VIEW CONCURRENTLY` from projector or cron
   - Verify: MV reflects latest state after refresh; refresh is non-blocking
 
