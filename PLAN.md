@@ -110,7 +110,7 @@ Notes:
   - Actions: Endpoint with zod validation + Drizzle; optimistic concurrency on `(stream_id, version)`
   - Verify: `curl POST /api/events` returns 201; row appears in `events`
 
-- [ ] 14) Scaffold Colyseus server via CLI
+- [x] 14) Scaffold Colyseus server via CLI
   - Commands:
     ```bash
     pnpm dlx create-colyseus-app apps/game-server
