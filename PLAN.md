@@ -146,7 +146,7 @@ Notes:
   - Actions: Pages for create/join; list rooms from `game_room_view`/MV; subscribe to UI broadcasts if exposed
   - Verify: Creating a room appears immediately; joining works and state syncs
 
-- [ ] 21) Dockerize web, game-server, projector; Compose
+- [x] 21) Dockerize web, game-server, projector; Compose
   - Actions: Add Dockerfiles for each app; update `infra/docker-compose.yml` to run all services with a private network to Postgres
   - Verify: `docker compose up` shows all services healthy
 

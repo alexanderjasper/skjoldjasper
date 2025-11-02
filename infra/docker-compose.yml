@@ -36,6 +36,58 @@ services:
     ports:
       - "5433:5432"
 
+  web:
+    image: node:22-alpine
+    container_name: skjoldjasper-web
+    working_dir: /workspace
+    command: sh -lc "corepack enable && pnpm install && pnpm --filter web dev --host 0.0.0.0"
+    env_file:
+      - ../apps/web/.env
+    environment:
+      - DATABASE_URL=postgres://app:${POSTGRES_PASSWORD:-app-password-change-me}@postgres:5432/${POSTGRES_DB:-appdb}
+      - PUBLIC_GAME_SERVER_WS=${PUBLIC_GAME_SERVER_WS:-ws://localhost:2567}
+    volumes:
+      - ../:/workspace
+    ports:
+      - "5173:5173"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - private
+
+  game-server:
+    image: node:22-alpine
+    container_name: skjoldjasper-game-server
+    working_dir: /workspace
+    command: sh -lc "corepack enable && pnpm install && pnpm --dir apps/game-server start"
+    environment:
+      - DATABASE_URL=postgres://app:${POSTGRES_PASSWORD:-app-password-change-me}@postgres:5432/${POSTGRES_DB:-appdb}
+    volumes:
+      - ../:/workspace
+    ports:
+      - "2567:2567"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - private
+
+  projector:
+    image: node:22-alpine
+    container_name: skjoldjasper-projector
+    working_dir: /workspace
+    command: sh -lc "corepack enable && pnpm install && pnpm --dir apps/projector run"
+    environment:
+      - DATABASE_URL=postgres://app:${POSTGRES_PASSWORD:-app-password-change-me}@postgres:5432/${POSTGRES_DB:-appdb}
+    volumes:
+      - ../:/workspace
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - private
+
   pgbackrest:
     build:
       context: ./pgbackrest
