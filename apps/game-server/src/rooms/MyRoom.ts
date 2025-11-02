@@ -14,6 +14,10 @@ export class MyRoom extends Room<MyRoomState> {
     this.streamIdForEvents = String(options?.streamId ?? this.roomId);
 
     this.onMessage("increment", (client) => {
+      // simple per-client rate limit: max 10 msgs/sec
+      if (!this.allowMessage(client.sessionId)) {
+        return;
+      }
       const { players, currentIndex } = this.state;
       if (players.length === 0) return;
       const currentPlayer = players[currentIndex];
@@ -37,6 +41,25 @@ export class MyRoom extends Room<MyRoomState> {
         this.state.currentIndex = 0;
       }
     }
+  }
+
+  private rate: Map<string, { count: number; window: number }> = new Map();
+  private allowMessage(sessionId: string): boolean {
+    const now = Date.now();
+    const windowMs = 1000;
+    const max = 10;
+    const r = this.rate.get(sessionId) ?? { count: 0, window: now };
+    if (now - r.window >= windowMs) {
+      r.count = 0;
+      r.window = now;
+    }
+    if (r.count >= max) {
+      this.rate.set(sessionId, r);
+      return false;
+    }
+    r.count += 1;
+    this.rate.set(sessionId, r);
+    return true;
   }
 
   onLeave (client: Client, consented: boolean) {

@@ -27,6 +27,7 @@
     "vite": "^7.1.10"
   },
   "dependencies": {
+    "@sentry/sveltekit": "^10.22.0",
     "@supabase/auth-helpers-sveltekit": "^0.13.0",
     "@supabase/supabase-js": "^2.78.0",
     "colyseus.js": "^0.16.22",
