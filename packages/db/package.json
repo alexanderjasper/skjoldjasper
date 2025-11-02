@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "drizzle-kit": "drizzle-kit",
-    "build": "tsc -p tsconfig.json"
+    "build": "tsc -p tsconfig.json",
+    "migrate:push": "drizzle-kit push",
+    "test:roundtrip": "tsx src/test/roundtrip.ts"
   },
   "devDependencies": {
     "@types/node": "^22.8.6",
