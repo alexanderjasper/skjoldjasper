@@ -68,6 +68,7 @@ services:
     container_name: skjoldjasper-game-server
     working_dir: /workspace
     command: sh -lc "corepack enable \
+      && apk add --no-cache git \
       && pnpm -w --filter @skjoldjasper/shared --filter @skjoldjasper/db install --no-frozen-lockfile \
       && pnpm -w --filter @skjoldjasper/shared --filter @skjoldjasper/db build \
       && pnpm --dir apps/game-server install --no-frozen-lockfile \
