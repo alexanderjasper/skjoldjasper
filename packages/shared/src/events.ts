@@ -1,5 +1,8 @@
 import { z } from 'zod';
-import type { Pool } from 'pg';
+
+type PgLike = {
+  query: (sql: string, params?: unknown[]) => Promise<{ rows: any[] }>;
+};
 
 export const eventAppendSchema = z.object({
   context: z.string().min(1),
@@ -21,7 +24,7 @@ export class VersionConflictError extends Error {
 }
 
 export async function appendEvent(
-  pool: Pool,
+  pool: PgLike,
   dto: EventAppend,
   mergedMetadata: Record<string, unknown>
 ): Promise<{ position: number; eventId: string }> {
