@@ -26,6 +26,12 @@ pnpm --dir packages/db migrate:push
 
 # Web dev (with debugger)
 pnpm --dir apps/web dev   # or use the "SvelteKit Dev (inspect)" launch config
+
+# Run full stack locally (web + game-server + projector)
+pnpm dev
+
+# Validate required env
+pnpm check:env
 ```
 
 ### Dev stack via Docker Compose
@@ -132,9 +138,23 @@ Restore smoke test (ephemeral):
 
 What it does: restores latest backup into a throwaway volume, boots a temp Postgres, waits for readiness, cleans up.
 
+## Add a new bounded context/app
+
+- Define events:
+  - Use `packages/shared/eventAppendSchema` for shape; append via `appendEvent(pool, dto, metadata)`.
+- Project state:
+  - Create a handler in `apps/projector/src/handlers/<context>/<category>.ts` implementing `ensureSchema` and `apply`.
+  - Add it to `handlers` in `apps/projector/src/index.ts`.
+- Consume in web:
+  - Query projection tables via `getPool()` from `@skjoldjasper/db`.
+- Rate limit:
+  - Use `createTokenBucket` from `@skjoldjasper/shared`; read caps from `getServerConfig()`.
+- CORS:
+  - Use `buildCorsHeaders` and `buildPreflightHeaders` from `@skjoldjasper/shared` with `allowedOrigins` from config.
+
 ## Scripts
 
-- Root: `dev:db`, `dev:stack`, `tunnel:up`, `compose:down`
+- Root: `dev`, `check:env`, `dev:db`, `dev:stack`, `tunnel:up`, `compose:down`
 - `packages/db`: `migrate:push`, `test:roundtrip`
 - `infra/scripts/pgbackrest-backup.sh` — run full/diff backups
 - `infra/scripts/pgbackrest-restore-smoke.sh` — restore validation

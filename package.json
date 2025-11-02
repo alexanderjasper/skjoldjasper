@@ -6,6 +6,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev:db": "docker compose -f infra/docker-compose.yml up -d postgres",
     "dev:stack": "docker compose -f infra/docker-compose.yml up -d web game-server projector",
+    "dev": "turbo run dev --parallel --filter=web --filter=my-app --filter=projector",
+    "check:env": "node scripts/check-env.mjs",
     "tunnel:up": "docker compose -f infra/docker-compose.yml up -d cloudflared",
     "compose:down": "docker compose -f infra/docker-compose.yml down -v"
   },
