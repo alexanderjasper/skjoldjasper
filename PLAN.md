@@ -142,7 +142,7 @@ Notes:
   - Actions: Create `game_room_list_mv`; `REFRESH MATERIALIZED VIEW CONCURRENTLY` from projector or cron
   - Verify: MV reflects latest state after refresh; refresh is non-blocking
 
-- [ ] 20) Frontend room UI (create/join) + list from projection
+- [x] 20) Frontend room UI (create/join) + list from projection
   - Actions: Pages for create/join; list rooms from `game_room_view`/MV; subscribe to UI broadcasts if exposed
   - Verify: Creating a room appears immediately; joining works and state syncs
 

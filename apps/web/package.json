@@ -29,6 +29,7 @@
   "dependencies": {
     "@supabase/auth-helpers-sveltekit": "^0.13.0",
     "@supabase/supabase-js": "^2.78.0",
+    "colyseus.js": "^0.16.22",
     "drizzle-orm": "^0.36.4",
     "pg": "^8.16.3",
     "zod": "^3.25.76"
