@@ -1,11 +1,13 @@
 import { Room, Client } from "colyseus";
 import { MyRoomState } from "./schema/MyRoomState";
 import { getPool } from "../db";
+import { createTokenBucket, getServerConfig } from "@skjoldjasper/shared";
 
 export class MyRoom extends Room<MyRoomState> {
   maxClients = 4;
 
   private streamIdForEvents: string = "";
+  private messageLimiter = createTokenBucket(getServerConfig().rateLimit.colyseusMessages);
 
   onCreate (options: any) {
     this.setState(new MyRoomState());
@@ -15,7 +17,7 @@ export class MyRoom extends Room<MyRoomState> {
 
     this.onMessage("increment", (client) => {
       // simple per-client rate limit: max 10 msgs/sec
-      if (!this.allowMessage(client.sessionId)) {
+      if (!this.messageLimiter.consume(client.sessionId)) {
         return;
       }
       const { players, currentIndex } = this.state;
@@ -43,24 +45,7 @@ export class MyRoom extends Room<MyRoomState> {
     }
   }
 
-  private rate: Map<string, { count: number; window: number }> = new Map();
-  private allowMessage(sessionId: string): boolean {
-    const now = Date.now();
-    const windowMs = 1000;
-    const max = 10;
-    const r = this.rate.get(sessionId) ?? { count: 0, window: now };
-    if (now - r.window >= windowMs) {
-      r.count = 0;
-      r.window = now;
-    }
-    if (r.count >= max) {
-      this.rate.set(sessionId, r);
-      return false;
-    }
-    r.count += 1;
-    this.rate.set(sessionId, r);
-    return true;
-  }
+  // rate limiting handled by shared token bucket
 
   onLeave (client: Client, consented: boolean) {
     console.log(client.sessionId, "left!");
