@@ -4,6 +4,7 @@ dotenv.config();
 import { Client } from "pg";
 import { runHandler } from "./runner";
 import { gameRoomViewHandler } from "./handlers/game/room";
+import { financeBudgetHandler } from "./handlers/finance/budget";
 
 async function main(): Promise<void> {
   const databaseUrl = process.env.DATABASE_URL;
@@ -12,7 +13,7 @@ async function main(): Promise<void> {
   const client = new Client({ connectionString: databaseUrl });
   await client.connect();
   try {
-    const handlers = [gameRoomViewHandler];
+    const handlers = [gameRoomViewHandler, financeBudgetHandler];
     for (const h of handlers) {
       await runHandler(client, h);
     }
