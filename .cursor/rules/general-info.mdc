@@ -1,4 +1,17 @@
 ---
 alwaysApply: true
 ---
-You can find information of the structure of the project in `/README.md`.
+
+Project structure overview
+
+- apps/: application code and domain logic (e.g., web UI, game-server, projectors)
+- packages/: infrastructure-only shared libraries (e.g., db schema, http utils, rate limit)
+- infra/: deployment/runtime infra (docker, cloudflared, postgres, scripts)
+
+Domain boundary guidance
+
+- Keep domain-specific logic and schemas inside the corresponding app under apps/.
+- Do not place domain code (e.g., game/room aggregates, view schemas, event handling) in packages/.
+- packages/ should remain generic/infra (database primitives, shared http/config helpers), with no domain coupling.
+
+See `/README.md` for more details.
