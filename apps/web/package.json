@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite dev",
-    "dev:inspect": "node --inspect ./node_modules/vite/bin/vite.js dev --host",
+    "dev:inspect": "DATABASE_URL=postgres://app:app-password-change-me@localhost:5433/appdb node --inspect ./node_modules/vite/bin/vite.js dev --host",
     "build": "vite build",
     "preview": "vite preview",
     "prepare": "svelte-kit sync || echo ''",
@@ -28,7 +28,7 @@
   },
   "dependencies": {
     "@sentry/sveltekit": "^10.22.0",
-    "@supabase/auth-helpers-sveltekit": "^0.13.0",
+    "@supabase/ssr": "^0.7.0",
     "@supabase/supabase-js": "^2.78.0",
     "colyseus.js": "^0.16.22",
     "drizzle-orm": "^0.36.4",

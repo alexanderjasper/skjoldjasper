@@ -1,4 +1,4 @@
-import { createSupabaseServerClient } from '@supabase/auth-helpers-sveltekit';
+import { createServerClient } from '@supabase/ssr';
 import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/public';
 import * as Sentry from '@sentry/sveltekit';
 import { env as privateEnv } from '$env/dynamic/private';
@@ -11,10 +11,16 @@ export const handle: Handle = async ({ event, resolve }) => {
       Sentry.init({ dsn, tracesSampleRate: 0.05 });
     }
   }
-  event.locals.supabase = createSupabaseServerClient({
-    supabaseUrl: PUBLIC_SUPABASE_URL,
-    supabaseKey: PUBLIC_SUPABASE_ANON_KEY,
-    event
+  
+  event.locals.supabase = createServerClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY, {
+    cookies: {
+      getAll: () => event.cookies.getAll(),
+      setAll: (cookiesToSet) => {
+        cookiesToSet.forEach(({ name, value, options }) => {
+          event.cookies.set(name, value, { ...options, path: '/' });
+        });
+      }
+    }
   });
 
   event.locals.safeGetSession = async () => {
