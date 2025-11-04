@@ -1,147 +1,97 @@
 import type { Pool } from 'pg';
 
-export interface Budget {
+export interface BudgetSummary {
   streamId: string;
   name: string;
   currency: string;
   createdAt: Date;
 }
 
-export interface CategoryWithTarget {
-  id: string;
-  budgetStreamId: string;
+export interface BudgetSnapshotState {
   name: string;
-  parentId: string | null;
-  yearlyTarget: string | null;
-}
-
-export interface TransactionWithDetails {
-  id: string;
-  budgetStreamId: string;
-  date: string;
-  description: string;
-  amount: string;
-  note: string | null;
-}
-
-export interface TransactionSplitRow {
-  transactionId: string;
-  categoryId: string;
-  amount: string;
+  currency: string;
+  creatorUserId: string;
+  members: string[];
+  categories: Record<string, { id: string; name: string; parentId: string | null; yearlyTarget?: number }>;
+  transactions: Record<string, { id: string; date: string; description: string; amount: number }>;
+  splits: Record<string, Array<{ categoryId: string; amount: number }>>;
+  notes: Record<string, string>;
+  version: number;
 }
 
 export interface CategoryActual {
   categoryId: string;
   categoryName: string;
-  yearlyTarget: string | null;
-  actualSpent: string;
+  yearlyTarget?: number;
+  actualSpent: number;
 }
 
-export async function getBudgetsForUser(pool: Pool, userId: string): Promise<Budget[]> {
-  const result = await pool.query(
-    `SELECT b.stream_id, b.name, b.currency, b.created_at
-     FROM budgets b
-     JOIN budget_members bm ON b.stream_id = bm.budget_stream_id
-     WHERE bm.user_id = $1
-     ORDER BY b.created_at DESC`,
-    [userId]
+async function getLatestSnapshots(pool: Pool) {
+  const { rows } = await pool.query(
+    `SELECT DISTINCT ON (stream_id)
+       stream_id,
+       payload,
+       created_at
+     FROM aggregate_snapshots
+     WHERE context = 'finance' AND stream_category = 'budget'
+     ORDER BY stream_id, version DESC`
   );
+  return rows as Array<{ stream_id: string; payload: any; created_at: Date }>;
+}
 
-  return result.rows.map((row) => ({
-    streamId: row.stream_id,
-    name: row.name,
-    currency: row.currency,
-    createdAt: row.created_at
-  }));
+export async function getBudgetsForUser(pool: Pool, userId: string): Promise<BudgetSummary[]> {
+  const rows = await getLatestSnapshots(pool);
+  const results: BudgetSummary[] = [];
+  for (const r of rows) {
+    const state = r.payload as BudgetSnapshotState;
+    if (Array.isArray(state.members) && state.members.includes(userId)) {
+      results.push({
+        streamId: r.stream_id,
+        name: state.name,
+        currency: state.currency,
+        createdAt: r.created_at
+      });
+    }
+  }
+  return results;
 }
 
 export async function getBudgetDetails(pool: Pool, budgetId: string) {
-  const budgetResult = await pool.query(
-    `SELECT stream_id, name, currency, created_at
-     FROM budgets
-     WHERE stream_id = $1`,
+  const { rows } = await pool.query(
+    `SELECT payload, created_at
+     FROM aggregate_snapshots
+     WHERE context = 'finance' AND stream_category = 'budget' AND stream_id = $1
+     ORDER BY version DESC
+     LIMIT 1`,
     [budgetId]
   );
-
-  if (budgetResult.rows.length === 0) return null;
-
-  const categoriesResult = await pool.query(
-    `SELECT id, budget_stream_id, name, parent_id, yearly_target
-     FROM categories
-     WHERE budget_stream_id = $1
-     ORDER BY name`,
-    [budgetId]
-  );
-
-  const transactionsResult = await pool.query(
-    `SELECT id, budget_stream_id, date, description, amount, note
-     FROM transactions
-     WHERE budget_stream_id = $1
-     ORDER BY date DESC`,
-    [budgetId]
-  );
-
-  const splitsResult = await pool.query(
-    `SELECT transaction_id, category_id, amount
-     FROM transaction_splits
-     WHERE transaction_id IN (SELECT id FROM transactions WHERE budget_stream_id = $1)`,
-    [budgetId]
-  );
-
-  const budget: Budget = {
-    streamId: budgetResult.rows[0].stream_id,
-    name: budgetResult.rows[0].name,
-    currency: budgetResult.rows[0].currency,
-    createdAt: budgetResult.rows[0].created_at
-  };
-
-  const categories: CategoryWithTarget[] = categoriesResult.rows.map((row) => ({
-    id: row.id,
-    budgetStreamId: row.budget_stream_id,
-    name: row.name,
-    parentId: row.parent_id,
-    yearlyTarget: row.yearly_target
-  }));
-
-  const transactions: TransactionWithDetails[] = transactionsResult.rows.map((row) => ({
-    id: row.id,
-    budgetStreamId: row.budget_stream_id,
-    date: row.date,
-    description: row.description,
-    amount: row.amount,
-    note: row.note
-  }));
-
-  const splits: TransactionSplitRow[] = splitsResult.rows.map((row) => ({
-    transactionId: row.transaction_id,
-    categoryId: row.category_id,
-    amount: row.amount
-  }));
-
-  return { budget, categories, transactions, splits };
+  if (rows.length === 0) return null;
+  const state = rows[0].payload as BudgetSnapshotState;
+  return { budgetId, state, createdAt: rows[0].created_at as Date };
 }
 
 export async function getBudgetVsActual(pool: Pool, budgetId: string): Promise<CategoryActual[]> {
-  const result = await pool.query(
-    `SELECT 
-       c.id as category_id,
-       c.name as category_name,
-       c.yearly_target,
-       COALESCE(SUM(ts.amount), 0) as actual_spent
-     FROM categories c
-     LEFT JOIN transaction_splits ts ON c.id = ts.category_id
-     LEFT JOIN transactions t ON ts.transaction_id = t.id
-     WHERE c.budget_stream_id = $1
-     GROUP BY c.id, c.name, c.yearly_target
-     ORDER BY c.name`,
-    [budgetId]
-  );
+  const details = await getBudgetDetails(pool, budgetId);
+  if (!details) return [];
+  const { state } = details;
 
-  return result.rows.map((row) => ({
-    categoryId: row.category_id,
-    categoryName: row.category_name,
-    yearlyTarget: row.yearly_target,
-    actualSpent: row.actual_spent
-  }));
+  const actualByCategory = new Map<string, number>();
+  for (const [txId, splits] of Object.entries(state.splits || {})) {
+    for (const split of splits) {
+      actualByCategory.set(split.categoryId, (actualByCategory.get(split.categoryId) ?? 0) + Number(split.amount));
+    }
+  }
+
+  const results: CategoryActual[] = [];
+  for (const [catId, cat] of Object.entries(state.categories || {})) {
+    results.push({
+      categoryId: catId,
+      categoryName: cat.name,
+      yearlyTarget: cat.yearlyTarget,
+      actualSpent: actualByCategory.get(catId) ?? 0
+    });
+  }
+  results.sort((a, b) => a.categoryName.localeCompare(b.categoryName));
+  return results;
 }
 
