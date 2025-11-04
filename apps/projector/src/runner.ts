@@ -1,4 +1,5 @@
 import { Client } from 'pg';
+import { ensureAppliedEventsTable, withIdempotentApply } from './utils/idempotency';
 
 export type EventRow = {
   position: string; // pg returns as string
@@ -60,6 +61,7 @@ async function fetchBatch(client: Client, h: ProjectorHandler, fromExclusive: nu
 export async function runHandler(client: Client, h: ProjectorHandler): Promise<void> {
   await h.ensureSchema(client);
   await ensureCheckpointTable(client);
+  await ensureAppliedEventsTable(client);
 
   let lastPos = await getLastPosition(client, h.handlerName);
   // eslint-disable-next-line no-console
@@ -71,7 +73,9 @@ export async function runHandler(client: Client, h: ProjectorHandler): Promise<v
 
     let maxPos = lastPos;
     for (const ev of rows) {
-      await h.apply(ev, client);
+      await withIdempotentApply(client, h.handlerName, Number(ev.position), async () => {
+        await h.apply(ev, client);
+      });
       const p = Number(ev.position);
       if (p > maxPos) maxPos = p;
     }
