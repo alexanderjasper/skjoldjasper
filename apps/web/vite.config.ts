@@ -1,8 +1,14 @@
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vite';
+import { fileURLToPath } from 'url';
+import { dirname, resolve } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 export default defineConfig({
 	plugins: [sveltekit()],
+	envDir: resolve(__dirname),
 	server: {
 		host: true,
 		port: 5173,
@@ -10,7 +16,8 @@ export default defineConfig({
 		fs: {
 			allow: [
 				'/workspace',
-				'/workspace/node_modules'
+				'/workspace/node_modules',
+				'/Users/alexander/Code/skjoldjasper'
 			]
 		},
 		hmr: {
