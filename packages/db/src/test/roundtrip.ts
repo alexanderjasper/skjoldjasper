@@ -18,7 +18,7 @@ async function main() {
     await client.query('BEGIN');
 
     // Determine next version for the stream (simple demo)
-    const streamId = 'room-1';
+    const streamId = 'entity-1';
     const { rows } = await client.query(
       'select coalesce(max(version), 0) as v from events where stream_id=$1',
       [streamId]
@@ -31,8 +31,8 @@ async function main() {
       ) values ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
       [
         eventId,
-        'game',
-        'room',
+        'demo',
+        'entity',
         streamId,
         nextVersion,
         'MovePlaced',
