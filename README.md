@@ -10,6 +10,14 @@ Monorepo for a SvelteKit app with Supabase Auth, Postgres + pgBackRest backups, 
 - `infra` — Docker Compose for Postgres and pgBackRest, backup scripts
 - `PLAN.md` — living checklist for implementation
 
+### Modellen (Family Finance)
+
+- Purpose: budgets, hierarchical categories with yearly targets, CSV imports, transaction splits, notes, budget vs actual, family sharing
+- Architecture: event-sourced writes, snapshot-based reads via a projector
+- Domain location: `apps/web/src/lib/server/finance` (domain logic) and `apps/projector/src/handlers/finance/budget.ts` (projection)
+- UI: `apps/web/src/routes/modellen` with APIs under `apps/web/src/routes/api/budgets`
+- See also: `apps/web/src/lib/server/finance/README.md` (overview) and `@general-info.mdc` (project structure and domain boundary guidance)
+
 ## Quickstart
 
 ```bash
