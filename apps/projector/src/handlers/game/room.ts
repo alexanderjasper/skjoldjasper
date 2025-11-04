@@ -1,5 +1,8 @@
 import { Client } from 'pg';
 import type { EventRow, ProjectorHandler } from '../../runner';
+import { drizzle } from 'drizzle-orm/node-postgres';
+import { sql } from 'drizzle-orm';
+import { gameRoomView } from '../../db/schema';
 
 export const handlerName = 'game_room_view';
 
@@ -14,17 +17,21 @@ async function ensureSchema(client: Client): Promise<void> {
 }
 
 async function apply(ev: EventRow, client: Client): Promise<void> {
-  if (ev.type === 'Incremented') {
-    const delta = Number((ev.payload as any)?.delta ?? 1);
-    await client.query(
-      `INSERT INTO game_room_view(stream_id, counter, updated_at)
-       VALUES ($1, $2, now())
-       ON CONFLICT(stream_id)
-       DO UPDATE SET counter = game_room_view.counter + EXCLUDED.counter,
-                     updated_at = now()`,
-      [ev.stream_id, delta]
-    );
-  }
+  if (ev.type !== 'Incremented') return;
+
+  const db = drizzle(client);
+  const delta = Number((ev.payload as any)?.delta ?? 1);
+
+  await db
+    .insert(gameRoomView)
+    .values({ streamId: ev.stream_id, counter: delta, updatedAt: new Date() })
+    .onConflictDoUpdate({
+      target: gameRoomView.streamId,
+      set: {
+        counter: sql`${gameRoomView.counter} + ${delta}`,
+        updatedAt: new Date()
+      }
+    });
 }
 
 export const gameRoomViewHandler: ProjectorHandler = {
