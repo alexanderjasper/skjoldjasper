@@ -1,4 +1,7 @@
 import { Client } from 'pg';
+import { drizzle } from 'drizzle-orm/node-postgres';
+import { eq } from 'drizzle-orm';
+import { projectorCheckpoints } from '@skjoldjasper/db';
 import { ensureAppliedEventsTable, withIdempotentApply } from './utils/idempotency';
 
 export type EventRow = {
@@ -28,22 +31,24 @@ async function ensureCheckpointTable(client: Client): Promise<void> {
   `);
 }
 
-async function getLastPosition(client: Client, name: string): Promise<number> {
-  const { rows } = await client.query<{ last_position: string }>(
-    `SELECT last_position FROM projector_checkpoints WHERE name=$1`,
-    [name]
-  );
+async function getLastPositionDb(db: ReturnType<typeof drizzle>, name: string): Promise<number> {
+  const rows = await db
+    .select({ lastPosition: projectorCheckpoints.lastPosition })
+    .from(projectorCheckpoints)
+    .where(eq(projectorCheckpoints.name, name))
+    .limit(1);
   if (rows.length === 0) return 0;
-  return Number(rows[0].last_position ?? 0);
+  return Number(rows[0].lastPosition ?? 0);
 }
 
-async function setLastPosition(client: Client, name: string, position: number): Promise<void> {
-  await client.query(
-    `INSERT INTO projector_checkpoints(name, last_position, updated_at)
-     VALUES ($1, $2, now())
-     ON CONFLICT(name) DO UPDATE SET last_position=EXCLUDED.last_position, updated_at=now()`,
-    [name, position]
-  );
+async function setLastPositionDb(db: ReturnType<typeof drizzle>, name: string, position: number): Promise<void> {
+  await db
+    .insert(projectorCheckpoints)
+    .values({ name, lastPosition: position, updatedAt: new Date() })
+    .onConflictDoUpdate({
+      target: projectorCheckpoints.name,
+      set: { lastPosition: position, updatedAt: new Date() }
+    });
 }
 
 async function fetchBatch(client: Client, h: ProjectorHandler, fromExclusive: number): Promise<EventRow[]> {
@@ -62,8 +67,9 @@ export async function runHandler(client: Client, h: ProjectorHandler): Promise<v
   await h.ensureSchema(client);
   await ensureCheckpointTable(client);
   await ensureAppliedEventsTable(client);
+  const db = drizzle(client);
 
-  let lastPos = await getLastPosition(client, h.handlerName);
+  let lastPos = await getLastPositionDb(db, h.handlerName);
   // eslint-disable-next-line no-console
   console.log(`[projector:${h.handlerName}] starting from position:`, lastPos);
 
@@ -80,7 +86,7 @@ export async function runHandler(client: Client, h: ProjectorHandler): Promise<v
       if (p > maxPos) maxPos = p;
     }
     lastPos = maxPos;
-    await setLastPosition(client, h.handlerName, lastPos);
+    await setLastPositionDb(db, h.handlerName, lastPos);
     // eslint-disable-next-line no-console
     console.log(`[projector:${h.handlerName}] advanced to position:`, lastPos);
   }
