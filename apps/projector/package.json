@@ -9,6 +9,7 @@
     "dev": "pnpm start"
   },
   "dependencies": {
+    "@skjoldjasper/db": "workspace:*",
     "dotenv": "^16.4.5",
     "drizzle-orm": "^0.36.4",
     "pg": "^8.16.3",
