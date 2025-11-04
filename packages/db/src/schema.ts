@@ -10,9 +10,9 @@ export const events = pgTable(
     // Idempotency key per event
     eventId: uuid('event_id').notNull(),
 
-    // Logical partitioning
-    context: text('context').notNull(), // e.g., 'game', 'billing'
-    streamCategory: text('stream_category').notNull(), // e.g., 'room', 'user'
+    // Logical partitioning (bounded context and stream category)
+    context: text('context').notNull(), // e.g., 'demo', 'billing'
+    streamCategory: text('stream_category').notNull(), // e.g., 'entity', 'user'
 
     // Aggregate stream identity + version for optimistic concurrency
     streamId: text('stream_id').notNull(),
