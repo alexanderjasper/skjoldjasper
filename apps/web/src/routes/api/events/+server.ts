@@ -23,8 +23,7 @@ export const POST: RequestHandler = async ({ request, locals, getClientAddress }
     return json({ error: 'invalid_body' }, { status: 400 });
   }
 
-  const { session } = await locals.safeGetSession?.() ?? { session: null };
-  const userId = session?.user?.id ?? null;
+  const userId = locals.user?.id ?? null;
 
   const ip = getClientAddress();
   const userAgent = request.headers.get('user-agent') ?? undefined;

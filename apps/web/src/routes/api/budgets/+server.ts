@@ -7,9 +7,8 @@ import { getPool } from '$lib/server/db';
 const CreateBudgetSchema = z.object({ name: z.string().min(1), currency: z.string().min(1) });
 
 export const GET: RequestHandler = async ({ locals }) => {
-  const { session } = (await locals.safeGetSession?.()) ?? { session: null };
-  const userId = session?.user?.id;
-  if (!userId) return json({ budgets: [] });
+	const userId = locals.user?.id;
+	if (!userId) return json({ budgets: [] });
 
   const pool = getPool();
   const { rows } = await pool.query(
@@ -28,13 +27,12 @@ export const GET: RequestHandler = async ({ locals }) => {
 };
 
 export const POST: RequestHandler = async ({ request, locals }) => {
-  const body = await request.json().catch(() => null);
-  const parsed = CreateBudgetSchema.safeParse(body);
-  if (!parsed.success) return json({ error: 'invalid_body' }, { status: 400 });
+	const body = await request.json().catch(() => null);
+	const parsed = CreateBudgetSchema.safeParse(body);
+	if (!parsed.success) return json({ error: 'invalid_body' }, { status: 400 });
 
-  const { session } = (await locals.safeGetSession?.()) ?? { session: null };
-  const userId = session?.user?.id;
-  if (!userId) return json({ error: 'unauthorized' }, { status: 401 });
+	const userId = locals.user?.id;
+	if (!userId) return json({ error: 'unauthorized' }, { status: 401 });
 
   const pool = getPool();
   const budgetId = `budget-${crypto.randomUUID()}`;

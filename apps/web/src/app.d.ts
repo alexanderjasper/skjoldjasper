@@ -1,20 +1,11 @@
-import type { Session, AuthError } from '@supabase/supabase-js';
-import type { createSupabaseServerClient } from '@supabase/auth-helpers-sveltekit';
-
-type SupabaseServerClient = ReturnType<typeof createSupabaseServerClient>;
-
 declare global {
 	namespace App {
 		interface Locals {
-			supabase: SupabaseServerClient;
-			safeGetSession: () => Promise<{
-				session: Session | null;
-				error: AuthError | null;
-			}>;
+			user: import('lucia').User | null;
+			session: import('lucia').Session | null;
 		}
 		interface PageData {
-			session: Session | null;
-			sessionError: string | null;
+			user: import('lucia').User | null;
 		}
 	}
 }

@@ -27,14 +27,16 @@
     "vite": "^7.1.10"
   },
   "dependencies": {
+    "@lucia-auth/adapter-drizzle": "^1.1.0",
+    "@node-rs/argon2": "^2.0.2",
     "@sentry/sveltekit": "^10.22.0",
-    "@supabase/ssr": "^0.7.0",
-    "@supabase/supabase-js": "^2.78.0",
+    "@skjoldjasper/db": "workspace:*",
+    "@skjoldjasper/shared": "workspace:*",
     "colyseus.js": "^0.16.22",
     "drizzle-orm": "^0.36.4",
+    "lucia": "^3.2.2",
+    "oslo": "^1.2.1",
     "pg": "^8.16.3",
-    "zod": "^3.25.76",
-    "@skjoldjasper/shared": "workspace:*",
-    "@skjoldjasper/db": "workspace:*"
+    "zod": "^3.25.76"
   }
 }

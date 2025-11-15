@@ -1,5 +1,20 @@
 import { pgTable, text, integer, timestamp, jsonb, uuid, bigserial, index, uniqueIndex } from 'drizzle-orm/pg-core';
 
+// User authentication tables (Lucia)
+export const user = pgTable('user', {
+	id: text('id').primaryKey(),
+	email: text('email').notNull().unique(),
+	hashedPassword: text('hashed_password')
+});
+
+export const session = pgTable('session', {
+	id: text('id').primaryKey(),
+	userId: text('user_id')
+		.notNull()
+		.references(() => user.id),
+	expiresAt: timestamp('expires_at', { withTimezone: true, mode: 'date' }).notNull()
+});
+
 // Append-only global event log supporting multiple bounded contexts.
 export const events = pgTable(
   'events',

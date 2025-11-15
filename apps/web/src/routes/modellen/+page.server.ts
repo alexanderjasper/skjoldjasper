@@ -3,9 +3,8 @@ import { getPool } from '$lib/server/db';
 import { getBudgetsForUser } from '$lib/server/finance/queries';
 
 export const load: PageServerLoad = async ({ locals }) => {
-  const { session } = (await locals.safeGetSession?.()) ?? { session: null };
-  const userId = session?.user?.id;
-  if (!userId) return { budgets: [] };
+	const userId = locals.user?.id;
+	if (!userId) return { budgets: [] };
 
   const pool = getPool();
   const budgets = await getBudgetsForUser(pool as any, userId);
