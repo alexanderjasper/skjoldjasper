@@ -22,6 +22,7 @@ export interface BudgetSnapshotState {
 export interface CategoryActual {
   categoryId: string;
   categoryName: string;
+  parentId: string | null;
   yearlyTarget?: number;
   actualSpent: number;
 }
@@ -191,11 +192,26 @@ export async function getBudgetVsActual(pool: Pool, budgetId: string): Promise<C
     results.push({
       categoryId: catId,
       categoryName: cat.name,
+      parentId: cat.parentId,
       yearlyTarget: cat.yearlyTarget,
       actualSpent: actualByCategory.get(catId) ?? 0
     });
   }
-  results.sort((a, b) => a.categoryName.localeCompare(b.categoryName));
-  return results;
+  
+  function buildTree(items: CategoryActual[]): CategoryActual[] {
+    const itemMap = new Map(items.map(i => [i.categoryId, i]));
+    const roots: CategoryActual[] = [];
+    
+    function addToTree(item: CategoryActual, result: CategoryActual[]) {
+      result.push(item);
+      const children = items.filter(i => i.parentId === item.categoryId);
+      children.forEach(child => addToTree(child, result));
+    }
+    
+    items.filter(i => !i.parentId || !itemMap.has(i.parentId)).forEach(root => addToTree(root, roots));
+    return roots;
+  }
+  
+  return buildTree(results);
 }
 
