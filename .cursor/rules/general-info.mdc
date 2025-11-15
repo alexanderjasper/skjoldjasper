@@ -4,14 +4,18 @@ alwaysApply: true
 
 Project structure overview
 
-- apps/: application code and domain logic (e.g., web UI, game-server, projectors)
-- packages/: infrastructure-only shared libraries (e.g., db schema, http utils, rate limit)
-- infra/: deployment/runtime infra (docker, cloudflared, postgres, scripts)
+- apps/: application code and domain logic (e.g., web UI, projector handlers, game-server rooms)
+- packages/: infrastructure-only shared libraries (e.g., db schema, http utils, rate limit, ids)
+- infra/: deployment/runtime infra (docker, cloudflared, postgres, scripts). No app code.
 
 Domain boundary guidance
 
-- Keep domain-specific logic and schemas inside the corresponding app under apps/.
-- Do not place domain code (e.g., game/room aggregates, view schemas, event handling) in packages/.
-- packages/ should remain generic/infra (database primitives, shared http/config helpers), with no domain coupling.
+- Keep every bounded context self-contained inside its app (`apps/web/src/lib/server/<context>`, `apps/projector/src/handlers/<context>`, etc.).
+- Do **not** place domain code (aggregates, event types, projections, room logic) in packages/.
+- `packages/*` must stay generic/infra. Only primitives that make sense across all contexts should live there.
+- When adding new capabilities:
+  1. Extend the domain module inside the owning app.
+  2. Expose it through adapters (routes, handlers) in the same app.
+  3. Touch packages only if you need reusable infra helpers.
 
 See `/README.md` for more details.

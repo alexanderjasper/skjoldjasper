@@ -1,29 +1,9 @@
-# Welcome to Colyseus!
+# Game Server (Colyseus)
 
-This project has been created using [⚔️ `create-colyseus-app`](https://github.com/colyseus/create-colyseus-app/) - an npm init template for kick starting a Colyseus project in TypeScript.
+- Hosts realtime rooms used by the web app (via WS). Business rules for matchmaking/room state live inside `src/rooms/*`.
+- `src/rooms/MyRoom.ts` shows the pattern: state class in `src/rooms/schema`, handler class in `src/rooms/`.
+- Keep game-specific logic inside this app. `packages/*` must stay domain-agnostic (only infra helpers).
+- Configure env via `env.example` → `.env` (matches root README instructions).
+- Run locally with `pnpm --dir apps/game-server dev` or start via `pnpm dev:stack` (Compose). Attach debugger through VS Code launch configs if needed.
 
-[Documentation](http://docs.colyseus.io/)
-
-## :crossed_swords: Usage
-
-```
-npm start
-```
-
-## Structure
-
-- `index.ts`: main entry point, register an empty room handler and attach [`@colyseus/monitor`](https://github.com/colyseus/colyseus-monitor)
-- `src/rooms/MyRoom.ts`: an empty room handler for you to implement your logic
-- `src/rooms/schema/MyRoomState.ts`: an empty schema used on your room's state.
-- `loadtest/example.ts`: scriptable client for the loadtest tool (see `npm run loadtest`)
-- `package.json`:
-    - `scripts`:
-        - `npm start`: runs `ts-node-dev index.ts`
-        - `npm test`: runs mocha test suite
-        - `npm run loadtest`: runs the [`@colyseus/loadtest`](https://github.com/colyseus/colyseus-loadtest/) tool for testing the connection, using the `loadtest/example.ts` script.
-- `tsconfig.json`: TypeScript configuration file
-
-
-## License
-
-MIT
+See https://docs.colyseus.io/ for detailed Colyseus APIs.
