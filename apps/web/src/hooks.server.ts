@@ -1,53 +1,42 @@
-import { createServerClient } from '@supabase/ssr';
-import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/public';
 import * as Sentry from '@sentry/sveltekit';
 import { env as privateEnv } from '$env/dynamic/private';
 import type { Handle } from '@sveltejs/kit';
+import { lucia } from '$lib/server/auth';
 
 export const handle: Handle = async ({ event, resolve }) => {
-  if (!Sentry.isInitialized()) {
-    const dsn = privateEnv.SENTRY_DSN;
-    if (dsn) {
-      Sentry.init({ dsn, tracesSampleRate: 0.05 });
-    }
-  }
-  
-  event.locals.supabase = createServerClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY, {
-    cookies: {
-      getAll: () => event.cookies.getAll(),
-      setAll: (cookiesToSet) => {
-        cookiesToSet.forEach(({ name, value, options }) => {
-          event.cookies.set(name, value, { ...options, path: '/' });
-        });
-      }
-    }
-  });
+	if (!Sentry.isInitialized()) {
+		const dsn = privateEnv.SENTRY_DSN;
+		if (dsn) {
+			Sentry.init({ dsn, tracesSampleRate: 0.05 });
+		}
+	}
 
-  event.locals.safeGetSession = async () => {
-    const {
-      data: { user },
-      error
-    } = await event.locals.supabase.auth.getUser();
+	const sessionId = event.cookies.get(lucia.sessionCookieName);
+	if (!sessionId) {
+		event.locals.user = null;
+		event.locals.session = null;
+		return resolve(event);
+	}
 
-    if (error || !user) {
-      return { session: null, error };
-    }
+	const { session, user } = await lucia.validateSession(sessionId);
+	if (session && session.fresh) {
+		const sessionCookie = lucia.createSessionCookie(session.id);
+		event.cookies.set(sessionCookie.name, sessionCookie.value, {
+			path: '.',
+			...sessionCookie.attributes
+		});
+	}
+	if (!session) {
+		const sessionCookie = lucia.createBlankSessionCookie();
+		event.cookies.set(sessionCookie.name, sessionCookie.value, {
+			path: '.',
+			...sessionCookie.attributes
+		});
+	}
+	event.locals.user = user;
+	event.locals.session = session;
 
-    // If user is verified, get the full session
-    const {
-      data: { session }
-    } = await event.locals.supabase.auth.getSession();
-
-    return { session, error: null };
-  };
-
-  const response = await resolve(event, {
-    filterSerializedResponseHeaders(name) {
-      return name === 'content-range';
-    }
-  });
-
-  return response;
+	return resolve(event);
 };
 
 

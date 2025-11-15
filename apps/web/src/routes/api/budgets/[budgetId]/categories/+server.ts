@@ -22,8 +22,8 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
   const parsed = AddCategorySchema.safeParse(body);
   if (!parsed.success) return json({ error: 'invalid_body' }, { status: 400 });
 
-  const { session } = (await locals.safeGetSession?.()) ?? { session: null };
-  const userId = session?.user?.id;
+  const userId = locals.user?.id;
+  
   if (!userId) return json({ error: 'unauthorized' }, { status: 401 });
 
   const pool = getPool();
@@ -55,8 +55,8 @@ export const PATCH: RequestHandler = async ({ params, request, locals }) => {
   const parsed = SetTargetSchema.safeParse(body);
   if (!parsed.success) return json({ error: 'invalid_body' }, { status: 400 });
 
-  const { session } = (await locals.safeGetSession?.()) ?? { session: null };
-  const userId = session?.user?.id;
+  const userId = locals.user?.id;
+  
   if (!userId) return json({ error: 'unauthorized' }, { status: 401 });
 
   const pool = getPool();

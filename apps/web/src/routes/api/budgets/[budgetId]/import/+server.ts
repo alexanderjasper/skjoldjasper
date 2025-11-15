@@ -6,10 +6,9 @@ import { loadBudget } from '$lib/server/finance/repository';
 import { importTransactions } from '$lib/server/finance/commands';
 
 export const POST: RequestHandler = async ({ params, request, url, locals }) => {
-  const budgetId = params.budgetId as string;
-  const { session } = (await locals.safeGetSession?.()) ?? { session: null };
-  const userId = session?.user?.id;
-  if (!userId) return json({ error: 'unauthorized' }, { status: 401 });
+	const budgetId = params.budgetId as string;
+	const userId = locals.user?.id;
+	if (!userId) return json({ error: 'unauthorized' }, { status: 401 });
 
   const text = await request.text();
   if (!text || text.trim().length === 0) return json({ error: 'empty_body' }, { status: 400 });
