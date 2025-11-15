@@ -41,19 +41,119 @@ async function getLatestSnapshots(pool: Pool) {
 
 export async function getBudgetsForUser(pool: Pool, userId: string): Promise<BudgetSummary[]> {
   const rows = await getLatestSnapshots(pool);
-  const results: BudgetSummary[] = [];
+  const snapshotResults: BudgetSummary[] = [];
+  const seenStreamIds = new Set<string>();
+  
   for (const r of rows) {
     const state = r.payload as BudgetSnapshotState;
     if (Array.isArray(state.members) && state.members.includes(userId)) {
-      results.push({
+      snapshotResults.push({
         streamId: r.stream_id,
         name: state.name,
         currency: state.currency,
         createdAt: r.created_at
       });
+      seenStreamIds.add(r.stream_id);
     }
   }
-  return results;
+
+  const { rows: eventRows } = await pool.query(
+    `SELECT DISTINCT stream_id
+     FROM events
+     WHERE context = 'finance' AND stream_category = 'budget'`
+  );
+
+  for (const eventRow of eventRows) {
+    const streamId = eventRow.stream_id as string;
+    if (!seenStreamIds.has(streamId)) {
+      const rebuilt = await buildStateFromEvents(pool, streamId);
+      if (rebuilt && Array.isArray(rebuilt.state.members) && rebuilt.state.members.includes(userId)) {
+        snapshotResults.push({
+          streamId,
+          name: rebuilt.state.name,
+          currency: rebuilt.state.currency,
+          createdAt: rebuilt.createdAt
+        });
+      }
+    }
+  }
+
+  return snapshotResults;
+}
+
+function applyEventToState(state: BudgetSnapshotState, type: string, payload: any): void {
+  switch (type) {
+    case 'BudgetCreated': {
+      state.name = payload.name;
+      state.currency = payload.currency;
+      state.creatorUserId = payload.creatorUserId;
+      if (!state.members.includes(payload.creatorUserId)) state.members.push(payload.creatorUserId);
+      break;
+    }
+    case 'MemberAdded': {
+      const userId: string = payload.userId;
+      if (!state.members.includes(userId)) state.members.push(userId);
+      break;
+    }
+    case 'CategoryAdded': {
+      const c = { id: payload.categoryId, name: payload.name, parentId: payload.parentId ?? null };
+      state.categories[c.id] = c;
+      break;
+    }
+    case 'CategoryTargetSet': {
+      const { categoryId, yearlyTarget } = payload as { categoryId: string; yearlyTarget: number };
+      const c = state.categories[categoryId];
+      if (c) c.yearlyTarget = yearlyTarget;
+      break;
+    }
+    case 'TransactionsImported': {
+      const txs = (payload.transactions ?? []) as Array<{ transactionId: string; date: string; description: string; amount: number }>;
+      for (const t of txs) {
+        state.transactions[t.transactionId] = { id: t.transactionId, date: t.date, description: t.description, amount: t.amount };
+      }
+      break;
+    }
+    case 'TransactionSplitAssigned': {
+      const { transactionId, splits } = payload as { transactionId: string; splits: Array<{ categoryId: string; amount: number }> };
+      state.splits[transactionId] = splits;
+      break;
+    }
+    case 'TransactionNoteAdded': {
+      const { transactionId, note } = payload as { transactionId: string; note: string };
+      state.notes[transactionId] = note;
+      break;
+    }
+  }
+}
+
+async function buildStateFromEvents(pool: Pool, budgetId: string): Promise<{ state: BudgetSnapshotState; createdAt: Date } | null> {
+  const { rows } = await pool.query(
+    `SELECT type, payload, created_at
+     FROM events
+     WHERE context = 'finance' AND stream_category = 'budget' AND stream_id = $1
+     ORDER BY position ASC`,
+    [budgetId]
+  );
+  
+  if (rows.length === 0) return null;
+  
+  const state: BudgetSnapshotState = {
+    name: '',
+    currency: '',
+    creatorUserId: '',
+    members: [],
+    categories: {},
+    transactions: {},
+    splits: {},
+    notes: {},
+    version: rows.length
+  };
+  
+  for (const row of rows) {
+    applyEventToState(state, row.type as string, row.payload);
+  }
+  
+  return { state, createdAt: rows[0].created_at as Date };
 }
 
 export async function getBudgetDetails(pool: Pool, budgetId: string) {
@@ -65,7 +165,11 @@ export async function getBudgetDetails(pool: Pool, budgetId: string) {
      LIMIT 1`,
     [budgetId]
   );
-  if (rows.length === 0) return null;
+  
+  if (rows.length === 0) {
+    return await buildStateFromEvents(pool, budgetId);
+  }
+  
   const state = rows[0].payload as BudgetSnapshotState;
   return { budgetId, state, createdAt: rows[0].created_at as Date };
 }
