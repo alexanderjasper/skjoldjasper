@@ -18,9 +18,25 @@
   let importError = '';
   let duplicates: Array<{ transactionId: string; date: string; description: string; amount: number }> = [];
 
+  let editingTarget: string | null = null;
+  let targetValue: Record<string, string> = {};
+  let targetError = '';
+  let savingTarget: string | null = null;
+
+  let editingSplits: string | null = null;
+  let splitRows: Record<string, Array<{ categoryId: string; amount: string }>> = {};
+  let splitError = '';
+  let savingSplits: string | null = null;
+
   type Category = { id: string; name: string; parentId: string | null; yearlyTarget?: number };
   type CategoryTree = Category & { children: CategoryTree[] };
   type FlatCategory = Category & { depth: number };
+  type Transaction = { id: string; date: string; description: string; amount: number };
+
+  function formatNumber(num: number | undefined | null): string {
+    if (num === undefined || num === null) return '';
+    return num.toLocaleString('da-DK');
+  }
 
   function buildCategoryTree(categories: Record<string, Category>): CategoryTree[] {
     const categoryArray = Object.values(categories);
@@ -72,6 +88,16 @@
     ...item,
     depth: computeDepth(item, data.overview ?? [])
   }));
+
+  $: {
+    const transactions = data.details?.state?.transactions ?? {};
+    const notes = data.details?.state?.notes ?? {};
+    for (const txId of Object.keys(transactions)) {
+      if (!(txId in noteText)) {
+        noteText[txId] = notes[txId] ?? '';
+      }
+    }
+  }
 
   async function addCategory() {
     addCatError = '';
@@ -156,6 +182,149 @@
     duplicates = [];
     location.reload();
   }
+
+  function startEditingTarget(categoryId: string, currentValue?: number) {
+    editingTarget = categoryId;
+    targetValue[categoryId] = currentValue?.toString() ?? '';
+    targetError = '';
+  }
+
+  function cancelEditingTarget() {
+    editingTarget = null;
+    targetError = '';
+  }
+
+  async function saveTarget(categoryId: string) {
+    targetError = '';
+    savingTarget = categoryId;
+    const rawValue = targetValue[categoryId];
+    const value = rawValue != null ? String(rawValue).trim() : '';
+    
+    if (!value) {
+      targetError = 'Target cannot be empty. Enter 0 to clear.';
+      savingTarget = null;
+      return;
+    }
+    
+    const numValue = parseFloat(value);
+    
+    if (isNaN(numValue) || !isFinite(numValue)) {
+      targetError = 'Invalid number';
+      savingTarget = null;
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/budgets/${encodeURIComponent(data.budgetId)}/categories`, {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ categoryId, yearlyTarget: numValue })
+      });
+
+      const j = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        targetError = j?.error ?? 'Failed to save target';
+        savingTarget = null;
+        return;
+      }
+
+      editingTarget = null;
+      savingTarget = null;
+      location.reload();
+    } catch (err) {
+      targetError = 'Network error. Please try again.';
+      savingTarget = null;
+    }
+  }
+
+  function startEditingSplits(transactionId: string, transactionAmount: number) {
+    editingSplits = transactionId;
+    splitError = '';
+    const existingSplits = data.details?.state?.splits?.[transactionId] ?? [];
+    if (existingSplits.length > 0) {
+      splitRows[transactionId] = existingSplits.map((s: { categoryId: string; amount: number }) => ({ categoryId: s.categoryId, amount: s.amount.toString() }));
+    } else {
+      splitRows[transactionId] = [{ categoryId: '', amount: '' }];
+    }
+  }
+
+  function cancelEditingSplits() {
+    editingSplits = null;
+    splitError = '';
+  }
+
+  function addSplitRow(transactionId: string) {
+    if (!splitRows[transactionId]) {
+      splitRows[transactionId] = [];
+    }
+    splitRows[transactionId] = [...splitRows[transactionId], { categoryId: '', amount: '' }];
+  }
+
+  function removeSplitRow(transactionId: string, index: number) {
+    splitRows[transactionId] = splitRows[transactionId].filter((_, i) => i !== index);
+  }
+
+  function getRemainingAmount(transactionId: string, transactionAmount: number): number {
+    if (!splitRows[transactionId]) return transactionAmount;
+    const total = splitRows[transactionId].reduce((sum, row) => {
+      const amount = parseFloat(row.amount) || 0;
+      return sum + amount;
+    }, 0);
+    return transactionAmount - total;
+  }
+
+  async function saveSplits(transactionId: string, transactionAmount: number) {
+    splitError = '';
+    savingSplits = transactionId;
+    
+    const rows = splitRows[transactionId] || [];
+    const splits = rows
+      .filter(row => row.categoryId && row.amount)
+      .map(row => ({
+        categoryId: row.categoryId,
+        amount: parseFloat(row.amount)
+      }));
+
+    if (splits.length === 0) {
+      splitError = 'At least one split is required';
+      savingSplits = null;
+      return;
+    }
+
+    const total = splits.reduce((sum, s) => sum + s.amount, 0);
+    const epsilon = 0.01;
+    if (Math.abs(total - transactionAmount) > epsilon) {
+      splitError = `Splits total ${total.toFixed(2)} does not match transaction amount ${transactionAmount.toFixed(2)}`;
+      savingSplits = null;
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/budgets/${encodeURIComponent(data.budgetId)}/transactions/${encodeURIComponent(transactionId)}/splits`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ splits })
+      });
+
+      const j = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        splitError = j?.message ?? j?.error ?? 'Failed to save splits';
+        savingSplits = null;
+        return;
+      }
+
+      editingSplits = null;
+      savingSplits = null;
+      location.reload();
+    } catch (err) {
+      splitError = 'Network error. Please try again.';
+      savingSplits = null;
+    }
+  }
 </script>
 
 {#if data.notFound}
@@ -170,8 +339,17 @@
     <section class="rounded border">
       <div class="p-4 border-b"><h2 class="text-lg font-medium">Overview</h2></div>
       <div class="p-4 overflow-x-auto">
+        {#if targetError}
+          <p class="text-sm text-red-600 mb-2">{targetError}</p>
+        {/if}
         <table class="min-w-full text-sm">
-          <thead><tr class="text-left"><th class="py-2 pr-4">Category</th><th class="py-2 pr-4">Target</th><th class="py-2">Actual</th></tr></thead>
+          <thead>
+            <tr class="text-left">
+              <th class="py-2 pr-4">Category</th>
+              <th class="py-2 pr-4 text-right" style="width: 150px;">Target</th>
+              <th class="py-2 pr-4 text-right" style="width: 150px;">Actual</th>
+            </tr>
+          </thead>
           <tbody>
             {#each overviewWithDepth as row}
               <tr class="border-t">
@@ -183,8 +361,50 @@
                     <span class:font-medium={row.depth === 0}>{row.categoryName}</span>
                   </span>
                 </td>
-                <td class="py-2 pr-4">{row.yearlyTarget ?? ''}</td>
-                <td class="py-2">{row.actualSpent}</td>
+                <td 
+                  class="py-2 pr-4 {editingTarget !== row.categoryId ? 'cursor-pointer hover:bg-gray-50' : ''}"
+                  style="width: 150px; text-align: right;"
+                  on:click={() => editingTarget !== row.categoryId && startEditingTarget(row.categoryId, row.yearlyTarget)}
+                  role={editingTarget !== row.categoryId ? "button" : undefined}
+                  tabindex={editingTarget !== row.categoryId ? 0 : undefined}
+                  on:keydown={(e) => editingTarget !== row.categoryId && e.key === 'Enter' && startEditingTarget(row.categoryId, row.yearlyTarget)}
+                >
+                  {#if editingTarget === row.categoryId}
+                    <div class="flex items-center justify-end gap-2" on:click={(e) => e.stopPropagation()} on:keydown={(e) => e.stopPropagation()} role="group">
+                      <input
+                        type="number"
+                        class="border rounded px-2 py-1 w-24 text-sm text-right"
+                        bind:value={targetValue[row.categoryId]}
+                        on:keydown={(e) => e.key === 'Enter' && saveTarget(row.categoryId)}
+                        on:keydown={(e) => e.key === 'Escape' && cancelEditingTarget()}
+                        disabled={savingTarget === row.categoryId}
+                      />
+                      <button
+                        class="px-2 py-1 bg-blue-600 text-white rounded text-xs disabled:opacity-50"
+                        on:click={(e) => { e.stopPropagation(); saveTarget(row.categoryId); }}
+                        disabled={savingTarget === row.categoryId}
+                      >
+                        {savingTarget === row.categoryId ? 'Saving...' : 'Save'}
+                      </button>
+                      <button
+                        class="px-2 py-1 bg-gray-100 rounded text-xs"
+                        on:click={(e) => { e.stopPropagation(); cancelEditingTarget(); }}
+                        disabled={savingTarget === row.categoryId}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  {:else}
+                    {#if row.yearlyTarget !== undefined && row.yearlyTarget !== null}
+                      {formatNumber(row.yearlyTarget)}
+                    {:else}
+                      <span class="text-gray-400 italic">Click to set</span>
+                    {/if}
+                  {/if}
+                </td>
+                <td class="py-2 pr-4" style="width: 150px; text-align: right;">
+                  {formatNumber(row.actualSpent)}
+                </td>
               </tr>
             {/each}
           </tbody>
@@ -200,7 +420,8 @@
           <select class="border rounded px-3 py-2 w-64" bind:value={parentId}>
             <option value={null}>No parent</option>
             {#each Object.values(data.details?.state?.categories ?? {}) as c}
-              <option value={c.id}>{c.name}</option>
+              {@const cat = c as Category}
+              <option value={cat.id}>{cat.name}</option>
             {/each}
           </select>
           <button class="px-4 py-2 bg-blue-600 text-white rounded" on:click={addCategory}>Add</button>
@@ -216,7 +437,7 @@
               {/if}
               <span class:font-medium={cat.depth === 0}>{cat.name}</span>
               {#if cat.yearlyTarget}
-                <span class="ml-2 text-sm text-gray-500">(Target: {cat.yearlyTarget})</span>
+                <span class="ml-2 text-sm text-gray-500">(Target: {formatNumber(cat.yearlyTarget)})</span>
               {/if}
             </div>
           {/each}
@@ -230,17 +451,107 @@
         {#if noteError}
           <p class="text-sm text-red-600">{noteError}</p>
         {/if}
+        {#if splitError}
+          <p class="text-sm text-red-600">{splitError}</p>
+        {/if}
         <ul class="divide-y">
           {#each Object.values(data.details?.state?.transactions ?? {}) as t}
-            <li class="py-3 flex items-center justify-between gap-4">
-              <div class="min-w-0">
-                <div class="font-medium truncate">{t.description}</div>
-                <div class="text-xs text-gray-500">{t.date} · {t.amount}</div>
+            {@const tx = t as Transaction}
+            {@const splits = data.details?.state?.splits?.[tx.id] ?? []}
+            {@const note = data.details?.state?.notes?.[tx.id] ?? ''}
+            <li class="py-3 space-y-3">
+              <div class="flex items-center justify-between gap-4">
+                <div class="min-w-0 flex-1">
+                  <div class="font-medium truncate">{tx.description}</div>
+                  <div class="text-xs text-gray-500">{tx.date} · <span class="text-right inline-block min-w-[80px]">{formatNumber(tx.amount)}</span></div>
+                  {#if splits.length > 0}
+                    <div class="mt-2 text-xs">
+                      <span class="font-medium">Splits:</span>
+                      {#each splits as split}
+                        {@const cat = data.details?.state?.categories?.[split.categoryId] as Category | undefined}
+                        <span class="ml-2">
+                          {cat?.name ?? split.categoryId}: <span class="text-right inline-block min-w-[60px]">{formatNumber(split.amount)}</span>
+                        </span>
+                      {/each}
+                    </div>
+                  {/if}
+                  {#if note}
+                    <div class="mt-1 text-xs text-gray-600 italic">Note: {note}</div>
+                  {/if}
+                </div>
+                <div class="flex items-center gap-2">
+                  <input class="border rounded px-2 py-1 text-sm w-32" placeholder="Note" bind:value={noteText[tx.id]} />
+                  <button class="px-3 py-1 bg-gray-100 rounded text-sm" on:click={() => saveNote(tx.id)}>Save Note</button>
+                  <button
+                    class="px-3 py-1 bg-blue-600 text-white rounded text-sm"
+                    on:click={() => startEditingSplits(tx.id, tx.amount)}
+                    disabled={editingSplits === tx.id}
+                  >
+                    {splits.length > 0 ? 'Edit Splits' : 'Assign Splits'}
+                  </button>
+                </div>
               </div>
-              <div class="flex items-center gap-2">
-                <input class="border rounded px-2 py-1 text-sm" placeholder="Note" bind:value={noteText[t.id]} />
-                <button class="px-3 py-1 bg-gray-100 rounded" on:click={() => saveNote(t.id)}>Save</button>
-              </div>
+              {#if editingSplits === tx.id}
+                <div class="ml-4 pl-4 border-l-2 border-blue-200 space-y-2">
+                  <div class="text-sm font-medium">Assign splits (Total: {formatNumber(tx.amount)})</div>
+                  {#each splitRows[tx.id] as row, index}
+                    <div class="flex items-center gap-2">
+                      <select
+                        class="border rounded px-2 py-1 text-sm flex-1"
+                        bind:value={row.categoryId}
+                      >
+                        <option value="">Select category</option>
+                        {#each Object.values(data.details?.state?.categories ?? {}) as cat}
+                          {@const category = cat as Category}
+                          <option value={category.id}>{category.name}</option>
+                        {/each}
+                      </select>
+                      <input
+                        type="number"
+                        step="0.01"
+                        class="border rounded px-2 py-1 text-sm w-24 text-right"
+                        placeholder="Amount"
+                        bind:value={row.amount}
+                      />
+                      {#if splitRows[tx.id].length > 1}
+                        <button
+                          class="px-2 py-1 bg-red-100 text-red-700 rounded text-sm"
+                          on:click={() => removeSplitRow(tx.id, index)}
+                        >
+                          Remove
+                        </button>
+                      {/if}
+                    </div>
+                  {/each}
+                  <div class="flex items-center gap-2">
+                    <button
+                      class="px-3 py-1 bg-gray-100 rounded text-sm"
+                      on:click={() => addSplitRow(tx.id)}
+                    >
+                      Add Split
+                    </button>
+                    <span class="text-sm {getRemainingAmount(tx.id, tx.amount) < 0 ? 'text-red-600' : getRemainingAmount(tx.id, tx.amount) > 0.01 ? 'text-orange-600' : 'text-green-600'}">
+                      Remaining: <span class="text-right inline-block min-w-[80px]">{formatNumber(getRemainingAmount(tx.id, tx.amount))}</span>
+                    </span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <button
+                      class="px-3 py-1 bg-blue-600 text-white rounded text-sm disabled:opacity-50"
+                      on:click={() => saveSplits(tx.id, tx.amount)}
+                      disabled={savingSplits === tx.id}
+                    >
+                      {savingSplits === tx.id ? 'Saving...' : 'Save Splits'}
+                    </button>
+                    <button
+                      class="px-3 py-1 bg-gray-100 rounded text-sm"
+                      on:click={cancelEditingSplits}
+                      disabled={savingSplits === tx.id}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              {/if}
             </li>
           {/each}
         </ul>
