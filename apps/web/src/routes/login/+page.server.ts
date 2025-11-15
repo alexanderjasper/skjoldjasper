@@ -21,7 +21,7 @@ export const actions: Actions = {
 		const password = formData.get('password');
 
 		if (typeof email !== 'string' || !email || typeof password !== 'string' || !password) {
-			return fail(400, { message: 'Invalid email or password' });
+			return fail(400, { message: 'Ugyldig email eller adgangskode' });
 		}
 
 		const pool = getPool();
@@ -34,12 +34,12 @@ export const actions: Actions = {
 			.limit(1);
 
 		if (existingUser.length === 0 || !existingUser[0].hashedPassword) {
-			return fail(400, { message: 'Invalid email or password' });
+			return fail(400, { message: 'Ugyldig email eller adgangskode' });
 		}
 
 		const validPassword = await verifyPassword(existingUser[0].hashedPassword, password);
 		if (!validPassword) {
-			return fail(400, { message: 'Invalid email or password' });
+			return fail(400, { message: 'Ugyldig email eller adgangskode' });
 		}
 
 		const session = await lucia.createSession(existingUser[0].id, {});

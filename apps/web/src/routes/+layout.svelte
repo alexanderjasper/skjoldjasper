@@ -18,13 +18,13 @@
 
 			<div class="flex items-center gap-3 text-sm">
 				{#if user && userEmail}
-					<span class="hidden text-slate-300 sm:inline">Signed in as {userEmail}</span>
+					<span class="hidden text-slate-300 sm:inline">Logget ind som {userEmail}</span>
 					<form method="POST" action="/logout">
 						<button
 							type="submit"
 							class="rounded bg-slate-200 px-3 py-1 font-medium text-slate-900 transition hover:bg-white/80"
 						>
-							Sign out
+							Log ud
 						</button>
 					</form>
 				{:else}
@@ -32,7 +32,7 @@
 						href="/login"
 						class="rounded bg-emerald-500 px-3 py-1 font-medium text-slate-900 transition hover:bg-emerald-400"
 					>
-						Sign in
+						Log ind
 					</a>
 				{/if}
 			</div>
