@@ -6,7 +6,8 @@
   "scripts": {
     "start": "tsx watch src/index.ts",
     "run": "tsx src/index.ts",
-    "dev": "pnpm start"
+    "dev": "pnpm start",
+    "dev:inspect": "NODE_OPTIONS='--inspect=0.0.0.0:9231' tsx watch src/index.ts"
   },
   "dependencies": {
     "@skjoldjasper/db": "workspace:*",
