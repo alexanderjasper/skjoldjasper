@@ -42,6 +42,20 @@ export function setCategoryTarget(
   if (!state.categories.has(categoryId)) {
     throw new Error('Category does not exist');
   }
+  
+  // Check if this category has children - only leaf categories can have targets
+  const category = state.categories.get(categoryId);
+  if (!category) {
+    throw new Error('Category does not exist');
+  }
+  
+  // Check if any category has this as a parent
+  for (const [id, cat] of state.categories.entries()) {
+    if (cat.parentId === categoryId) {
+      throw new Error('Cannot set target on parent category. Only leaf categories can have targets.');
+    }
+  }
+  
   return { categoryId, yearlyTarget };
 }
 

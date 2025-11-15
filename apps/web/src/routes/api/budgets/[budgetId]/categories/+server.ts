@@ -63,7 +63,12 @@ export const PATCH: RequestHandler = async ({ params, request, locals }) => {
   const state = await loadBudget(pool as any, budgetId);
   if (!state) return json({ error: 'not_found' }, { status: 404 });
 
-  const eventPayload = setCategoryTarget(state, parsed.data.categoryId, parsed.data.yearlyTarget);
+  let eventPayload;
+  try {
+    eventPayload = setCategoryTarget(state, parsed.data.categoryId, parsed.data.yearlyTarget);
+  } catch (err: any) {
+    return json({ error: 'validation_failed', message: String(err?.message ?? err) }, { status: 400 });
+  }
 
   await appendEvent(
     pool,

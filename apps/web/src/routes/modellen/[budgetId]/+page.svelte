@@ -84,10 +84,55 @@
     return depth;
   }
 
-  $: overviewWithDepth = (data.overview ?? []).map(item => ({
-    ...item,
-    depth: computeDepth(item, data.overview ?? [])
-  }));
+  function hasChildren(categoryId: string): boolean {
+    const categories = data.details?.state?.categories ?? {};
+    return (Object.values(categories) as Category[]).some((cat: Category) => cat.parentId === categoryId);
+  }
+
+  function calculateParentTarget(categoryId: string): number | undefined {
+    const categories = data.details?.state?.categories ?? {};
+    const children = (Object.values(categories) as Category[]).filter((cat: Category) => cat.parentId === categoryId);
+    if (children.length === 0) return undefined;
+    
+    const sum = children.reduce((total: number, child: Category) => {
+      // If child is also a parent, use its calculated target, otherwise use its yearlyTarget
+      const childTarget = hasChildren(child.id) 
+        ? (calculateParentTarget(child.id) ?? 0)
+        : (child.yearlyTarget ?? 0);
+      return total + childTarget;
+    }, 0);
+    
+    return sum > 0 ? sum : undefined;
+  }
+
+  function calculateParentActual(categoryId: string): number {
+    const categories = data.details?.state?.categories ?? {};
+    const overview = data.overview ?? [];
+    const children = (Object.values(categories) as Category[]).filter((cat: Category) => cat.parentId === categoryId);
+    if (children.length === 0) return 0;
+    
+    return children.reduce((total: number, child: Category) => {
+      // If child is also a parent, use its calculated actual, otherwise use its actualSpent from overview
+      const childActual = hasChildren(child.id)
+        ? calculateParentActual(child.id)
+        : (overview.find(item => item.categoryId === child.id)?.actualSpent ?? 0);
+      return total + childActual;
+    }, 0);
+  }
+
+  $: overviewWithDepth = (data.overview ?? []).map(item => {
+    const isParent = hasChildren(item.categoryId);
+    const calculatedTarget = isParent ? calculateParentTarget(item.categoryId) : undefined;
+    const calculatedActual = isParent ? calculateParentActual(item.categoryId) : item.actualSpent;
+    return {
+      ...item,
+      depth: computeDepth(item, data.overview ?? []),
+      isParent,
+      calculatedTarget,
+      calculatedActual,
+      displayTarget: isParent ? calculatedTarget : item.yearlyTarget
+    };
+  });
 
   $: {
     const transactions = data.details?.state?.transactions ?? {};
@@ -225,7 +270,7 @@
       const j = await res.json().catch(() => ({}));
 
       if (!res.ok) {
-        targetError = j?.error ?? 'Kunne ikke gemme mål';
+        targetError = j?.message ?? j?.error ?? 'Kunne ikke gemme mål';
         savingTarget = null;
         return;
       }
@@ -362,12 +407,12 @@
                   </span>
                 </td>
                 <td 
-                  class="py-2 pr-4 {editingTarget !== row.categoryId ? 'cursor-pointer hover:bg-gray-50' : ''}"
+                  class="py-2 pr-4 {editingTarget !== row.categoryId && !row.isParent ? 'cursor-pointer hover:bg-gray-50' : ''}"
                   style="width: 150px; text-align: right;"
-                  on:click={() => editingTarget !== row.categoryId && startEditingTarget(row.categoryId, row.yearlyTarget)}
-                  role={editingTarget !== row.categoryId ? "button" : undefined}
-                  tabindex={editingTarget !== row.categoryId ? 0 : undefined}
-                  on:keydown={(e) => editingTarget !== row.categoryId && e.key === 'Enter' && startEditingTarget(row.categoryId, row.yearlyTarget)}
+                  on:click={() => editingTarget !== row.categoryId && !row.isParent && startEditingTarget(row.categoryId, row.yearlyTarget)}
+                  role={editingTarget !== row.categoryId && !row.isParent ? "button" : undefined}
+                  tabindex={editingTarget !== row.categoryId && !row.isParent ? 0 : undefined}
+                  on:keydown={(e) => editingTarget !== row.categoryId && !row.isParent && e.key === 'Enter' && startEditingTarget(row.categoryId, row.yearlyTarget)}
                 >
                   {#if editingTarget === row.categoryId}
                     <div class="flex items-center justify-end gap-2" on:click={(e) => e.stopPropagation()} on:keydown={(e) => e.stopPropagation()} role="group">
@@ -395,7 +440,13 @@
                       </button>
                     </div>
                   {:else}
-                    {#if row.yearlyTarget !== undefined && row.yearlyTarget !== null}
+                    {#if row.isParent}
+                      {#if row.calculatedTarget !== undefined && row.calculatedTarget !== null}
+                        <span class="text-gray-600" title="Sum af underkategorier">{formatNumber(row.calculatedTarget)}</span>
+                      {:else}
+                        <span class="text-gray-400 italic">Ingen mål i underkategorier</span>
+                      {/if}
+                    {:else if row.yearlyTarget !== undefined && row.yearlyTarget !== null}
                       {formatNumber(row.yearlyTarget)}
                     {:else}
                       <span class="text-gray-400 italic">Klik for at angive</span>
@@ -403,7 +454,7 @@
                   {/if}
                 </td>
                 <td class="py-2 pr-4" style="width: 150px; text-align: right;">
-                  {formatNumber(row.actualSpent)}
+                  {formatNumber(row.calculatedActual)}
                 </td>
               </tr>
             {/each}
