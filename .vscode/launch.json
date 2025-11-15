@@ -12,7 +12,44 @@
       "skipFiles": ["<node_internals>/**"],
       "env": {
         "FORCE_COLOR": "1"
-      }
+      },
+      "envFile": "${workspaceFolder}/apps/web/.env",
+      "preLaunchTask": "Start Database"
+    },
+    {
+      "name": "Game Server (attach)",
+      "type": "node",
+      "request": "attach",
+      "port": 9230,
+      "address": "localhost",
+      "localRoot": "${workspaceFolder}",
+      "remoteRoot": "${workspaceFolder}",
+      "skipFiles": ["<node_internals>/**"],
+      "sourceMaps": true,
+      "restart": true
+    },
+    {
+      "name": "Projector (attach)",
+      "type": "node",
+      "request": "attach",
+      "port": 9231,
+      "address": "localhost",
+      "localRoot": "${workspaceFolder}",
+      "remoteRoot": "${workspaceFolder}",
+      "skipFiles": ["<node_internals>/**"],
+      "sourceMaps": true,
+      "restart": true
+    }
+  ],
+  "compounds": [
+    {
+      "name": "All Apps (inspect)",
+      "configurations": [
+        "SvelteKit Dev (inspect)",
+        "Game Server (attach)",
+        "Projector (attach)"
+      ],
+      "stopAll": true
     }
   ]
 }

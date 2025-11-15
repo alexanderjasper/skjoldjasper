@@ -10,6 +10,7 @@
   "scripts": {
     "start": "tsx watch src/index.ts",
     "dev": "pnpm start",
+    "dev:inspect": "NODE_OPTIONS='--inspect=0.0.0.0:9230' tsx watch src/index.ts",
     "loadtest": "tsx loadtest/example.ts --room my_room --numClients 2",
     "loadtest:quick": "tsx loadtest/example.ts --endpoint ws://localhost:2567 --room my_room --numClients 1 --duration 3",
     "build": "npm run clean && tsc",
