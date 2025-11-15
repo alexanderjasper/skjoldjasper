@@ -415,7 +415,7 @@
                   on:keydown={(e) => editingTarget !== row.categoryId && !row.isParent && e.key === 'Enter' && startEditingTarget(row.categoryId, row.yearlyTarget)}
                 >
                   {#if editingTarget === row.categoryId}
-                    <div class="flex items-center justify-end gap-2" on:click={(e) => e.stopPropagation()} on:keydown={(e) => e.stopPropagation()} role="group">
+                    <div class="flex items-center justify-end gap-2" on:click={(e) => e.stopPropagation()} role="presentation">
                       <input
                         type="number"
                         class="border rounded px-2 py-1 w-24 text-sm text-right"
