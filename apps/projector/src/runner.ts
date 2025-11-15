@@ -63,7 +63,9 @@ async function fetchBatch(client: Client, h: ProjectorHandler, fromExclusive: nu
   return rows;
 }
 
-export async function runHandler(client: Client, h: ProjectorHandler): Promise<void> {
+export async function runHandler(client: Client, h: ProjectorHandler, options?: { pollIntervalMs?: number }): Promise<void> {
+  const pollIntervalMs = options?.pollIntervalMs ?? 2000;
+  
   await h.ensureSchema(client);
   await ensureCheckpointTable(client);
   await ensureAppliedEventsTable(client);
@@ -75,7 +77,11 @@ export async function runHandler(client: Client, h: ProjectorHandler): Promise<v
 
   while (true) {
     const rows = await fetchBatch(client, h, lastPos);
-    if (rows.length === 0) break;
+    
+    if (rows.length === 0) {
+      await new Promise(resolve => setTimeout(resolve, pollIntervalMs));
+      continue;
+    }
 
     let maxPos = lastPos;
     for (const ev of rows) {
@@ -90,9 +96,6 @@ export async function runHandler(client: Client, h: ProjectorHandler): Promise<v
     // eslint-disable-next-line no-console
     console.log(`[projector:${h.handlerName}] advanced to position:`, lastPos);
   }
-
-  // eslint-disable-next-line no-console
-  console.log(`[projector:${h.handlerName}] done. last position:`, lastPos);
 }
 
 

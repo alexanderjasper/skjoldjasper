@@ -10,16 +10,19 @@ async function main(): Promise<void> {
   const databaseUrl = process.env.DATABASE_URL;
   if (!databaseUrl) throw new Error("DATABASE_URL is not set");
 
-  const client = new Client({ connectionString: databaseUrl });
-  await client.connect();
-  try {
-    const handlers = [gameRoomViewHandler, financeBudgetHandler];
-    for (const h of handlers) {
+  const handlers = [gameRoomViewHandler, financeBudgetHandler];
+  
+  const runningHandlers = handlers.map(async (h) => {
+    const client = new Client({ connectionString: databaseUrl });
+    await client.connect();
+    try {
       await runHandler(client, h);
+    } finally {
+      await client.end();
     }
-  } finally {
-    await client.end();
-  }
+  });
+
+  await Promise.all(runningHandlers);
 }
 
 main().catch((err) => {
