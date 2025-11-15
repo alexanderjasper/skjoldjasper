@@ -103,7 +103,7 @@
     addCatError = '';
     const name = catName.trim();
     if (!name) {
-      addCatError = 'Name is required';
+      addCatError = 'Navn er påkrævet';
       return;
     }
     const res = await fetch(`/api/budgets/${encodeURIComponent(data.budgetId)}/categories`, {
@@ -114,7 +114,7 @@
     });
     if (!res.ok) {
       const j = await res.json().catch(() => ({}));
-      addCatError = j?.error ?? 'Failed to add category';
+      addCatError = j?.error ?? 'Kunne ikke tilføje kategori';
       return;
     }
     location.reload();
@@ -131,7 +131,7 @@
     });
     if (!res.ok) {
       const j = await res.json().catch(() => ({}));
-      noteError = j?.error ?? 'Failed to save note';
+      noteError = j?.error ?? 'Kunne ikke gemme note';
       return;
     }
     location.reload();
@@ -150,16 +150,16 @@
     if (res.status === 409) {
       const j = await res.json();
       duplicates = j.duplicates ?? [];
-      importMsg = `Found ${duplicates.length} duplicates. ${j.newCount ?? 0} new transactions.`;
+      importMsg = `Fundet ${duplicates.length} dubletter. ${j.newCount ?? 0} nye transaktioner.`;
       return;
     }
     if (!res.ok) {
       const j = await res.json().catch(() => ({}));
-      importError = j?.error ?? 'Import failed';
+      importError = j?.error ?? 'Import fejlede';
       return;
     }
     const j = await res.json();
-    importMsg = `Imported ${j.imported} transactions`;
+    importMsg = `Importeret ${j.imported} transaktioner`;
     csvText = '';
     location.reload();
   }
@@ -173,11 +173,11 @@
     });
     if (!res.ok) {
       const j = await res.json().catch(() => ({}));
-      importError = j?.error ?? 'Import failed';
+      importError = j?.error ?? 'Import fejlede';
       return;
     }
     const j = await res.json();
-    importMsg = `Imported ${j.imported} transactions (${j.duplicates} duplicates)`;
+    importMsg = `Importeret ${j.imported} transaktioner (${j.duplicates} dubletter)`;
     csvText = '';
     duplicates = [];
     location.reload();
@@ -201,7 +201,7 @@
     const value = rawValue != null ? String(rawValue).trim() : '';
     
     if (!value) {
-      targetError = 'Target cannot be empty. Enter 0 to clear.';
+      targetError = 'Mål kan ikke være tomt. Indtast 0 for at rydde.';
       savingTarget = null;
       return;
     }
@@ -209,7 +209,7 @@
     const numValue = parseFloat(value);
     
     if (isNaN(numValue) || !isFinite(numValue)) {
-      targetError = 'Invalid number';
+      targetError = 'Ugyldigt tal';
       savingTarget = null;
       return;
     }
@@ -225,7 +225,7 @@
       const j = await res.json().catch(() => ({}));
 
       if (!res.ok) {
-        targetError = j?.error ?? 'Failed to save target';
+        targetError = j?.error ?? 'Kunne ikke gemme mål';
         savingTarget = null;
         return;
       }
@@ -234,7 +234,7 @@
       savingTarget = null;
       location.reload();
     } catch (err) {
-      targetError = 'Network error. Please try again.';
+      targetError = 'Netværksfejl. Prøv igen.';
       savingTarget = null;
     }
   }
@@ -288,7 +288,7 @@
       }));
 
     if (splits.length === 0) {
-      splitError = 'At least one split is required';
+      splitError = 'Mindst én opdeling er påkrævet';
       savingSplits = null;
       return;
     }
@@ -296,7 +296,7 @@
     const total = splits.reduce((sum, s) => sum + s.amount, 0);
     const epsilon = 0.01;
     if (Math.abs(total - transactionAmount) > epsilon) {
-      splitError = `Splits total ${total.toFixed(2)} does not match transaction amount ${transactionAmount.toFixed(2)}`;
+      splitError = `Opdelinger i alt ${total.toFixed(2)} matcher ikke transaktionsbeløb ${transactionAmount.toFixed(2)}`;
       savingSplits = null;
       return;
     }
@@ -312,7 +312,7 @@
       const j = await res.json().catch(() => ({}));
 
       if (!res.ok) {
-        splitError = j?.message ?? j?.error ?? 'Failed to save splits';
+        splitError = j?.message ?? j?.error ?? 'Kunne ikke gemme opdelinger';
         savingSplits = null;
         return;
       }
@@ -321,23 +321,23 @@
       savingSplits = null;
       location.reload();
     } catch (err) {
-      splitError = 'Network error. Please try again.';
+      splitError = 'Netværksfejl. Prøv igen.';
       savingSplits = null;
     }
   }
 </script>
 
 {#if data.notFound}
-  <div class="max-w-3xl mx-auto p-4">Budget not found.</div>
+  <div class="max-w-3xl mx-auto p-4">Budget ikke fundet.</div>
 {:else}
   <div class="max-w-5xl mx-auto p-4 space-y-8">
     <div class="flex items-center justify-between">
       <h1 class="text-2xl font-semibold">{data.details?.state?.name}</h1>
-      <a class="text-blue-600 hover:underline" href="/modellen">Back</a>
+      <a class="text-blue-600 hover:underline" href="/modellen">Tilbage</a>
     </div>
 
     <section class="rounded border">
-      <div class="p-4 border-b"><h2 class="text-lg font-medium">Overview</h2></div>
+      <div class="p-4 border-b"><h2 class="text-lg font-medium">Oversigt</h2></div>
       <div class="p-4 overflow-x-auto">
         {#if targetError}
           <p class="text-sm text-red-600 mb-2">{targetError}</p>
@@ -345,9 +345,9 @@
         <table class="min-w-full text-sm">
           <thead>
             <tr class="text-left">
-              <th class="py-2 pr-4">Category</th>
-              <th class="py-2 pr-4 text-right" style="width: 150px;">Target</th>
-              <th class="py-2 pr-4 text-right" style="width: 150px;">Actual</th>
+              <th class="py-2 pr-4">Kategori</th>
+              <th class="py-2 pr-4 text-right" style="width: 150px;">Mål</th>
+              <th class="py-2 pr-4 text-right" style="width: 150px;">Faktisk</th>
             </tr>
           </thead>
           <tbody>
@@ -384,21 +384,21 @@
                         on:click={(e) => { e.stopPropagation(); saveTarget(row.categoryId); }}
                         disabled={savingTarget === row.categoryId}
                       >
-                        {savingTarget === row.categoryId ? 'Saving...' : 'Save'}
+                        {savingTarget === row.categoryId ? 'Gemmer...' : 'Gem'}
                       </button>
                       <button
                         class="px-2 py-1 bg-gray-100 rounded text-xs"
                         on:click={(e) => { e.stopPropagation(); cancelEditingTarget(); }}
                         disabled={savingTarget === row.categoryId}
                       >
-                        Cancel
+                        Annuller
                       </button>
                     </div>
                   {:else}
                     {#if row.yearlyTarget !== undefined && row.yearlyTarget !== null}
                       {formatNumber(row.yearlyTarget)}
                     {:else}
-                      <span class="text-gray-400 italic">Click to set</span>
+                      <span class="text-gray-400 italic">Klik for at angive</span>
                     {/if}
                   {/if}
                 </td>
@@ -413,18 +413,18 @@
     </section>
 
     <section class="rounded border">
-      <div class="p-4 border-b"><h2 class="text-lg font-medium">Categories</h2></div>
+      <div class="p-4 border-b"><h2 class="text-lg font-medium">Kategorier</h2></div>
       <div class="p-4 space-y-4">
         <div class="flex flex-col gap-3 sm:flex-row">
-          <input class="flex-1 border rounded px-3 py-2" placeholder="Category name" bind:value={catName} />
+          <input class="flex-1 border rounded px-3 py-2" placeholder="Kategorinavn" bind:value={catName} />
           <select class="border rounded px-3 py-2 w-64" bind:value={parentId}>
-            <option value={null}>No parent</option>
+            <option value={null}>Ingen forælder</option>
             {#each Object.values(data.details?.state?.categories ?? {}) as c}
               {@const cat = c as Category}
               <option value={cat.id}>{cat.name}</option>
             {/each}
           </select>
-          <button class="px-4 py-2 bg-blue-600 text-white rounded" on:click={addCategory}>Add</button>
+          <button class="px-4 py-2 bg-blue-600 text-white rounded" on:click={addCategory}>Tilføj</button>
         </div>
         {#if addCatError}
           <p class="text-sm text-red-600">{addCatError}</p>
@@ -437,7 +437,7 @@
               {/if}
               <span class:font-medium={cat.depth === 0}>{cat.name}</span>
               {#if cat.yearlyTarget}
-                <span class="ml-2 text-sm text-gray-500">(Target: {formatNumber(cat.yearlyTarget)})</span>
+                <span class="ml-2 text-sm text-gray-500">(Mål: {formatNumber(cat.yearlyTarget)})</span>
               {/if}
             </div>
           {/each}
@@ -446,7 +446,7 @@
     </section>
 
     <section class="rounded border">
-      <div class="p-4 border-b"><h2 class="text-lg font-medium">Transactions</h2></div>
+      <div class="p-4 border-b"><h2 class="text-lg font-medium">Transaktioner</h2></div>
       <div class="p-4 space-y-4">
         {#if noteError}
           <p class="text-sm text-red-600">{noteError}</p>
@@ -466,7 +466,7 @@
                   <div class="text-xs text-gray-500">{tx.date} · <span class="text-right inline-block min-w-[80px]">{formatNumber(tx.amount)}</span></div>
                   {#if splits.length > 0}
                     <div class="mt-2 text-xs">
-                      <span class="font-medium">Splits:</span>
+                      <span class="font-medium">Opdelinger:</span>
                       {#each splits as split}
                         {@const cat = data.details?.state?.categories?.[split.categoryId] as Category | undefined}
                         <span class="ml-2">
@@ -481,26 +481,26 @@
                 </div>
                 <div class="flex items-center gap-2">
                   <input class="border rounded px-2 py-1 text-sm w-32" placeholder="Note" bind:value={noteText[tx.id]} />
-                  <button class="px-3 py-1 bg-gray-100 rounded text-sm" on:click={() => saveNote(tx.id)}>Save Note</button>
+                  <button class="px-3 py-1 bg-gray-100 rounded text-sm" on:click={() => saveNote(tx.id)}>Gem Note</button>
                   <button
                     class="px-3 py-1 bg-blue-600 text-white rounded text-sm"
                     on:click={() => startEditingSplits(tx.id, tx.amount)}
                     disabled={editingSplits === tx.id}
                   >
-                    {splits.length > 0 ? 'Edit Splits' : 'Assign Splits'}
+                    {splits.length > 0 ? 'Rediger Opdelinger' : 'Tildel Opdelinger'}
                   </button>
                 </div>
               </div>
               {#if editingSplits === tx.id}
                 <div class="ml-4 pl-4 border-l-2 border-blue-200 space-y-2">
-                  <div class="text-sm font-medium">Assign splits (Total: {formatNumber(tx.amount)})</div>
+                  <div class="text-sm font-medium">Tildel opdelinger (I alt: {formatNumber(tx.amount)})</div>
                   {#each splitRows[tx.id] as row, index}
                     <div class="flex items-center gap-2">
                       <select
                         class="border rounded px-2 py-1 text-sm flex-1"
                         bind:value={row.categoryId}
                       >
-                        <option value="">Select category</option>
+                        <option value="">Vælg kategori</option>
                         {#each Object.values(data.details?.state?.categories ?? {}) as cat}
                           {@const category = cat as Category}
                           <option value={category.id}>{category.name}</option>
@@ -510,7 +510,7 @@
                         type="number"
                         step="0.01"
                         class="border rounded px-2 py-1 text-sm w-24 text-right"
-                        placeholder="Amount"
+                        placeholder="Beløb"
                         bind:value={row.amount}
                       />
                       {#if splitRows[tx.id].length > 1}
@@ -518,7 +518,7 @@
                           class="px-2 py-1 bg-red-100 text-red-700 rounded text-sm"
                           on:click={() => removeSplitRow(tx.id, index)}
                         >
-                          Remove
+                          Fjern
                         </button>
                       {/if}
                     </div>
@@ -528,10 +528,10 @@
                       class="px-3 py-1 bg-gray-100 rounded text-sm"
                       on:click={() => addSplitRow(tx.id)}
                     >
-                      Add Split
+                      Tilføj Opdeling
                     </button>
                     <span class="text-sm {getRemainingAmount(tx.id, tx.amount) < 0 ? 'text-red-600' : getRemainingAmount(tx.id, tx.amount) > 0.01 ? 'text-orange-600' : 'text-green-600'}">
-                      Remaining: <span class="text-right inline-block min-w-[80px]">{formatNumber(getRemainingAmount(tx.id, tx.amount))}</span>
+                      Resterende: <span class="text-right inline-block min-w-[80px]">{formatNumber(getRemainingAmount(tx.id, tx.amount))}</span>
                     </span>
                   </div>
                   <div class="flex items-center gap-2">
@@ -540,7 +540,7 @@
                       on:click={() => saveSplits(tx.id, tx.amount)}
                       disabled={savingSplits === tx.id}
                     >
-                      {savingSplits === tx.id ? 'Saving...' : 'Save Splits'}
+                      {savingSplits === tx.id ? 'Gemmer...' : 'Gem Opdelinger'}
                     </button>
                     <button
                       class="px-3 py-1 bg-gray-100 rounded text-sm"
@@ -559,7 +559,7 @@
     </section>
 
     <section class="rounded border">
-      <div class="p-4 border-b"><h2 class="text-lg font-medium">Import CSV</h2></div>
+      <div class="p-4 border-b"><h2 class="text-lg font-medium">Importer CSV</h2></div>
       <div class="p-4 space-y-3">
         {#if importError}
           <p class="text-sm text-red-600">{importError}</p>
@@ -567,16 +567,16 @@
         {#if importMsg}
           <p class="text-sm text-green-700">{importMsg}</p>
         {/if}
-        <textarea class="w-full border rounded p-2 font-mono text-sm" rows="8" bind:value={csvText} placeholder="Paste exported CSV here..."></textarea>
+        <textarea class="w-full border rounded p-2 font-mono text-sm" rows="8" bind:value={csvText} placeholder="Indsæt eksporteret CSV her..."></textarea>
         <div class="flex gap-2">
-          <button class="px-4 py-2 bg-gray-100 rounded" on:click={previewImport}>Preview</button>
+          <button class="px-4 py-2 bg-gray-100 rounded" on:click={previewImport}>Forhåndsvisning</button>
           {#if duplicates.length > 0}
-            <button class="px-4 py-2 bg-blue-600 text-white rounded" on:click={importConfirmed}>Import anyway</button>
+            <button class="px-4 py-2 bg-blue-600 text-white rounded" on:click={importConfirmed}>Importer alligevel</button>
           {/if}
         </div>
         {#if duplicates.length > 0}
           <div class="rounded border p-3">
-            <p class="font-medium mb-2">Duplicates</p>
+            <p class="font-medium mb-2">Dubletter</p>
             <ul class="text-sm list-disc pl-5">
               {#each duplicates as d}
                 <li>{d.date} · {d.description} · {d.amount}</li>

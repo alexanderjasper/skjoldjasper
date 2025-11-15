@@ -22,11 +22,11 @@ export const actions: Actions = {
 		const password = formData.get('password');
 
 		if (typeof email !== 'string' || !email || typeof password !== 'string' || !password) {
-			return fail(400, { message: 'Invalid email or password' });
+			return fail(400, { message: 'Ugyldig email eller adgangskode' });
 		}
 
 		if (password.length < 8) {
-			return fail(400, { message: 'Password must be at least 8 characters' });
+			return fail(400, { message: 'Adgangskode skal være mindst 8 tegn' });
 		}
 
 		const pool = getPool();
@@ -39,7 +39,7 @@ export const actions: Actions = {
 			.limit(1);
 
 		if (existingUser.length > 0) {
-			return fail(400, { message: 'Email already registered' });
+			return fail(400, { message: 'Email er allerede registreret' });
 		}
 
 		const userId = generateIdFromEntropySize(10);
