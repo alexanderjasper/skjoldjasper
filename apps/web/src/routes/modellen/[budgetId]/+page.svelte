@@ -3,7 +3,7 @@
     budgetId: string;
     notFound?: boolean;
     details?: { budgetId: string; state: any };
-    overview?: Array<{ categoryId: string; categoryName: string; yearlyTarget?: number; actualSpent: number }>;
+    overview?: Array<{ categoryId: string; categoryName: string; parentId: string | null; yearlyTarget?: number; actualSpent: number }>;
   };
 
   let catName = '';
@@ -17,6 +17,61 @@
   let importMsg = '';
   let importError = '';
   let duplicates: Array<{ transactionId: string; date: string; description: string; amount: number }> = [];
+
+  type Category = { id: string; name: string; parentId: string | null; yearlyTarget?: number };
+  type CategoryTree = Category & { children: CategoryTree[] };
+  type FlatCategory = Category & { depth: number };
+
+  function buildCategoryTree(categories: Record<string, Category>): CategoryTree[] {
+    const categoryArray = Object.values(categories);
+    const categoryMap = new Map<string, CategoryTree>();
+    
+    categoryArray.forEach(cat => {
+      categoryMap.set(cat.id, { ...cat, children: [] });
+    });
+    
+    const roots: CategoryTree[] = [];
+    categoryArray.forEach(cat => {
+      const node = categoryMap.get(cat.id)!;
+      if (cat.parentId && categoryMap.has(cat.parentId)) {
+        categoryMap.get(cat.parentId)!.children.push(node);
+      } else {
+        roots.push(node);
+      }
+    });
+    
+    return roots;
+  }
+
+  function flattenTree(tree: CategoryTree[], depth = 0): FlatCategory[] {
+    const result: FlatCategory[] = [];
+    for (const node of tree) {
+      result.push({ ...node, depth });
+      if (node.children.length > 0) {
+        result.push(...flattenTree(node.children, depth + 1));
+      }
+    }
+    return result;
+  }
+
+  $: categoryTree = data.details?.state?.categories ? buildCategoryTree(data.details.state.categories) : [];
+  $: flatCategories = flattenTree(categoryTree);
+
+  function computeDepth(item: { categoryId: string; parentId: string | null }, allItems: Array<{ categoryId: string; parentId: string | null }>): number {
+    let depth = 0;
+    let currentParentId = item.parentId;
+    while (currentParentId) {
+      depth++;
+      const parent = allItems.find(i => i.categoryId === currentParentId);
+      currentParentId = parent?.parentId || null;
+    }
+    return depth;
+  }
+
+  $: overviewWithDepth = (data.overview ?? []).map(item => ({
+    ...item,
+    depth: computeDepth(item, data.overview ?? [])
+  }));
 
   async function addCategory() {
     addCatError = '';
@@ -118,9 +173,16 @@
         <table class="min-w-full text-sm">
           <thead><tr class="text-left"><th class="py-2 pr-4">Category</th><th class="py-2 pr-4">Target</th><th class="py-2">Actual</th></tr></thead>
           <tbody>
-            {#each data.overview ?? [] as row}
+            {#each overviewWithDepth as row}
               <tr class="border-t">
-                <td class="py-2 pr-4">{row.categoryName}</td>
+                <td class="py-2 pr-4">
+                  <span style="padding-left: {row.depth * 1.5}rem" class="inline-flex items-center">
+                    {#if row.depth > 0}
+                      <span class="text-gray-400 mr-2">└─</span>
+                    {/if}
+                    <span class:font-medium={row.depth === 0}>{row.categoryName}</span>
+                  </span>
+                </td>
                 <td class="py-2 pr-4">{row.yearlyTarget ?? ''}</td>
                 <td class="py-2">{row.actualSpent}</td>
               </tr>
@@ -146,11 +208,19 @@
         {#if addCatError}
           <p class="text-sm text-red-600">{addCatError}</p>
         {/if}
-        <ul class="list-disc pl-6">
-          {#each Object.values(data.details?.state?.categories ?? {}) as c}
-            <li>{c.name}</li>
+        <div class="space-y-1">
+          {#each flatCategories as cat}
+            <div class="flex items-center py-1" style="padding-left: {cat.depth * 2}rem">
+              {#if cat.depth > 0}
+                <span class="text-gray-400 mr-2">└─</span>
+              {/if}
+              <span class:font-medium={cat.depth === 0}>{cat.name}</span>
+              {#if cat.yearlyTarget}
+                <span class="ml-2 text-sm text-gray-500">(Target: {cat.yearlyTarget})</span>
+              {/if}
+            </div>
           {/each}
-        </ul>
+        </div>
       </div>
     </section>
 
