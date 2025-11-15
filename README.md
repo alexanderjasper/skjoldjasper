@@ -4,11 +4,21 @@ Monorepo for a SvelteKit app with Supabase Auth, Postgres + pgBackRest backups, 
 
 ## Layout
 
-- `apps/web` — SvelteKit + Tailwind, Supabase Auth (GitHub), debugging ready for Cursor
-- `packages/shared` — Shared TypeScript utilities and zod schemas
-- `packages/db` — Drizzle config, schema, migrations and DB scripts
-- `infra` — Docker Compose for Postgres and pgBackRest, backup scripts
+- `apps/` — every bounded context (web, projector, game-server). Domain logic stays here.
+  - `apps/web` — SvelteKit + Tailwind with Supabase Auth (GitHub), hosts finance domain logic under `src/lib/server`
+  - `apps/projector` — applies events into read models per context (finance handler, etc.)
+  - `apps/game-server` — Colyseus server; game rules/rooms live here, not in shared packages
+- `packages/` — infrastructure-only shared libraries (database primitives, generic config, rate limiting). **Never add domain-specific schemas or logic here.**
+  - `packages/shared` — Shared TypeScript utilities and zod schemas that are domain-agnostic
+  - `packages/db` — Drizzle config, schema, migrations, DB scripts (event store + snapshots)
+- `infra/` — Docker Compose for Postgres and pgBackRest, backup scripts and tunnels
 - `PLAN.md` — living checklist for implementation
+
+### Architecture principles
+
+1. **Domain-first organization.** All business logic, aggregates, commands, queries, and projections belong to their owning app under `apps/`. Keep UI adapters (`routes/*`) thin and delegate to domain modules in `apps/web/src/lib/server/<context>`.
+2. **Shared code stays generic.** `packages/*` must remain free of finance/game-specific concepts—only primitives (db clients, config, ids, events helpers).
+3. **Separated read/write paths.** Event-sourced writes live beside their context (e.g., `apps/web/src/lib/server/finance`). Projector handlers per context sit in `apps/projector/src/handlers/<context>`.
 
 ### Modellen (Family Finance)
 

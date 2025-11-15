@@ -25,6 +25,12 @@ High-level overview of the finance/budgeting bounded context.
 - Domain logic: `apps/web/src/lib/server/finance`
 - Projector handler: `apps/projector/src/handlers/finance/budget.ts`
 
+## Contribution guidelines
+
+- Keep all finance-specific schemas, commands, queries, and projections inside this directory (and the projector handler). Do **not** move them into `packages/*`.
+- Server routes should import domain services from here instead of re-implementing business rules.
+- When adding a new capability, extend the domain modules first (events, commands, state) and expose APIs/routes that call into them.
+
 ## Read more
 
 - Project-wide structure and domain boundary guidance: see `@general-info.mdc`
