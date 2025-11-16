@@ -8,8 +8,8 @@
 
 $ErrorActionPreference = "Stop"
 
-Write-Host "Rebuilding and restarting web, game-server, projector, and cloudflared..." -ForegroundColor Yellow
-docker compose -f infra\docker-compose.yml up -d --build web game-server projector cloudflared
+Write-Host "Rebuilding and restarting web, game-server, and cloudflared..." -ForegroundColor Yellow
+docker compose -f infra\docker-compose.yml up -d --build web game-server cloudflared
 
 Write-Host ""
 Write-Host "Containers running:" -ForegroundColor Cyan
