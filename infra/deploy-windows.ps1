@@ -1,10 +1,17 @@
 <# Minimal deploy script for Windows
    Run from project root:
-   .\infra\deploy-windows.ps1
+     .\infra\deploy-windows.ps1
+
+   What it does:
+   - Stops any existing Docker stack
+   - Starts Postgres (and builds image if needed)
+   - Runs database migrations using pnpm on the host
+   - Starts cloudflared (tunnel) container
 
    Assumes:
    - Docker Desktop is running
    - .env files are already created
+   - Node + pnpm are installed on the host (server)
 #>
 
 $ErrorActionPreference = "Stop"
@@ -18,9 +25,8 @@ docker compose -f infra\docker-compose.yml up -d --build postgres
 Write-Host "Waiting 15 seconds for PostgreSQL to start..." -ForegroundColor Yellow
 Start-Sleep -Seconds 15
 
-Write-Host "Running database migrations (this may take a while on first run)..." -ForegroundColor Yellow
-$migrateCmd = "corepack enable && pnpm -w --filter @skjoldjasper/shared --filter @skjoldjasper/db install --no-frozen-lockfile && pnpm -w --filter @skjoldjasper/shared --filter @skjoldjasper/db build && pnpm --dir packages/db migrate:push"
-docker compose -f infra\docker-compose.yml run --rm web sh -c $migrateCmd
+Write-Host "Running database migrations in web container..." -ForegroundColor Yellow
+docker compose -f infra\docker-compose.yml run --rm web sh -lc "pnpm --dir packages/db migrate:push"
 
 Write-Host "Starting web, game-server, and cloudflared (building images if needed)..." -ForegroundColor Yellow
 docker compose -f infra\docker-compose.yml up -d --build web game-server cloudflared
@@ -30,4 +36,4 @@ Write-Host "Containers running:" -ForegroundColor Cyan
 docker compose -f infra\docker-compose.yml ps
 
 Write-Host ""
-Write-Host "Done. Web should be on http://localhost:5173/" -ForegroundColor Green
+Write-Host "Done. Postgres and cloudflared are up." -ForegroundColor Green
