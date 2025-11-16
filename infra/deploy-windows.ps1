@@ -103,12 +103,9 @@ if (-not $SkipMigrations) {
     Write-Host "Running database migrations..." -ForegroundColor Yellow
     Write-Host "(This may take a few minutes on first run)" -ForegroundColor Gray
     
-    docker compose -f infra\docker-compose.yml run --rm web sh -c @"
-corepack enable && \
-pnpm -w --filter @skjoldjasper/shared --filter @skjoldjasper/db install --no-frozen-lockfile && \
-pnpm -w --filter @skjoldjasper/shared --filter @skjoldjasper/db build && \
-pnpm --dir packages/db migrate:push
-"@
+    $migrateCmd = "corepack enable && pnpm -w --filter @skjoldjasper/shared --filter @skjoldjasper/db install --no-frozen-lockfile && pnpm -w --filter @skjoldjasper/shared --filter @skjoldjasper/db build && pnpm --dir packages/db migrate:push"
+    
+    docker compose -f infra\docker-compose.yml run --rm web sh -c $migrateCmd
     
     if ($LASTEXITCODE -ne 0) {
         Write-Host "✗ Migration failed" -ForegroundColor Red
