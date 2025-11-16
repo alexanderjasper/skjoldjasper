@@ -22,8 +22,8 @@ Write-Host "Running database migrations (this may take a while on first run)..."
 $migrateCmd = "corepack enable && pnpm -w --filter @skjoldjasper/shared --filter @skjoldjasper/db install --no-frozen-lockfile && pnpm -w --filter @skjoldjasper/shared --filter @skjoldjasper/db build && pnpm --dir packages/db migrate:push"
 docker compose -f infra\docker-compose.yml run --rm web sh -c $migrateCmd
 
-Write-Host "Starting web, game-server, projector, and cloudflared (building images if needed)..." -ForegroundColor Yellow
-docker compose -f infra\docker-compose.yml up -d --build web game-server projector cloudflared
+Write-Host "Starting web, game-server, and cloudflared (building images if needed)..." -ForegroundColor Yellow
+docker compose -f infra\docker-compose.yml up -d --build web game-server cloudflared
 
 Write-Host ""
 Write-Host "Containers running:" -ForegroundColor Cyan

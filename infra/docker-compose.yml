@@ -43,7 +43,9 @@ services:
     command: sh -lc "corepack enable \
       && pnpm -w install --no-frozen-lockfile --filter web... --filter @skjoldjasper/shared --filter @skjoldjasper/db \
       && pnpm -w --filter @skjoldjasper/shared --filter @skjoldjasper/db build \
-      && pnpm --dir apps/web dev -- --host 0.0.0.0 --port 5173 --strictPort"
+      && pnpm --dir apps/projector install --no-frozen-lockfile \
+      && pnpm --dir apps/projector run & \
+         pnpm --dir apps/web dev -- --host 0.0.0.0 --port 5173 --strictPort"
     env_file:
       - ../apps/web/.env
     environment:
@@ -81,28 +83,6 @@ services:
       - /workspace/apps/game-server/node_modules
     ports:
       - "2567:2567"
-    depends_on:
-      postgres:
-        condition: service_healthy
-    networks:
-      - private
-
-  projector:
-    image: node:22-alpine
-    container_name: skjoldjasper-projector
-    working_dir: /workspace
-    command: sh -lc "corepack enable \
-      && pnpm -w --filter @skjoldjasper/shared --filter @skjoldjasper/db install --no-frozen-lockfile \
-      && pnpm -w --filter @skjoldjasper/shared --filter @skjoldjasper/db build \
-      && pnpm --dir apps/projector install --no-frozen-lockfile \
-      && pnpm --dir apps/projector run"
-    environment:
-      - DATABASE_URL=postgres://app:${POSTGRES_PASSWORD:-app-password-change-me}@postgres:5432/${POSTGRES_DB:-appdb}
-      - CI=true
-    volumes:
-      - ../:/workspace
-      - /workspace/node_modules
-      - /workspace/apps/projector/node_modules
     depends_on:
       postgres:
         condition: service_healthy
