@@ -41,7 +41,8 @@ services:
     container_name: skjoldjasper-web
     working_dir: /workspace
     command: sh -lc "corepack enable \
-      && corepack prepare pnpm@10.20.0 --activate \
+      && npm install -g pnpm@10.20.0 \
+      && pnpm -v \
       && pnpm -w install --no-frozen-lockfile --filter web... --filter @skjoldjasper/shared --filter @skjoldjasper/db \
       && pnpm -w --filter @skjoldjasper/shared --filter @skjoldjasper/db build \
       && pnpm --dir apps/projector install --no-frozen-lockfile \
@@ -71,7 +72,8 @@ services:
     working_dir: /workspace
     command: sh -lc "corepack enable \
       && apk add --no-cache git \
-      && corepack prepare pnpm@10.20.0 --activate \
+      && npm install -g pnpm@10.20.0 \
+      && pnpm -v \
       && pnpm -w --filter @skjoldjasper/shared --filter @skjoldjasper/db install --no-frozen-lockfile \
       && pnpm -w --filter @skjoldjasper/shared --filter @skjoldjasper/db build \
       && pnpm --dir apps/game-server install --no-frozen-lockfile \
