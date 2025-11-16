@@ -30,6 +30,8 @@ Monorepo for a SvelteKit app with Supabase Auth, Postgres + pgBackRest backups, 
 
 ## Quickstart
 
+### Local Development (macOS/Linux)
+
 ```bash
 # Install deps for working packages on demand
 pnpm --dir packages/shared install && pnpm --dir packages/shared build
@@ -50,6 +52,32 @@ pnpm dev
 
 # Validate required env
 pnpm check:env
+```
+
+### Windows Server Deployment
+
+For deploying on Windows 10/11 or Windows Server with Docker:
+
+**See [infra/WINDOWS-SETUP.md](infra/WINDOWS-SETUP.md) for complete setup guide.**
+
+Quick start:
+```powershell
+# 1. Create .env files from examples
+Copy-Item infra\env.example infra\.env
+Copy-Item apps\web\env.example apps\web\.env
+Copy-Item apps\game-server\env.example apps\game-server\.env
+Copy-Item packages\db\env.example packages\db\.env
+
+# 2. Edit .env files (set passwords, Supabase credentials)
+
+# 3. Run deployment script
+.\infra\deploy-windows.ps1
+```
+
+Updates after code changes:
+```powershell
+git pull
+.\infra\update-windows.ps1
 ```
 
 ### Dev stack via Docker Compose
