@@ -24,7 +24,7 @@
   let savingTarget: string | null = null;
 
   let editingSplits: string | null = null;
-  let splitRows: Record<string, Array<{ categoryId: string; amount: string }>> = {};
+  let splitRows: Array<{ categoryId: string; amount: string }> = [];
   let splitError = '';
   let savingSplits: string | null = null;
 
@@ -285,35 +285,39 @@
   }
 
   function startEditingSplits(transactionId: string, transactionAmount: number) {
-    editingSplits = transactionId;
     splitError = '';
     const existingSplits = data.details?.state?.splits?.[transactionId] ?? [];
     if (existingSplits.length > 0) {
-      splitRows[transactionId] = existingSplits.map((s: { categoryId: string; amount: number }) => ({ categoryId: s.categoryId, amount: s.amount.toString() }));
+      splitRows = existingSplits.map((s: { categoryId: string; amount: number }) => ({
+        categoryId: s.categoryId,
+        amount: s.amount.toString()
+      }));
     } else {
-      splitRows[transactionId] = [{ categoryId: '', amount: '' }];
+      splitRows = [{ categoryId: '', amount: '' }];
     }
+    editingSplits = transactionId;
   }
 
   function cancelEditingSplits() {
     editingSplits = null;
     splitError = '';
+    splitRows = [];
   }
 
   function addSplitRow(transactionId: string) {
-    if (!splitRows[transactionId]) {
-      splitRows[transactionId] = [];
-    }
-    splitRows[transactionId] = [...splitRows[transactionId], { categoryId: '', amount: '' }];
+    if (editingSplits !== transactionId) return;
+    splitRows = [...splitRows, { categoryId: '', amount: '' }];
   }
 
   function removeSplitRow(transactionId: string, index: number) {
-    splitRows[transactionId] = splitRows[transactionId].filter((_, i) => i !== index);
+    if (editingSplits !== transactionId) return;
+    splitRows = splitRows.filter((_, i) => i !== index);
   }
 
   function getRemainingAmount(transactionId: string, transactionAmount: number): number {
-    if (!splitRows[transactionId]) return transactionAmount;
-    const total = splitRows[transactionId].reduce((sum, row) => {
+    if (editingSplits !== transactionId) return transactionAmount;
+    if (!splitRows || splitRows.length === 0) return transactionAmount;
+    const total = splitRows.reduce((sum, row) => {
       const amount = parseFloat(row.amount) || 0;
       return sum + amount;
     }, 0);
@@ -324,7 +328,13 @@
     splitError = '';
     savingSplits = transactionId;
     
-    const rows = splitRows[transactionId] || [];
+    if (editingSplits !== transactionId) {
+      splitError = 'Intern fejl: forkert transaktion under redigering';
+      savingSplits = null;
+      return;
+    }
+
+    const rows = splitRows || [];
     const splits = rows
       .filter(row => row.categoryId && row.amount)
       .map(row => ({
@@ -542,10 +552,10 @@
                   </button>
                 </div>
               </div>
-              {#if editingSplits === tx.id}
+                  {#if editingSplits === tx.id}
                 <div class="ml-4 pl-4 border-l-2 border-blue-200 space-y-2">
                   <div class="text-sm font-medium">Tildel opdelinger (I alt: {formatNumber(tx.amount)})</div>
-                  {#each splitRows[tx.id] as row, index}
+                  {#each splitRows as row, index}
                     <div class="flex items-center gap-2">
                       <select
                         class="border rounded px-2 py-1 text-sm flex-1"
@@ -564,7 +574,7 @@
                         placeholder="Beløb"
                         bind:value={row.amount}
                       />
-                      {#if splitRows[tx.id].length > 1}
+                      {#if splitRows.length > 1}
                         <button
                           class="px-2 py-1 bg-red-100 text-red-700 rounded text-sm"
                           on:click={() => removeSplitRow(tx.id, index)}
