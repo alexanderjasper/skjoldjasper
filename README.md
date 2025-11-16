@@ -56,27 +56,17 @@ pnpm check:env
 
 ### Windows Server Deployment
 
-For deploying on Windows 10/11 or Windows Server with Docker:
-
-**See [infra/WINDOWS-SETUP.md](infra/WINDOWS-SETUP.md) for complete setup guide.**
-
-Quick start:
 ```powershell
-# 1. Create .env files from examples
+# From project root
 Copy-Item infra\env.example infra\.env
 Copy-Item apps\web\env.example apps\web\.env
 Copy-Item apps\game-server\env.example apps\game-server\.env
 Copy-Item packages\db\env.example packages\db\.env
 
-# 2. Edit .env files (set passwords, Supabase credentials)
-
-# 3. Run deployment script
+# Edit the .env files, then:
 .\infra\deploy-windows.ps1
-```
 
-Updates after code changes:
-```powershell
-git pull
+# After git pull:
 .\infra\update-windows.ps1
 ```
 
