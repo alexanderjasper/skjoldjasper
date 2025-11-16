@@ -1,0 +1,12 @@
+node_modules
+**/node_modules
+.git
+.gitignore
+.vscode
+dist
+**/dist
+pnpm-store
+npm-debug.log*
+yarn-error.log*
+
+
