@@ -37,26 +37,17 @@ services:
       - "5433:5432"
 
   web:
-    image: node:22-alpine
+    build:
+      context: ..
+      dockerfile: apps/web/Dockerfile
     container_name: skjoldjasper-web
     working_dir: /workspace
-    command: sh -lc "npm install -g pnpm@10.20.0 --force \
-      && pnpm -v \
-      && pnpm -w install --no-frozen-lockfile --filter web... --filter @skjoldjasper/shared --filter @skjoldjasper/db \
-      && pnpm -w --filter @skjoldjasper/shared --filter @skjoldjasper/db build \
-      && pnpm --dir apps/projector install --no-frozen-lockfile \
-      && pnpm --dir apps/projector run & \
-         pnpm --dir apps/web dev -- --host 0.0.0.0 --port 5173 --strictPort"
     env_file:
       - ../apps/web/.env
     environment:
       - DATABASE_URL=postgres://app:${POSTGRES_PASSWORD:-app-password-change-me}@postgres:5432/${POSTGRES_DB:-appdb}
       - PUBLIC_GAME_SERVER_WS=${PUBLIC_GAME_SERVER_WS:-ws://localhost:2567}
       - CI=true
-    volumes:
-      - ../:/workspace
-      - /workspace/node_modules
-      - /workspace/apps/web/node_modules
     ports:
       - "5173:5173"
     depends_on:
@@ -66,23 +57,14 @@ services:
       - private
 
   game-server:
-    image: node:22-alpine
+    build:
+      context: ..
+      dockerfile: apps/game-server/Dockerfile
     container_name: skjoldjasper-game-server
     working_dir: /workspace
-    command: sh -lc "apk add --no-cache git \
-      && npm install -g pnpm@10.20.0 --force \
-      && pnpm -v \
-      && pnpm -w --filter @skjoldjasper/shared --filter @skjoldjasper/db install --no-frozen-lockfile \
-      && pnpm -w --filter @skjoldjasper/shared --filter @skjoldjasper/db build \
-      && pnpm --dir apps/game-server install --no-frozen-lockfile \
-      && pnpm --dir apps/game-server start"
     environment:
       - DATABASE_URL=postgres://app:${POSTGRES_PASSWORD:-app-password-change-me}@postgres:5432/${POSTGRES_DB:-appdb}
       - CI=true
-    volumes:
-      - ../:/workspace
-      - /workspace/node_modules
-      - /workspace/apps/game-server/node_modules
     ports:
       - "2567:2567"
     depends_on:
