@@ -41,18 +41,89 @@ docker --version
 docker compose version
 ```
 
-## Step 2: Clone the Repository
+## Step 2: Set Up Git Authentication
+
+GitHub requires authentication for private repositories. Choose one of the following methods:
+
+### Option A: SSH Keys (Recommended)
+
+1. **Generate an SSH key on your server:**
+   ```bash
+   ssh-keygen -t ed25519 -C "your_email@example.com"
+   # Press Enter to accept default location
+   # Optionally set a passphrase
+   ```
+
+2. **Copy the public key:**
+   ```bash
+   cat ~/.ssh/id_ed25519.pub
+   ```
+
+3. **Add the key to GitHub:**
+   - Go to GitHub → Settings → SSH and GPG keys
+   - Click "New SSH key"
+   - Paste your public key and save
+
+4. **Test the connection:**
+   ```bash
+   ssh -T git@github.com
+   # You should see: "Hi username! You've successfully authenticated..."
+   ```
+
+5. **Clone using SSH:**
+   ```bash
+   git clone git@github.com:alexanderjasper/skjoldjasper.git
+   cd skjoldjasper
+   ```
+
+### Option B: Personal Access Token
+
+1. **Create a Personal Access Token on GitHub:**
+   - Go to GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic)
+   - Click "Generate new token (classic)"
+   - Select scopes: `repo` (full control of private repositories)
+   - Generate and copy the token (you won't see it again!)
+
+2. **Clone using HTTPS with token:**
+   ```bash
+   # When prompted for username, use your GitHub username
+   # When prompted for password, paste your personal access token
+   git clone https://github.com/alexanderjasper/skjoldjasper.git
+   cd skjoldjasper
+   ```
+
+   Or use the token directly in the URL (less secure, but convenient):
+   ```bash
+   git clone https://YOUR_TOKEN@github.com/alexanderjasper/skjoldjasper.git
+   cd skjoldjasper
+   ```
+
+3. **Store credentials (optional, for convenience):**
+   ```bash
+   git config --global credential.helper store
+   # Next time you clone/pull, credentials will be saved
+   ```
+
+## Step 3: Clone the Repository
+
+If you haven't already cloned using one of the methods above:
 
 ```bash
 # Navigate to a suitable directory (e.g., /opt or your home directory)
 cd ~
+
+# For SSH (if you set up SSH keys):
+git clone git@github.com:alexanderjasper/skjoldjasper.git
+
+# OR for HTTPS (if using personal access token):
 git clone https://github.com/alexanderjasper/skjoldjasper.git
+
 cd skjoldjasper
 ```
 
-## Step 3: Configure Environment Variables
+## Step 4: Configure Environment Variables
 
-### 3.1 Infrastructure Environment
+### 4.1 Infrastructure Environment
 
 ```bash
 cp infra/env.example infra/.env
@@ -65,7 +136,7 @@ Edit the following values:
 - `POSTGRES_DB` - Database name (default: `appdb`)
 - `CLOUDFLARED_TUNNEL_TOKEN` - (Optional) Cloudflare Tunnel token if using Cloudflare Tunnel
 
-### 3.2 Web Application Environment
+### 4.2 Web Application Environment
 
 ```bash
 cp apps/web/env.example apps/web/.env
@@ -79,7 +150,7 @@ Required values:
 - `PUBLIC_GAME_SERVER_WS` - WebSocket URL for game server (e.g., `ws://your-domain:2567` or `wss://ws.your-domain` if using Cloudflare Tunnel)
 - `ALLOWED_ORIGINS` - Comma-separated list of allowed origins (e.g., `https://app.your-domain`)
 
-### 3.3 Game Server Environment
+### 4.3 Game Server Environment
 
 ```bash
 cp apps/game-server/env.example apps/game-server/.env
@@ -90,7 +161,7 @@ Required values:
 - `DATABASE_URL` - Will be set automatically by docker-compose
 - `SENTRY_DSN` - (Optional) Sentry DSN for error tracking
 
-### 3.4 Database Package Environment
+### 4.4 Database Package Environment
 
 ```bash
 cp packages/db/env.example packages/db/.env
@@ -102,7 +173,7 @@ Set `DATABASE_URL` to match your Postgres connection:
 DATABASE_URL=postgres://app:YOUR_PASSWORD@localhost:5432/appdb
 ```
 
-## Step 4: Set Up Supabase Authentication
+## Step 5: Set Up Supabase Authentication
 
 1. Create a Supabase project at https://supabase.com
 2. Go to Settings → API and copy:
@@ -114,9 +185,9 @@ DATABASE_URL=postgres://app:YOUR_PASSWORD@localhost:5432/appdb
    - Set callback URL: `https://<project-ref>.supabase.co/auth/v1/callback`
    - Add your GitHub OAuth App Client ID and Secret
 
-## Step 5: Deploy the Application
+## Step 6: Deploy the Application
 
-### 5.1 Run the Deployment Script
+### 6.1 Run the Deployment Script
 
 ```bash
 chmod +x infra/deploy-ubuntu.sh
@@ -130,7 +201,7 @@ This script will:
 - Build and start the web application and game server
 - Optionally start Cloudflare Tunnel (if configured)
 
-### 5.2 Verify Services are Running
+### 6.2 Verify Services are Running
 
 ```bash
 docker compose -f infra/docker-compose.yml ps
@@ -142,7 +213,7 @@ You should see:
 - `skjoldjasper-game-server` - Running
 - `skjoldjasper-cloudflared` - Running (if configured)
 
-### 5.3 Check Logs
+### 6.3 Check Logs
 
 ```bash
 # View all logs
@@ -153,7 +224,7 @@ docker compose -f infra/docker-compose.yml logs -f web
 docker compose -f infra/docker-compose.yml logs -f game-server
 ```
 
-## Step 6: Configure Firewall (if needed)
+## Step 7: Configure Firewall (if needed)
 
 If you're exposing services directly (not using Cloudflare Tunnel):
 
@@ -169,7 +240,7 @@ sudo ufw allow 2567/tcp
 sudo ufw enable
 ```
 
-## Step 7: Set Up Cloudflare Tunnel (Optional but Recommended)
+## Step 8: Set Up Cloudflare Tunnel (Optional but Recommended)
 
 1. Install Cloudflare Tunnel on your server or use the Docker container (already configured)
 2. Create a tunnel in Cloudflare Zero Trust dashboard
@@ -182,9 +253,9 @@ sudo ufw enable
    docker compose -f infra/docker-compose.yml up -d cloudflared
    ```
 
-## Step 8: Set Up Backups (Optional)
+## Step 9: Set Up Backups (Optional)
 
-### 8.1 Configure pgBackRest with Cloudflare R2
+### 9.1 Configure pgBackRest with Cloudflare R2
 
 1. Create a Cloudflare R2 bucket
 2. Create R2 API tokens with read/write permissions
@@ -197,7 +268,7 @@ sudo ufw enable
    PGBACKREST_REPO1_S3_REGION=auto
    ```
 
-### 8.2 Initialize Backups
+### 9.2 Initialize Backups
 
 ```bash
 # Create stanza
@@ -212,7 +283,7 @@ docker compose -f infra/docker-compose.yml --env-file infra/.env run --rm pgback
 bash infra/scripts/pgbackrest-backup.sh full
 ```
 
-### 8.3 Set Up Automated Backups
+### 9.3 Set Up Automated Backups
 
 Add to crontab:
 ```bash
@@ -224,7 +295,7 @@ Add line for daily backups at 2 AM:
 0 2 * * * cd /path/to/skjoldjasper && bash infra/scripts/pgbackrest-backup.sh diff
 ```
 
-## Step 9: Update Deployment
+## Step 10: Update Deployment
 
 When you need to update the application:
 
