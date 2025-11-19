@@ -16,7 +16,7 @@ import * as dotenv from "dotenv";
 import app from "./app.config";
 
 dotenv.config();
-if (!Sentry.getCurrentHub().getClient()) {
+if (!Sentry.getClient()) {
   const dsn = process.env.SENTRY_DSN;
   if (dsn) {
     Sentry.init({ dsn, tracesSampleRate: 0.05 });
