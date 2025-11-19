@@ -5,6 +5,7 @@ services:
     build:
       context: ./postgres
       dockerfile: Dockerfile
+    restart: unless-stopped
     container_name: skjoldjasper-postgres
     command: [
       "postgres",
@@ -40,6 +41,7 @@ services:
     build:
       context: ..
       dockerfile: apps/web/Dockerfile
+    restart: unless-stopped
     container_name: skjoldjasper-web
     working_dir: /workspace
     env_file:
@@ -60,6 +62,7 @@ services:
     build:
       context: ..
       dockerfile: apps/game-server/Dockerfile
+    restart: unless-stopped
     container_name: skjoldjasper-game-server
     working_dir: /workspace
     environment:
@@ -75,6 +78,7 @@ services:
 
   cloudflared:
     image: cloudflare/cloudflared:latest
+    restart: unless-stopped
     container_name: skjoldjasper-cloudflared
     command: ["tunnel", "run", "--token", "${CLOUDFLARED_TUNNEL_TOKEN}"]
     env_file:
@@ -97,6 +101,7 @@ services:
       dockerfile: Dockerfile
     profiles: ["backup"]
     container_name: skjoldjasper-pgbackrest
+    restart: unless-stopped
     depends_on:
       postgres:
         condition: service_healthy
