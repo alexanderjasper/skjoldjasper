@@ -11,7 +11,7 @@ export const eventAppendSchema = z.object({
   type: z.string().min(1),
   version: z.number().int().nonnegative(),
   payload: z.unknown(),
-  metadata: z.record(z.any()).optional()
+  metadata: z.record(z.string(), z.any()).optional()
 });
 
 export type EventAppend = z.infer<typeof eventAppendSchema>;
