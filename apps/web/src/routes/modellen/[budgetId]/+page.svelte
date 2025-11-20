@@ -383,122 +383,139 @@
 </script>
 
 {#if data.notFound}
-  <div class="max-w-3xl mx-auto p-4">Budget ikke fundet.</div>
+  <div class="max-w-3xl mx-auto p-4 text-white">Budget ikke fundet.</div>
 {:else}
   <div class="max-w-5xl mx-auto p-4 space-y-8">
     <div class="flex items-center justify-between">
-      <h1 class="text-2xl font-semibold">{data.details?.state?.name}</h1>
-      <a class="text-blue-600 hover:underline" href="/modellen">Tilbage</a>
+      <h1 class="text-2xl font-semibold text-white">{data.details?.state?.name}</h1>
+      <a class="text-emerald-400 hover:text-emerald-300 transition" href="/modellen">Tilbage</a>
     </div>
 
-    <section class="rounded border">
-      <div class="p-4 border-b"><h2 class="text-lg font-medium">Oversigt</h2></div>
-      <div class="p-4 overflow-x-auto">
+    <section class="surface-panel p-0 overflow-hidden">
+      <div class="p-4 border-b border-slate-800">
+        <h2 class="text-lg font-medium text-white">Oversigt</h2>
+      </div>
+      <div class="p-4">
         {#if targetError}
-          <p class="text-sm text-red-600 mb-2">{targetError}</p>
+          <p class="text-sm text-red-400 mb-2">{targetError}</p>
         {/if}
-        <table class="min-w-full text-sm">
-          <thead>
-            <tr class="text-left">
-              <th class="py-2 pr-4">Kategori</th>
-              <th class="py-2 pr-4 text-right" style="width: 150px;">Mål</th>
-              <th class="py-2 pr-4 text-right" style="width: 150px;">Faktisk</th>
-            </tr>
-          </thead>
-          <tbody>
-            {#each overviewWithDepth as row}
-              <tr class="border-t">
-                <td class="py-2 pr-4">
-                  <span style="padding-left: {row.depth * 1.5}rem" class="inline-flex items-center">
-                    {#if row.depth > 0}
-                      <span class="text-gray-400 mr-2">└─</span>
-                    {/if}
-                    <span class:font-medium={row.depth === 0}>{row.categoryName}</span>
-                  </span>
-                </td>
-                <td 
-                  class="py-2 pr-4 {editingTarget !== row.categoryId && !row.isParent ? 'cursor-pointer hover:bg-gray-50' : ''}"
-                  style="width: 150px; text-align: right;"
-                  on:click={() => editingTarget !== row.categoryId && !row.isParent && startEditingTarget(row.categoryId, row.yearlyTarget)}
-                  role={editingTarget !== row.categoryId && !row.isParent ? "button" : undefined}
-                  tabindex={editingTarget !== row.categoryId && !row.isParent ? 0 : undefined}
-                  on:keydown={(e) => editingTarget !== row.categoryId && !row.isParent && e.key === 'Enter' && startEditingTarget(row.categoryId, row.yearlyTarget)}
-                >
-                  {#if editingTarget === row.categoryId}
-                    <div class="flex items-center justify-end gap-2" on:click={(e) => e.stopPropagation()} role="presentation">
-                      <input
-                        type="number"
-                        class="border rounded px-2 py-1 w-24 text-sm text-right"
-                        bind:value={targetValue[row.categoryId]}
-                        on:keydown={(e) => e.key === 'Enter' && saveTarget(row.categoryId)}
-                        on:keydown={(e) => e.key === 'Escape' && cancelEditingTarget()}
-                        disabled={savingTarget === row.categoryId}
-                      />
-                      <button
-                        class="px-2 py-1 bg-blue-600 text-white rounded text-xs disabled:opacity-50"
-                        on:click={(e) => { e.stopPropagation(); saveTarget(row.categoryId); }}
-                        disabled={savingTarget === row.categoryId}
-                      >
-                        {savingTarget === row.categoryId ? 'Gemmer...' : 'Gem'}
-                      </button>
-                      <button
-                        class="px-2 py-1 bg-gray-100 rounded text-xs"
-                        on:click={(e) => { e.stopPropagation(); cancelEditingTarget(); }}
-                        disabled={savingTarget === row.categoryId}
-                      >
-                        Annuller
-                      </button>
-                    </div>
-                  {:else}
-                    {#if row.isParent}
-                      {#if row.calculatedTarget !== undefined && row.calculatedTarget !== null}
-                        <span class="text-gray-600" title="Sum af underkategorier">{formatNumber(row.calculatedTarget)}</span>
-                      {:else}
-                        <span class="text-gray-400 italic">Ingen mål i underkategorier</span>
+        <div class="space-y-1">
+          {#each overviewWithDepth as row}
+            <div class="rounded-lg border border-slate-800 bg-slate-900/50 hover:bg-slate-800/70 transition" style="margin-left: {row.depth * 1.25}rem">
+              <div class="p-3 flex flex-col gap-2">
+                <div class="flex items-start justify-between gap-3">
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2">
+                      {#if row.depth > 0}
+                        <span class="text-slate-500 text-xs">└</span>
                       {/if}
-                    {:else if row.yearlyTarget !== undefined && row.yearlyTarget !== null}
-                      {formatNumber(row.yearlyTarget)}
+                      <span class="text-white {row.depth === 0 ? 'font-semibold' : 'font-medium'} truncate">
+                        {row.categoryName}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-3 text-sm">
+                  <div 
+                    class="flex flex-col {editingTarget !== row.categoryId && !row.isParent ? 'cursor-pointer' : ''}"
+                    on:click={() => editingTarget !== row.categoryId && !row.isParent && startEditingTarget(row.categoryId, row.yearlyTarget)}
+                    role={editingTarget !== row.categoryId && !row.isParent ? "button" : undefined}
+                    tabindex={editingTarget !== row.categoryId && !row.isParent ? 0 : undefined}
+                    on:keydown={(e) => editingTarget !== row.categoryId && !row.isParent && e.key === 'Enter' && startEditingTarget(row.categoryId, row.yearlyTarget)}
+                  >
+                    <span class="text-xs text-slate-400 uppercase tracking-wide">Mål</span>
+                    {#if editingTarget === row.categoryId}
+                      <div class="flex items-center gap-2 mt-1" on:click={(e) => e.stopPropagation()} role="presentation">
+                        <input
+                          type="number"
+                          class="flex-1 rounded-lg border border-slate-700 bg-slate-800 px-2 py-1 text-sm text-slate-100 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+                          bind:value={targetValue[row.categoryId]}
+                          on:keydown={(e) => e.key === 'Enter' && saveTarget(row.categoryId)}
+                          on:keydown={(e) => e.key === 'Escape' && cancelEditingTarget()}
+                          disabled={savingTarget === row.categoryId}
+                        />
+                        <button
+                          class="primary-button px-2 py-1 text-xs disabled:opacity-50"
+                          on:click={(e) => { e.stopPropagation(); saveTarget(row.categoryId); }}
+                          disabled={savingTarget === row.categoryId}
+                        >
+                          {savingTarget === row.categoryId ? '...' : '✓'}
+                        </button>
+                        <button
+                          class="secondary-button px-2 py-1 text-xs"
+                          on:click={(e) => { e.stopPropagation(); cancelEditingTarget(); }}
+                          disabled={savingTarget === row.categoryId}
+                        >
+                          ✕
+                        </button>
+                      </div>
                     {:else}
-                      <span class="text-gray-400 italic">Klik for at angive</span>
+                      <div class="text-white font-medium">
+                        {#if row.isParent}
+                          {#if row.calculatedTarget !== undefined && row.calculatedTarget !== null}
+                            <span class="text-slate-400" title="Sum af underkategorier">{formatNumber(row.calculatedTarget)}</span>
+                          {:else}
+                            <span class="text-slate-500 italic text-xs">Ingen mål</span>
+                          {/if}
+                        {:else if row.yearlyTarget !== undefined && row.yearlyTarget !== null}
+                          {formatNumber(row.yearlyTarget)}
+                        {:else}
+                          <span class="text-slate-500 italic text-xs">Klik for at angive</span>
+                        {/if}
+                      </div>
                     {/if}
-                  {/if}
-                </td>
-                <td class="py-2 pr-4" style="width: 150px; text-align: right;">
-                  {formatNumber(row.calculatedActual)}
-                </td>
-              </tr>
-            {/each}
-          </tbody>
-        </table>
+                  </div>
+                  
+                  <div class="flex flex-col">
+                    <span class="text-xs text-slate-400 uppercase tracking-wide">Faktisk</span>
+                    <div class="text-white font-medium mt-1">
+                      {formatNumber(row.calculatedActual)}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          {/each}
+        </div>
       </div>
     </section>
 
-    <section class="rounded border">
-      <div class="p-4 border-b"><h2 class="text-lg font-medium">Kategorier</h2></div>
+    <section class="surface-panel p-0 overflow-hidden">
+      <div class="p-4 border-b border-slate-800">
+        <h2 class="text-lg font-medium text-white">Kategorier</h2>
+      </div>
       <div class="p-4 space-y-4">
         <div class="flex flex-col gap-3 sm:flex-row">
-          <input class="flex-1 border rounded px-3 py-2" placeholder="Kategorinavn" bind:value={catName} />
-          <select class="border rounded px-3 py-2 w-64" bind:value={parentId}>
+          <input 
+            class="flex-1 rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-slate-100 placeholder-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50" 
+            placeholder="Kategorinavn" 
+            bind:value={catName} 
+          />
+          <select 
+            class="rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-slate-100 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 w-full sm:w-64" 
+            bind:value={parentId}
+          >
             <option value={null}>Ingen forælder</option>
             {#each Object.values(data.details?.state?.categories ?? {}) as c}
               {@const cat = c as Category}
               <option value={cat.id}>{cat.name}</option>
             {/each}
           </select>
-          <button class="px-4 py-2 bg-blue-600 text-white rounded" on:click={addCategory}>Tilføj</button>
+          <button class="primary-button px-4 py-2" on:click={addCategory}>Tilføj</button>
         </div>
         {#if addCatError}
-          <p class="text-sm text-red-600">{addCatError}</p>
+          <p class="text-sm text-red-400">{addCatError}</p>
         {/if}
         <div class="space-y-1">
           {#each flatCategories as cat}
-            <div class="flex items-center py-1" style="padding-left: {cat.depth * 2}rem">
+            <div class="flex items-center py-2 px-3 rounded-lg bg-slate-900/50" style="margin-left: {cat.depth * 1.25}rem">
               {#if cat.depth > 0}
-                <span class="text-gray-400 mr-2">└─</span>
+                <span class="text-slate-500 mr-2 text-xs">└</span>
               {/if}
-              <span class:font-medium={cat.depth === 0}>{cat.name}</span>
+              <span class="text-white {cat.depth === 0 ? 'font-semibold' : 'font-medium'}">{cat.name}</span>
               {#if cat.yearlyTarget}
-                <span class="ml-2 text-sm text-gray-500">(Mål: {formatNumber(cat.yearlyTarget)})</span>
+                <span class="ml-2 text-sm text-slate-400">(Mål: {formatNumber(cat.yearlyTarget)})</span>
               {/if}
             </div>
           {/each}
@@ -506,27 +523,29 @@
       </div>
     </section>
 
-    <section class="rounded border">
-      <div class="p-4 border-b"><h2 class="text-lg font-medium">Transaktioner</h2></div>
+    <section class="surface-panel p-0 overflow-hidden">
+      <div class="p-4 border-b border-slate-800">
+        <h2 class="text-lg font-medium text-white">Transaktioner</h2>
+      </div>
       <div class="p-4 space-y-4">
         {#if noteError}
-          <p class="text-sm text-red-600">{noteError}</p>
+          <p class="text-sm text-red-400">{noteError}</p>
         {/if}
         {#if splitError}
-          <p class="text-sm text-red-600">{splitError}</p>
+          <p class="text-sm text-red-400">{splitError}</p>
         {/if}
-        <ul class="divide-y">
+        <ul class="divide-y divide-slate-800">
           {#each Object.values(data.details?.state?.transactions ?? {}) as t}
             {@const tx = t as Transaction}
             {@const splits = data.details?.state?.splits?.[tx.id] ?? []}
             {@const note = data.details?.state?.notes?.[tx.id] ?? ''}
             <li class="py-3 space-y-3">
-              <div class="flex items-center justify-between gap-4">
+              <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div class="min-w-0 flex-1">
-                  <div class="font-medium truncate">{tx.description}</div>
-                  <div class="text-xs text-gray-500">{tx.date} · <span class="text-right inline-block min-w-[80px]">{formatNumber(tx.amount)}</span></div>
+                  <div class="font-medium text-white truncate">{tx.description}</div>
+                  <div class="text-xs text-slate-400">{tx.date} · <span class="text-right inline-block min-w-[80px]">{formatNumber(tx.amount)}</span></div>
                   {#if splits.length > 0}
-                    <div class="mt-2 text-xs">
+                    <div class="mt-2 text-xs text-slate-300">
                       <span class="font-medium">Opdelinger:</span>
                       {#each splits as split}
                         {@const cat = data.details?.state?.categories?.[split.categoryId] as Category | undefined}
@@ -537,14 +556,18 @@
                     </div>
                   {/if}
                   {#if note}
-                    <div class="mt-1 text-xs text-gray-600 italic">Note: {note}</div>
+                    <div class="mt-1 text-xs text-slate-400 italic">Note: {note}</div>
                   {/if}
                 </div>
-                <div class="flex items-center gap-2">
-                  <input class="border rounded px-2 py-1 text-sm w-32" placeholder="Note" bind:value={noteText[tx.id]} />
-                  <button class="px-3 py-1 bg-gray-100 rounded text-sm" on:click={() => saveNote(tx.id)}>Gem Note</button>
+                <div class="flex flex-wrap items-center gap-2">
+                  <input 
+                    class="rounded-lg border border-slate-700 bg-slate-800 px-2 py-1 text-sm text-slate-100 placeholder-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 w-full sm:w-32" 
+                    placeholder="Note" 
+                    bind:value={noteText[tx.id]} 
+                  />
+                  <button class="secondary-button px-3 py-1 text-sm" on:click={() => saveNote(tx.id)}>Gem Note</button>
                   <button
-                    class="px-3 py-1 bg-blue-600 text-white rounded text-sm"
+                    class="primary-button px-3 py-1 text-sm"
                     on:click={() => startEditingSplits(tx.id, tx.amount)}
                     disabled={editingSplits === tx.id}
                   >
@@ -553,12 +576,12 @@
                 </div>
               </div>
                   {#if editingSplits === tx.id}
-                <div class="ml-4 pl-4 border-l-2 border-blue-200 space-y-2">
-                  <div class="text-sm font-medium">Tildel opdelinger (I alt: {formatNumber(tx.amount)})</div>
+                <div class="ml-0 sm:ml-4 pl-0 sm:pl-4 border-l-2 border-emerald-500/30 space-y-2 mt-3">
+                  <div class="text-sm font-medium text-white">Tildel opdelinger (I alt: {formatNumber(tx.amount)})</div>
                   {#each splitRows as row, index}
-                    <div class="flex items-center gap-2">
+                    <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                       <select
-                        class="border rounded px-2 py-1 text-sm flex-1"
+                        class="rounded-lg border border-slate-700 bg-slate-800 px-2 py-1 text-sm text-slate-100 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 flex-1"
                         bind:value={row.categoryId}
                       >
                         <option value="">Vælg kategori</option>
@@ -570,13 +593,13 @@
                       <input
                         type="number"
                         step="0.01"
-                        class="border rounded px-2 py-1 text-sm w-24 text-right"
+                        class="rounded-lg border border-slate-700 bg-slate-800 px-2 py-1 text-sm text-slate-100 placeholder-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 w-full sm:w-24 text-right"
                         placeholder="Beløb"
                         bind:value={row.amount}
                       />
                       {#if splitRows.length > 1}
                         <button
-                          class="px-2 py-1 bg-red-100 text-red-700 rounded text-sm"
+                          class="px-2 py-1 bg-red-900/50 text-red-300 rounded-lg text-sm hover:bg-red-900/70 transition"
                           on:click={() => removeSplitRow(tx.id, index)}
                         >
                           Fjern
@@ -584,27 +607,27 @@
                       {/if}
                     </div>
                   {/each}
-                  <div class="flex items-center gap-2">
+                  <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2">
                     <button
-                      class="px-3 py-1 bg-gray-100 rounded text-sm"
+                      class="secondary-button px-3 py-1 text-sm"
                       on:click={() => addSplitRow(tx.id)}
                     >
                       Tilføj Opdeling
                     </button>
-                    <span class="text-sm {getRemainingAmount(tx.id, tx.amount) < 0 ? 'text-red-600' : getRemainingAmount(tx.id, tx.amount) > 0.01 ? 'text-orange-600' : 'text-green-600'}">
+                    <span class="text-sm {getRemainingAmount(tx.id, tx.amount) < 0 ? 'text-red-400' : getRemainingAmount(tx.id, tx.amount) > 0.01 ? 'text-orange-400' : 'text-emerald-400'}">
                       Resterende: <span class="text-right inline-block min-w-[80px]">{formatNumber(getRemainingAmount(tx.id, tx.amount))}</span>
                     </span>
                   </div>
-                  <div class="flex items-center gap-2">
+                  <div class="flex flex-wrap items-center gap-2">
                     <button
-                      class="px-3 py-1 bg-blue-600 text-white rounded text-sm disabled:opacity-50"
+                      class="primary-button px-3 py-1 text-sm disabled:opacity-50"
                       on:click={() => saveSplits(tx.id, tx.amount)}
                       disabled={savingSplits === tx.id}
                     >
                       {savingSplits === tx.id ? 'Gemmer...' : 'Gem Opdelinger'}
                     </button>
                     <button
-                      class="px-3 py-1 bg-gray-100 rounded text-sm"
+                      class="secondary-button px-3 py-1 text-sm"
                       on:click={cancelEditingSplits}
                       disabled={savingSplits === tx.id}
                     >
@@ -619,26 +642,33 @@
       </div>
     </section>
 
-    <section class="rounded border">
-      <div class="p-4 border-b"><h2 class="text-lg font-medium">Importer CSV</h2></div>
+    <section class="surface-panel p-0 overflow-hidden">
+      <div class="p-4 border-b border-slate-800">
+        <h2 class="text-lg font-medium text-white">Importer CSV</h2>
+      </div>
       <div class="p-4 space-y-3">
         {#if importError}
-          <p class="text-sm text-red-600">{importError}</p>
+          <p class="text-sm text-red-400">{importError}</p>
         {/if}
         {#if importMsg}
-          <p class="text-sm text-green-700">{importMsg}</p>
+          <p class="text-sm text-emerald-400">{importMsg}</p>
         {/if}
-        <textarea class="w-full border rounded p-2 font-mono text-sm" rows="8" bind:value={csvText} placeholder="Indsæt eksporteret CSV her..."></textarea>
-        <div class="flex gap-2">
-          <button class="px-4 py-2 bg-gray-100 rounded" on:click={previewImport}>Forhåndsvisning</button>
+        <textarea 
+          class="w-full rounded-lg border border-slate-700 bg-slate-800 p-3 font-mono text-sm text-slate-100 placeholder-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50" 
+          rows="8" 
+          bind:value={csvText} 
+          placeholder="Indsæt eksporteret CSV her..."
+        ></textarea>
+        <div class="flex flex-wrap gap-2">
+          <button class="secondary-button px-4 py-2" on:click={previewImport}>Forhåndsvisning</button>
           {#if duplicates.length > 0}
-            <button class="px-4 py-2 bg-blue-600 text-white rounded" on:click={importConfirmed}>Importer alligevel</button>
+            <button class="primary-button px-4 py-2" on:click={importConfirmed}>Importer alligevel</button>
           {/if}
         </div>
         {#if duplicates.length > 0}
-          <div class="rounded border p-3">
-            <p class="font-medium mb-2">Dubletter</p>
-            <ul class="text-sm list-disc pl-5">
+          <div class="rounded-lg border border-slate-700 bg-slate-900/50 p-3">
+            <p class="font-medium text-white mb-2">Dubletter</p>
+            <ul class="text-sm text-slate-300 list-disc pl-5">
               {#each duplicates as d}
                 <li>{d.date} · {d.description} · {d.amount}</li>
               {/each}
