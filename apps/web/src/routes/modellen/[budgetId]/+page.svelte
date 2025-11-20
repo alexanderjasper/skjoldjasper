@@ -387,15 +387,15 @@
 {#if data.notFound}
   <div class="max-w-3xl mx-auto p-4 text-slate-900">Budget ikke fundet.</div>
 {:else}
-  <div class="max-w-5xl mx-auto p-4 space-y-6">
+  <div class="max-w-5xl mx-auto p-4 md:p-6 space-y-4 md:space-y-6">
     <div class="flex items-center justify-between">
-      <h1 class="text-2xl font-semibold text-slate-900">{data.details?.state?.name}</h1>
-      <a class="text-emerald-600 hover:text-emerald-700 transition font-medium" href="/modellen">Tilbage</a>
+      <h1 class="text-xl md:text-2xl font-semibold text-slate-900">{data.details?.state?.name}</h1>
+      <a class="text-emerald-600 hover:text-emerald-700 transition font-medium text-sm md:text-base" href="/modellen">Tilbage</a>
     </div>
 
     <!-- Tabs -->
-    <div class="surface-panel p-0 overflow-hidden">
-      <div class="flex border-b border-slate-200 overflow-x-auto">
+    <div class="md:surface-panel md:p-0 md:overflow-hidden -mx-4 md:mx-0">
+      <div class="flex border-b border-slate-200 overflow-x-auto px-4 md:px-0">
         <button
           class="px-6 py-3 text-sm font-medium transition whitespace-nowrap {activeTab === 'overview' ? 'text-emerald-600 border-b-2 border-emerald-600' : 'text-slate-600 hover:text-slate-900'}"
           on:click={() => activeTab = 'overview'}
@@ -424,18 +424,16 @@
     </div>
 
     {#if activeTab === 'overview'}
-    <section class="surface-panel p-0 overflow-hidden">
-      <div class="p-4 border-b border-slate-200">
-        <h2 class="text-lg font-medium text-slate-900">Oversigt</h2>
-      </div>
-      <div class="p-4">
+    <section class="md:surface-panel md:p-0 md:overflow-hidden space-y-3 md:space-y-0">
+      <h2 class="text-lg font-medium text-slate-900 md:p-4 md:border-b md:border-slate-200">Oversigt</h2>
+      <div class="md:p-4 space-y-3 md:space-y-4">
         {#if targetError}
           <p class="text-sm text-red-600 mb-2">{targetError}</p>
         {/if}
         <div class="space-y-1">
           {#each overviewWithDepth as row}
-            <div class="rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition" style="margin-left: {row.depth * 1.25}rem">
-              <div class="p-3 flex flex-col gap-2">
+            <div class="rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition" style="margin-left: {row.depth * 0.75}rem">
+              <div class="p-2 md:p-3 flex flex-col gap-2">
                 <div class="flex items-start justify-between gap-3">
                   <div class="flex-1 min-w-0">
                     <div class="flex items-center gap-2">
@@ -516,11 +514,9 @@
     {/if}
 
     {#if activeTab === 'categories'}
-    <section class="surface-panel p-0 overflow-hidden">
-      <div class="p-4 border-b border-slate-200">
-        <h2 class="text-lg font-medium text-slate-900">Kategorier</h2>
-      </div>
-      <div class="p-4 space-y-4">
+    <section class="md:surface-panel md:p-0 md:overflow-hidden space-y-3 md:space-y-0">
+      <h2 class="text-lg font-medium text-slate-900 md:p-4 md:border-b md:border-slate-200">Kategorier</h2>
+      <div class="md:p-4 space-y-3 md:space-y-4">
         <div class="flex flex-col gap-3 sm:flex-row">
           <input 
             class="flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-100 placeholder-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50" 
@@ -544,7 +540,7 @@
         {/if}
         <div class="space-y-1">
           {#each flatCategories as cat}
-            <div class="flex items-center py-2 px-3 rounded-lg bg-slate-50/50" style="margin-left: {cat.depth * 1.25}rem">
+            <div class="flex items-center py-2 px-2 md:px-3 rounded-lg bg-slate-50/50" style="margin-left: {cat.depth * 0.75}rem">
               {#if cat.depth > 0}
                 <span class="text-slate-400 mr-2 text-xs">└</span>
               {/if}
@@ -560,11 +556,9 @@
     {/if}
 
     {#if activeTab === 'transactions'}
-    <section class="surface-panel p-0 overflow-hidden">
-      <div class="p-4 border-b border-slate-200">
-        <h2 class="text-lg font-medium text-slate-900">Transaktioner</h2>
-      </div>
-      <div class="p-4 space-y-4">
+    <section class="md:surface-panel md:p-0 md:overflow-hidden space-y-3 md:space-y-0">
+      <h2 class="text-lg font-medium text-slate-900 md:p-4 md:border-b md:border-slate-200">Transaktioner</h2>
+      <div class="md:p-4 space-y-3 md:space-y-4">
         {#if noteError}
           <p class="text-sm text-red-600">{noteError}</p>
         {/if}
@@ -681,11 +675,9 @@
     {/if}
 
     {#if activeTab === 'import'}
-    <section class="surface-panel p-0 overflow-hidden">
-      <div class="p-4 border-b border-slate-200">
-        <h2 class="text-lg font-medium text-slate-900">Importer CSV</h2>
-      </div>
-      <div class="p-4 space-y-3">
+    <section class="md:surface-panel md:p-0 md:overflow-hidden space-y-3 md:space-y-0">
+      <h2 class="text-lg font-medium text-slate-900 md:p-4 md:border-b md:border-slate-200">Importer CSV</h2>
+      <div class="md:p-4 space-y-3">
         {#if importError}
           <p class="text-sm text-red-600">{importError}</p>
         {/if}

@@ -35,10 +35,10 @@
   }
 </script>
 
-<div class="max-w-3xl mx-auto p-4 space-y-6">
+<div class="max-w-3xl mx-auto p-4 md:p-6 space-y-6">
   <h1 class="text-2xl font-semibold text-slate-900">Modellen</h1>
 
-  <section class="surface-panel space-y-3">
+  <section class="md:surface-panel space-y-3 md:space-y-4">
     <h2 class="text-lg font-medium text-slate-900">Opret nyt budget</h2>
     {#if error}
       <p class="text-sm text-red-600">{error}</p>
@@ -50,7 +50,7 @@
         bind:value={name}
         on:keydown={(e) => e.key === 'Enter' && createBudget()}
       />
-      <select class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 w-40" bind:value={currency}>
+      <select class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 w-full sm:w-40" bind:value={currency}>
         <option value="DKK">DKK</option>
       </select>
       <button class="primary-button px-4 py-2 disabled:opacity-50" disabled={loading} on:click={createBudget}>
@@ -59,16 +59,14 @@
     </div>
   </section>
 
-  <section class="surface-panel p-0 overflow-hidden">
-    <div class="p-4 border-b border-slate-200">
-      <h2 class="text-lg font-medium text-slate-900">Dine budgetter</h2>
-    </div>
+  <section class="md:surface-panel md:p-0 md:overflow-hidden space-y-3 md:space-y-0">
+    <h2 class="text-lg font-medium text-slate-900 md:p-4 md:border-b md:border-slate-200">Dine budgetter</h2>
     {#if data.budgets.length === 0}
-      <div class="p-4 text-slate-500">Ingen budgetter endnu.</div>
+      <div class="text-slate-500 md:p-4">Ingen budgetter endnu.</div>
     {:else}
-      <ul class="divide-y divide-slate-200">
+      <ul class="space-y-2 md:space-y-0 md:divide-y md:divide-slate-200">
         {#each data.budgets as b}
-          <li class="p-4 flex items-center justify-between hover:bg-slate-50 transition">
+          <li class="rounded-lg border border-slate-200 bg-white p-3 md:rounded-none md:border-0 md:p-4 flex items-center justify-between hover:bg-slate-50 transition">
             <div>
               <div class="font-medium text-slate-900">{b.name}</div>
               <div class="text-sm text-slate-600">{b.currency}</div>
