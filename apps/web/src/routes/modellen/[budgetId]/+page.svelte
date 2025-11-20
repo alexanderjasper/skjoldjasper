@@ -385,37 +385,37 @@
 </script>
 
 {#if data.notFound}
-  <div class="max-w-3xl mx-auto p-4 text-white">Budget ikke fundet.</div>
+  <div class="max-w-3xl mx-auto p-4 text-slate-900">Budget ikke fundet.</div>
 {:else}
   <div class="max-w-5xl mx-auto p-4 space-y-6">
     <div class="flex items-center justify-between">
-      <h1 class="text-2xl font-semibold text-white">{data.details?.state?.name}</h1>
-      <a class="text-emerald-400 hover:text-emerald-300 transition" href="/modellen">Tilbage</a>
+      <h1 class="text-2xl font-semibold text-slate-900">{data.details?.state?.name}</h1>
+      <a class="text-emerald-600 hover:text-emerald-700 transition font-medium" href="/modellen">Tilbage</a>
     </div>
 
     <!-- Tabs -->
     <div class="surface-panel p-0 overflow-hidden">
-      <div class="flex border-b border-slate-800 overflow-x-auto">
+      <div class="flex border-b border-slate-200 overflow-x-auto">
         <button
-          class="px-6 py-3 text-sm font-medium transition whitespace-nowrap {activeTab === 'overview' ? 'text-emerald-400 border-b-2 border-emerald-400' : 'text-slate-400 hover:text-slate-200'}"
+          class="px-6 py-3 text-sm font-medium transition whitespace-nowrap {activeTab === 'overview' ? 'text-emerald-600 border-b-2 border-emerald-600' : 'text-slate-600 hover:text-slate-900'}"
           on:click={() => activeTab = 'overview'}
         >
           Oversigt
         </button>
         <button
-          class="px-6 py-3 text-sm font-medium transition whitespace-nowrap {activeTab === 'categories' ? 'text-emerald-400 border-b-2 border-emerald-400' : 'text-slate-400 hover:text-slate-200'}"
+          class="px-6 py-3 text-sm font-medium transition whitespace-nowrap {activeTab === 'categories' ? 'text-emerald-600 border-b-2 border-emerald-600' : 'text-slate-600 hover:text-slate-900'}"
           on:click={() => activeTab = 'categories'}
         >
           Kategorier
         </button>
         <button
-          class="px-6 py-3 text-sm font-medium transition whitespace-nowrap {activeTab === 'transactions' ? 'text-emerald-400 border-b-2 border-emerald-400' : 'text-slate-400 hover:text-slate-200'}"
+          class="px-6 py-3 text-sm font-medium transition whitespace-nowrap {activeTab === 'transactions' ? 'text-emerald-600 border-b-2 border-emerald-600' : 'text-slate-600 hover:text-slate-900'}"
           on:click={() => activeTab = 'transactions'}
         >
           Transaktioner
         </button>
         <button
-          class="px-6 py-3 text-sm font-medium transition whitespace-nowrap {activeTab === 'import' ? 'text-emerald-400 border-b-2 border-emerald-400' : 'text-slate-400 hover:text-slate-200'}"
+          class="px-6 py-3 text-sm font-medium transition whitespace-nowrap {activeTab === 'import' ? 'text-emerald-600 border-b-2 border-emerald-600' : 'text-slate-600 hover:text-slate-900'}"
           on:click={() => activeTab = 'import'}
         >
           Importer CSV
@@ -425,24 +425,24 @@
 
     {#if activeTab === 'overview'}
     <section class="surface-panel p-0 overflow-hidden">
-      <div class="p-4 border-b border-slate-800">
-        <h2 class="text-lg font-medium text-white">Oversigt</h2>
+      <div class="p-4 border-b border-slate-200">
+        <h2 class="text-lg font-medium text-slate-900">Oversigt</h2>
       </div>
       <div class="p-4">
         {#if targetError}
-          <p class="text-sm text-red-400 mb-2">{targetError}</p>
+          <p class="text-sm text-red-600 mb-2">{targetError}</p>
         {/if}
         <div class="space-y-1">
           {#each overviewWithDepth as row}
-            <div class="rounded-lg border border-slate-800 bg-slate-900/50 hover:bg-slate-800/70 transition" style="margin-left: {row.depth * 1.25}rem">
+            <div class="rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition" style="margin-left: {row.depth * 1.25}rem">
               <div class="p-3 flex flex-col gap-2">
                 <div class="flex items-start justify-between gap-3">
                   <div class="flex-1 min-w-0">
                     <div class="flex items-center gap-2">
                       {#if row.depth > 0}
-                        <span class="text-slate-500 text-xs">└</span>
+                        <span class="text-slate-600 text-xs">└</span>
                       {/if}
-                      <span class="text-white {row.depth === 0 ? 'font-semibold' : 'font-medium'} truncate">
+                      <span class="text-slate-900 {row.depth === 0 ? 'font-semibold' : 'font-medium'} truncate">
                         {row.categoryName}
                       </span>
                     </div>
@@ -457,12 +457,12 @@
                     tabindex={editingTarget !== row.categoryId && !row.isParent ? 0 : undefined}
                     on:keydown={(e) => editingTarget !== row.categoryId && !row.isParent && e.key === 'Enter' && startEditingTarget(row.categoryId, row.yearlyTarget)}
                   >
-                    <span class="text-xs text-slate-400 uppercase tracking-wide">Mål</span>
+                    <span class="text-xs text-slate-600 uppercase tracking-wide">Mål</span>
                     {#if editingTarget === row.categoryId}
                       <div class="flex items-center gap-2 mt-1" on:click={(e) => e.stopPropagation()} role="presentation">
                         <input
                           type="number"
-                          class="flex-1 rounded-lg border border-slate-700 bg-slate-800 px-2 py-1 text-sm text-slate-100 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+                          class="flex-1 rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm text-slate-100 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
                           bind:value={targetValue[row.categoryId]}
                           on:keydown={(e) => e.key === 'Enter' && saveTarget(row.categoryId)}
                           on:keydown={(e) => e.key === 'Escape' && cancelEditingTarget()}
@@ -484,25 +484,25 @@
                         </button>
                       </div>
                     {:else}
-                      <div class="text-white font-medium">
+                      <div class="text-slate-900 font-medium">
                         {#if row.isParent}
                           {#if row.calculatedTarget !== undefined && row.calculatedTarget !== null}
-                            <span class="text-slate-400" title="Sum af underkategorier">{formatNumber(row.calculatedTarget)}</span>
+                            <span class="text-slate-600" title="Sum af underkategorier">{formatNumber(row.calculatedTarget)}</span>
                           {:else}
-                            <span class="text-slate-500 italic text-xs">Ingen mål</span>
+                            <span class="text-slate-400 italic text-xs">Ingen mål</span>
                           {/if}
                         {:else if row.yearlyTarget !== undefined && row.yearlyTarget !== null}
                           {formatNumber(row.yearlyTarget)}
                         {:else}
-                          <span class="text-slate-500 italic text-xs">Klik for at angive</span>
+                          <span class="text-slate-400 italic text-xs">Klik for at angive</span>
                         {/if}
                       </div>
                     {/if}
                   </div>
                   
                   <div class="flex flex-col">
-                    <span class="text-xs text-slate-400 uppercase tracking-wide">Faktisk</span>
-                    <div class="text-white font-medium mt-1">
+                    <span class="text-xs text-slate-600 uppercase tracking-wide">Faktisk</span>
+                    <div class="text-slate-900 font-medium mt-1">
                       {formatNumber(row.calculatedActual)}
                     </div>
                   </div>
@@ -517,18 +517,18 @@
 
     {#if activeTab === 'categories'}
     <section class="surface-panel p-0 overflow-hidden">
-      <div class="p-4 border-b border-slate-800">
-        <h2 class="text-lg font-medium text-white">Kategorier</h2>
+      <div class="p-4 border-b border-slate-200">
+        <h2 class="text-lg font-medium text-slate-900">Kategorier</h2>
       </div>
       <div class="p-4 space-y-4">
         <div class="flex flex-col gap-3 sm:flex-row">
           <input 
-            class="flex-1 rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-slate-100 placeholder-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50" 
+            class="flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-100 placeholder-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50" 
             placeholder="Kategorinavn" 
             bind:value={catName} 
           />
           <select 
-            class="rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-slate-100 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 w-full sm:w-64" 
+            class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-100 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 w-full sm:w-64" 
             bind:value={parentId}
           >
             <option value={null}>Ingen forælder</option>
@@ -540,17 +540,17 @@
           <button class="primary-button px-4 py-2" on:click={addCategory}>Tilføj</button>
         </div>
         {#if addCatError}
-          <p class="text-sm text-red-400">{addCatError}</p>
+          <p class="text-sm text-red-600">{addCatError}</p>
         {/if}
         <div class="space-y-1">
           {#each flatCategories as cat}
-            <div class="flex items-center py-2 px-3 rounded-lg bg-slate-900/50" style="margin-left: {cat.depth * 1.25}rem">
+            <div class="flex items-center py-2 px-3 rounded-lg bg-slate-50/50" style="margin-left: {cat.depth * 1.25}rem">
               {#if cat.depth > 0}
-                <span class="text-slate-500 mr-2 text-xs">└</span>
+                <span class="text-slate-400 mr-2 text-xs">└</span>
               {/if}
-              <span class="text-white {cat.depth === 0 ? 'font-semibold' : 'font-medium'}">{cat.name}</span>
+              <span class="text-slate-900 {cat.depth === 0 ? 'font-semibold' : 'font-medium'}">{cat.name}</span>
               {#if cat.yearlyTarget}
-                <span class="ml-2 text-sm text-slate-400">(Mål: {formatNumber(cat.yearlyTarget)})</span>
+                <span class="ml-2 text-sm text-slate-600">(Mål: {formatNumber(cat.yearlyTarget)})</span>
               {/if}
             </div>
           {/each}
@@ -561,15 +561,15 @@
 
     {#if activeTab === 'transactions'}
     <section class="surface-panel p-0 overflow-hidden">
-      <div class="p-4 border-b border-slate-800">
-        <h2 class="text-lg font-medium text-white">Transaktioner</h2>
+      <div class="p-4 border-b border-slate-200">
+        <h2 class="text-lg font-medium text-slate-900">Transaktioner</h2>
       </div>
       <div class="p-4 space-y-4">
         {#if noteError}
-          <p class="text-sm text-red-400">{noteError}</p>
+          <p class="text-sm text-red-600">{noteError}</p>
         {/if}
         {#if splitError}
-          <p class="text-sm text-red-400">{splitError}</p>
+          <p class="text-sm text-red-600">{splitError}</p>
         {/if}
         <ul class="divide-y divide-slate-800">
           {#each Object.values(data.details?.state?.transactions ?? {}) as t}
@@ -579,10 +579,10 @@
             <li class="py-3 space-y-3">
               <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div class="min-w-0 flex-1">
-                  <div class="font-medium text-white truncate">{tx.description}</div>
-                  <div class="text-xs text-slate-400">{tx.date} · <span class="text-right inline-block min-w-[80px]">{formatNumber(tx.amount)}</span></div>
+                  <div class="font-medium text-slate-900 truncate">{tx.description}</div>
+                  <div class="text-xs text-slate-600">{tx.date} · <span class="text-right inline-block min-w-[80px]">{formatNumber(tx.amount)}</span></div>
                   {#if splits.length > 0}
-                    <div class="mt-2 text-xs text-slate-300">
+                    <div class="mt-2 text-xs text-slate-700">
                       <span class="font-medium">Opdelinger:</span>
                       {#each splits as split}
                         {@const cat = data.details?.state?.categories?.[split.categoryId] as Category | undefined}
@@ -593,12 +593,12 @@
                     </div>
                   {/if}
                   {#if note}
-                    <div class="mt-1 text-xs text-slate-400 italic">Note: {note}</div>
+                    <div class="mt-1 text-xs text-slate-600 italic">Note: {note}</div>
                   {/if}
                 </div>
                 <div class="flex flex-wrap items-center gap-2">
                   <input 
-                    class="rounded-lg border border-slate-700 bg-slate-800 px-2 py-1 text-sm text-slate-100 placeholder-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 w-full sm:w-32" 
+                    class="rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm text-slate-100 placeholder-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 w-full sm:w-32" 
                     placeholder="Note" 
                     bind:value={noteText[tx.id]} 
                   />
@@ -614,11 +614,11 @@
               </div>
                   {#if editingSplits === tx.id}
                 <div class="ml-0 sm:ml-4 pl-0 sm:pl-4 border-l-2 border-emerald-500/30 space-y-2 mt-3">
-                  <div class="text-sm font-medium text-white">Tildel opdelinger (I alt: {formatNumber(tx.amount)})</div>
+                  <div class="text-sm font-medium text-slate-900">Tildel opdelinger (I alt: {formatNumber(tx.amount)})</div>
                   {#each splitRows as row, index}
                     <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                       <select
-                        class="rounded-lg border border-slate-700 bg-slate-800 px-2 py-1 text-sm text-slate-100 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 flex-1"
+                        class="rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm text-slate-100 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 flex-1"
                         bind:value={row.categoryId}
                       >
                         <option value="">Vælg kategori</option>
@@ -630,7 +630,7 @@
                       <input
                         type="number"
                         step="0.01"
-                        class="rounded-lg border border-slate-700 bg-slate-800 px-2 py-1 text-sm text-slate-100 placeholder-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 w-full sm:w-24 text-right"
+                        class="rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm text-slate-100 placeholder-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 w-full sm:w-24 text-right"
                         placeholder="Beløb"
                         bind:value={row.amount}
                       />
@@ -651,7 +651,7 @@
                     >
                       Tilføj Opdeling
                     </button>
-                    <span class="text-sm {getRemainingAmount(tx.id, tx.amount) < 0 ? 'text-red-400' : getRemainingAmount(tx.id, tx.amount) > 0.01 ? 'text-orange-400' : 'text-emerald-400'}">
+                    <span class="text-sm {getRemainingAmount(tx.id, tx.amount) < 0 ? 'text-red-600' : getRemainingAmount(tx.id, tx.amount) > 0.01 ? 'text-orange-400' : 'text-emerald-600'}">
                       Resterende: <span class="text-right inline-block min-w-[80px]">{formatNumber(getRemainingAmount(tx.id, tx.amount))}</span>
                     </span>
                   </div>
@@ -682,18 +682,18 @@
 
     {#if activeTab === 'import'}
     <section class="surface-panel p-0 overflow-hidden">
-      <div class="p-4 border-b border-slate-800">
-        <h2 class="text-lg font-medium text-white">Importer CSV</h2>
+      <div class="p-4 border-b border-slate-200">
+        <h2 class="text-lg font-medium text-slate-900">Importer CSV</h2>
       </div>
       <div class="p-4 space-y-3">
         {#if importError}
-          <p class="text-sm text-red-400">{importError}</p>
+          <p class="text-sm text-red-600">{importError}</p>
         {/if}
         {#if importMsg}
-          <p class="text-sm text-emerald-400">{importMsg}</p>
+          <p class="text-sm text-emerald-600">{importMsg}</p>
         {/if}
         <textarea 
-          class="w-full rounded-lg border border-slate-700 bg-slate-800 p-3 font-mono text-sm text-slate-100 placeholder-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50" 
+          class="w-full rounded-lg border border-slate-300 bg-white p-3 font-mono text-sm text-slate-100 placeholder-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50" 
           rows="8" 
           bind:value={csvText} 
           placeholder="Indsæt eksporteret CSV her..."
@@ -705,9 +705,9 @@
           {/if}
         </div>
         {#if duplicates.length > 0}
-          <div class="rounded-lg border border-slate-700 bg-slate-900/50 p-3">
-            <p class="font-medium text-white mb-2">Dubletter</p>
-            <ul class="text-sm text-slate-300 list-disc pl-5">
+          <div class="rounded-lg border border-slate-300 bg-slate-50/50 p-3">
+            <p class="font-medium text-slate-900 mb-2">Dubletter</p>
+            <ul class="text-sm text-slate-700 list-disc pl-5">
               {#each duplicates as d}
                 <li>{d.date} · {d.description} · {d.amount}</li>
               {/each}
