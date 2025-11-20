@@ -28,6 +28,8 @@
   let splitError = '';
   let savingSplits: string | null = null;
 
+  let activeTab: 'overview' | 'categories' | 'transactions' | 'import' = 'overview';
+
   type Category = { id: string; name: string; parentId: string | null; yearlyTarget?: number };
   type CategoryTree = Category & { children: CategoryTree[] };
   type FlatCategory = Category & { depth: number };
@@ -385,12 +387,43 @@
 {#if data.notFound}
   <div class="max-w-3xl mx-auto p-4 text-white">Budget ikke fundet.</div>
 {:else}
-  <div class="max-w-5xl mx-auto p-4 space-y-8">
+  <div class="max-w-5xl mx-auto p-4 space-y-6">
     <div class="flex items-center justify-between">
       <h1 class="text-2xl font-semibold text-white">{data.details?.state?.name}</h1>
       <a class="text-emerald-400 hover:text-emerald-300 transition" href="/modellen">Tilbage</a>
     </div>
 
+    <!-- Tabs -->
+    <div class="surface-panel p-0 overflow-hidden">
+      <div class="flex border-b border-slate-800 overflow-x-auto">
+        <button
+          class="px-6 py-3 text-sm font-medium transition whitespace-nowrap {activeTab === 'overview' ? 'text-emerald-400 border-b-2 border-emerald-400' : 'text-slate-400 hover:text-slate-200'}"
+          on:click={() => activeTab = 'overview'}
+        >
+          Oversigt
+        </button>
+        <button
+          class="px-6 py-3 text-sm font-medium transition whitespace-nowrap {activeTab === 'categories' ? 'text-emerald-400 border-b-2 border-emerald-400' : 'text-slate-400 hover:text-slate-200'}"
+          on:click={() => activeTab = 'categories'}
+        >
+          Kategorier
+        </button>
+        <button
+          class="px-6 py-3 text-sm font-medium transition whitespace-nowrap {activeTab === 'transactions' ? 'text-emerald-400 border-b-2 border-emerald-400' : 'text-slate-400 hover:text-slate-200'}"
+          on:click={() => activeTab = 'transactions'}
+        >
+          Transaktioner
+        </button>
+        <button
+          class="px-6 py-3 text-sm font-medium transition whitespace-nowrap {activeTab === 'import' ? 'text-emerald-400 border-b-2 border-emerald-400' : 'text-slate-400 hover:text-slate-200'}"
+          on:click={() => activeTab = 'import'}
+        >
+          Importer CSV
+        </button>
+      </div>
+    </div>
+
+    {#if activeTab === 'overview'}
     <section class="surface-panel p-0 overflow-hidden">
       <div class="p-4 border-b border-slate-800">
         <h2 class="text-lg font-medium text-white">Oversigt</h2>
@@ -480,7 +513,9 @@
         </div>
       </div>
     </section>
+    {/if}
 
+    {#if activeTab === 'categories'}
     <section class="surface-panel p-0 overflow-hidden">
       <div class="p-4 border-b border-slate-800">
         <h2 class="text-lg font-medium text-white">Kategorier</h2>
@@ -522,7 +557,9 @@
         </div>
       </div>
     </section>
+    {/if}
 
+    {#if activeTab === 'transactions'}
     <section class="surface-panel p-0 overflow-hidden">
       <div class="p-4 border-b border-slate-800">
         <h2 class="text-lg font-medium text-white">Transaktioner</h2>
@@ -641,7 +678,9 @@
         </ul>
       </div>
     </section>
+    {/if}
 
+    {#if activeTab === 'import'}
     <section class="surface-panel p-0 overflow-hidden">
       <div class="p-4 border-b border-slate-800">
         <h2 class="text-lg font-medium text-white">Importer CSV</h2>
@@ -677,5 +716,6 @@
         {/if}
       </div>
     </section>
+    {/if}
   </div>
 {/if}
