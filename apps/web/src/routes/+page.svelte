@@ -9,7 +9,7 @@
 	<section class="flex min-h-[60vh] items-center justify-center px-4">
 		<div class="surface-panel max-w-md text-center">
 			<div class="space-y-3">
-				<h1 class="text-3xl font-bold text-white">Velkommen til skjoldjasper</h1>
+				<h1 class="text-3xl font-bold text-white">Velkommen til Skjold Jasper</h1>
 				<p class="text-slate-400">Log ind for at fortsætte</p>
 			</div>
 			<div class="mt-8 flex flex-col gap-3">
