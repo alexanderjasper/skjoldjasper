@@ -36,21 +36,21 @@
 </script>
 
 <div class="max-w-3xl mx-auto p-4 space-y-6">
-  <h1 class="text-2xl font-semibold text-white">Modellen</h1>
+  <h1 class="text-2xl font-semibold text-slate-900">Modellen</h1>
 
   <section class="surface-panel space-y-3">
-    <h2 class="text-lg font-medium text-white">Opret nyt budget</h2>
+    <h2 class="text-lg font-medium text-slate-900">Opret nyt budget</h2>
     {#if error}
-      <p class="text-sm text-red-400">{error}</p>
+      <p class="text-sm text-red-600">{error}</p>
     {/if}
     <div class="flex flex-col gap-3 sm:flex-row">
       <input
-        class="flex-1 rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-slate-100 placeholder-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+        class="flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 placeholder-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
         placeholder="Budgetnavn (f.eks. 2025)"
         bind:value={name}
         on:keydown={(e) => e.key === 'Enter' && createBudget()}
       />
-      <select class="rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-slate-100 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 w-40" bind:value={currency}>
+      <select class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 w-40" bind:value={currency}>
         <option value="DKK">DKK</option>
       </select>
       <button class="primary-button px-4 py-2 disabled:opacity-50" disabled={loading} on:click={createBudget}>
@@ -60,18 +60,18 @@
   </section>
 
   <section class="surface-panel p-0 overflow-hidden">
-    <div class="p-4 border-b border-slate-800">
-      <h2 class="text-lg font-medium text-white">Dine budgetter</h2>
+    <div class="p-4 border-b border-slate-200">
+      <h2 class="text-lg font-medium text-slate-900">Dine budgetter</h2>
     </div>
     {#if data.budgets.length === 0}
-      <div class="p-4 text-slate-400">Ingen budgetter endnu.</div>
+      <div class="p-4 text-slate-500">Ingen budgetter endnu.</div>
     {:else}
-      <ul class="divide-y divide-slate-800">
+      <ul class="divide-y divide-slate-200">
         {#each data.budgets as b}
-          <li class="p-4 flex items-center justify-between hover:bg-slate-800/50 transition">
+          <li class="p-4 flex items-center justify-between hover:bg-slate-50 transition">
             <div>
-              <div class="font-medium text-white">{b.name}</div>
-              <div class="text-sm text-slate-400">{b.currency}</div>
+              <div class="font-medium text-slate-900">{b.name}</div>
+              <div class="text-sm text-slate-600">{b.currency}</div>
             </div>
             <a class="secondary-button px-3 py-1 text-sm" href={`/modellen/${encodeURIComponent(b.streamId)}`}>Åbn</a>
           </li>
