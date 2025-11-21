@@ -29,7 +29,7 @@ export default defineConfig({
 			'Cache-Control': 'no-store'
 		},
 		allowedHosts: [
-			'app.spilspurt.dk',
+			'skjoldjasper.dk',
 			'localhost'
 		]
 	}
