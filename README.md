@@ -1,12 +1,12 @@
 # skjoldjasper
 
-Monorepo for a SvelteKit app with Supabase Auth, Postgres + pgBackRest backups, and a CQRS/ES
+Monorepo for a SvelteKit app Postgres + pgBackRest backups, and a CQRS/ES
 foundation using Drizzle ORM.
 
 ## Layout
 
 - `apps/` — every bounded context (web, projector, game-server). Domain logic stays here.
-    - `apps/web` — SvelteKit + Tailwind with Supabase Auth (GitHub), hosts finance domain logic
+    - `apps/web` — SvelteKit + Tailwind, hosts finance domain logic
       under `src/lib/server`
     - `apps/projector` — applies events into read models per context (finance handler, etc.)
     - `apps/game-server` — Colyseus server; game rules/rooms live here, not in shared packages
@@ -62,7 +62,7 @@ pnpm --dir apps/web dev   # or use the "SvelteKit Dev (inspect)" launch config
 pnpm dev
 
 # Validate required env
-pnpm check:env
+pnpm** check:env
 ```
 
 ### Windows Server Deployment
@@ -114,21 +114,9 @@ Endpoints:
 
 ## Web (apps/web)
 
-Env: copy `apps/web/env.example` to `apps/web/.env` and set your Supabase values
-
-- `PUBLIC_SUPABASE_URL`
-- `PUBLIC_SUPABASE_ANON_KEY`
-
 Debugging in Cursor:
 - Added `.vscode/launch.json` → "SvelteKit Dev (inspect)"; or run `pnpm --dir apps/web dev:inspect`
 - Set breakpoints inside `<script>` blocks for reliable binding
-
-## Auth (Supabase)
-
-- Create a Supabase project → Settings → API → copy Project URL and anon key to `apps/web/.env`
-- Enable GitHub provider and set callback:
-  - Callback URL: `https://<project-ref>.supabase.co/auth/v1/callback`
-  - Paste GitHub OAuth Client ID/Secret into Supabase
 
 ## Database (packages/db)
 

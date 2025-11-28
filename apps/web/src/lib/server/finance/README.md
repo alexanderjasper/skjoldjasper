@@ -16,7 +16,7 @@ High-level overview of the finance/budgeting bounded context.
 
 - Event Sourcing + CQRS: commands append events; a projector updates snapshots for fast reads
 - Postgres stores events (event store) and read snapshots (aggregate snapshots)
-- SvelteKit for UI and APIs; Supabase Auth (GitHub) for authentication
+- SvelteKit for UI and APIs
 - Domain logic lives in `apps/web`; infra-only code lives in `packages/`
 
 ## Where things live (at a glance)
