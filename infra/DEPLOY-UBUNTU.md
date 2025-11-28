@@ -7,7 +7,6 @@ This guide will help you deploy the skjoldjasper project on a fresh Ubuntu Serve
 - Ubuntu Server (22.04 LTS or later recommended)
 - SSH access to the server
 - A domain name (optional, for Cloudflare Tunnel)
-- Supabase account (for authentication)
 
 ## Step 1: Initial Server Setup
 
@@ -147,8 +146,6 @@ nano apps/web/.env
 Required values:
 
 - `DATABASE_URL` - Will be set automatically by docker-compose, but you can override
-- `PUBLIC_SUPABASE_URL` - Your Supabase project URL
-- `PUBLIC_SUPABASE_ANON_KEY` - Your Supabase anon key
 - `PUBLIC_GAME_SERVER_WS` - WebSocket URL for game server (e.g., `ws://your-domain:2567` or
   `wss://ws.your-domain` if using Cloudflare Tunnel)
 - `ALLOWED_ORIGINS` - Comma-separated list of allowed origins (e.g., `https://app.your-domain`)
@@ -177,18 +174,6 @@ Set `DATABASE_URL` to match your Postgres connection:
 ```
 DATABASE_URL=postgres://app:YOUR_PASSWORD@localhost:5432/appdb
 ```
-
-## Step 5: Set Up Supabase Authentication
-
-1. Create a Supabase project at https://supabase.com
-2. Go to Settings → API and copy:
-    - Project URL → `PUBLIC_SUPABASE_URL`
-    - anon/public key → `PUBLIC_SUPABASE_ANON_KEY`
-3. Enable GitHub OAuth provider:
-    - Go to Authentication → Providers → GitHub
-    - Enable GitHub provider
-    - Set callback URL: `https://<project-ref>.supabase.co/auth/v1/callback`
-    - Add your GitHub OAuth App Client ID and Secret
 
 ## Step 6: Deploy the Application
 
