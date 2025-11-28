@@ -30,7 +30,8 @@
             });
             if (!res.ok) {
                 const j = await res.json().catch(() => ({}));
-                throw new Error(j?.error ?? 'Kunne ikke oprette budget');
+                error = j?.error ?? 'Kunne ikke oprette budget';
+                return;
             }
             const {id} = await res.json();
             window.location.href = `/modellen/${encodeURIComponent(id)}`;
