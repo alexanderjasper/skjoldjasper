@@ -85,6 +85,8 @@
 
     $: categoryTree = data.details?.state?.categories ? buildCategoryTree(data.details.state.categories) : [];
     $: flatCategories = flattenTree(categoryTree);
+    $: categories = Object.values(data.details?.state?.categories ?? {}) as Category[];
+    $: transactions = Object.values(data.details?.state?.transactions ?? {}) as Transaction[];
 
     function computeDepth(item: { categoryId: string; parentId: string | null }, allItems: Array<{
         categoryId: string;
@@ -396,6 +398,7 @@
             savingSplits = null;
         }
     }
+
 </script>
 
 {#if data.notFound}
@@ -549,8 +552,7 @@
                                 bind:value={parentId}
                         >
                             <option value={null}>Ingen forælder</option>
-                            {#each Object.values(data.details?.state?.categories ?? {}) as c}
-                                {@const cat = c as Category}
+                            {#each categories as cat}
                                 <option value={cat.id}>{cat.name}</option>
                             {/each}
                         </select>
@@ -591,8 +593,7 @@
                         <p class="text-sm text-red-600">{splitError}</p>
                     {/if}
                     <ul class="divide-y divide-slate-800">
-                        {#each Object.values(data.details?.state?.transactions ?? {}) as t}
-                            {@const tx = t as Transaction}
+                        {#each transactions as tx}
                             {@const splits = data.details?.state?.splits?.[tx.id] ?? []}
                             {@const note = data.details?.state?.notes?.[tx.id] ?? ''}
                             <li class="py-3 space-y-3">
@@ -607,7 +608,7 @@
                                                 <span class="font-medium">Opdelinger:</span>
                                                 {#each splits as split}
                                                     {@const
-                                                        cat = data.details?.state?.categories?.[split.categoryId] as Category | undefined}
+                                                        cat = categories[split.categoryId]}
                                                     <span class="ml-2">
                           {cat?.name ?? split.categoryId}: <span
                                                             class="text-right inline-block min-w-[60px]">{formatNumber(split.amount)}</span>
@@ -650,8 +651,7 @@
                                                         bind:value={row.categoryId}
                                                 >
                                                     <option value="">Vælg kategori</option>
-                                                    {#each Object.values(data.details?.state?.categories ?? {}) as cat}
-                                                        {@const category = cat as Category}
+                                                    {#each categories as category}
                                                         <option value={category.id}>{category.name}</option>
                                                     {/each}
                                                 </select>
