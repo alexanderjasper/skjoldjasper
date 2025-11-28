@@ -10,7 +10,7 @@ export class MyRoom extends Room<MyRoomState> {
     private messageLimiter = createTokenBucket(getServerConfig().rateLimit.colyseusMessages);
 
     onCreate(options: any) {
-        this.setState(new MyRoomState());
+        this.state = new MyRoomState();
 
         // choose stable stream id if provided by join options; otherwise use roomId
         this.streamIdForEvents = String(options?.streamId ?? this.roomId);
