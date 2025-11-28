@@ -7,7 +7,7 @@ import {assignSplits} from '$lib/server/finance/commands';
 import {appendEvent} from '@skjoldjasper/shared';
 
 const SplitsSchema = z.object({
-    splits: z.array(z.object({categoryId: z.string().min(1), amount: z.number().finite()})).min(1)
+    splits: z.array(z.object({categoryId: z.string().min(1), amount: z.number()})).min(1)
 });
 
 export const POST: RequestHandler = async ({params, request, locals}) => {

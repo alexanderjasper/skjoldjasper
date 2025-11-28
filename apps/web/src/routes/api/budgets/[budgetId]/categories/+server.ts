@@ -13,7 +13,7 @@ const AddCategorySchema = z.object({
 
 const SetTargetSchema = z.object({
     categoryId: z.string().min(1),
-    yearlyTarget: z.number().finite()
+    yearlyTarget: z.number()
 });
 
 export const POST: RequestHandler = async ({params, request, locals}) => {
