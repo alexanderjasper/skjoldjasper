@@ -7,6 +7,7 @@ export const userProfileSchema = z.object({
     createdAt: z.string()
 });
 
+// noinspection JSUnusedGlobalSymbols -- public API type for consumers of @skjoldjasper/shared
 export type UserProfile = z.infer<typeof userProfileSchema>;
 
 export * from './config.js';

@@ -6,15 +6,20 @@ export const projectorCheckpoints = pgTable('projector_checkpoints', {
     updatedAt: timestamp('updated_at', {withTimezone: true}).notNull().defaultNow()
 });
 
-export const projectorAppliedEvents = pgTable('projector_applied_events', {
-    handlerName: text('handler_name').notNull(),
-    position: bigint('position', {mode: 'number'}).notNull(),
-    createdAt: timestamp('created_at', {withTimezone: true}).notNull().defaultNow()
-}, (t) => ({
-    pk: {
-        name: 'projector_applied_events_pk',
-        columns: [t.handlerName, t.position] as const
-    }
-}));
+// noinspection JSUnusedGlobalSymbols -- schema used by Drizzle, not directly imported in TS code
+export const projectorAppliedEvents = pgTable(
+    'projector_applied_events',
+    {
+        handlerName: text('handler_name').notNull(),
+        position: bigint('position', {mode: 'number'}).notNull(),
+        createdAt: timestamp('created_at', {withTimezone: true}).notNull().defaultNow()
+    },
+    (t) => ({
+        pk: {
+            name: 'projector_applied_events_pk',
+            columns: [t.handlerName, t.position] as const
+        }
+    })
+);
 
 
