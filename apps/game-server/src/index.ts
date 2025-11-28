@@ -8,7 +8,7 @@
  *
  * See: https://docs.colyseus.io/server/api/#constructor-options
  */
-import { listen } from "@colyseus/tools";
+import {listen} from "@colyseus/tools";
 import * as Sentry from "@sentry/node";
 import * as dotenv from "dotenv";
 
@@ -17,10 +17,10 @@ import app from "./app.config";
 
 dotenv.config();
 if (!Sentry.getClient()) {
-  const dsn = process.env.SENTRY_DSN;
-  if (dsn) {
-    Sentry.init({ dsn, tracesSampleRate: 0.05 });
-  }
+    const dsn = process.env.SENTRY_DSN;
+    if (dsn) {
+        Sentry.init({dsn, tracesSampleRate: 0.05});
+    }
 }
 
 // Create and listen on 2567 (or PORT environment variable.)
