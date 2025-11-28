@@ -100,6 +100,7 @@ export async function runHandler(client: Client, h: ProjectorHandler, options?: 
     // eslint-disable-next-line no-console
     console.log(`[projector:${h.handlerName}] starting from position:`, lastPos);
 
+    // noinspection InfiniteLoopJS
     while (true) {
         const rows = await fetchBatch(client, h, lastPos);
 
