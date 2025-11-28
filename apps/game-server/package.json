@@ -26,26 +26,26 @@
   "devDependencies": {
     "@colyseus/loadtest": "^0.16.1",
     "@colyseus/testing": "^0.16.3",
-    "@types/express": "^4.17.1",
-    "@types/mocha": "^10.0.1",
+    "@types/express": "^4.17.25",
+    "@types/mocha": "^10.0.10",
     "@types/pg": "^8.15.6",
-    "mocha": "^10.2.0",
-    "rimraf": "^5.0.0",
+    "mocha": "^10.8.2",
+    "rimraf": "^5.0.10",
     "tsx": "^4.20.6",
-    "typescript": "^5.0.4"
+    "typescript": "^5.9.3"
   },
   "dependencies": {
     "@colyseus/monitor": "^0.16.7",
     "@colyseus/playground": "^0.16.4",
-    "@colyseus/schema": "^3.0.65",
+    "@colyseus/schema": "^3.0.69",
     "@colyseus/tools": "^0.16.14",
-    "@sentry/node": "^10.26.0",
+    "@sentry/node": "^10.27.0",
+    "@skjoldjasper/db": "workspace:*",
+    "@skjoldjasper/shared": "workspace:*",
     "colyseus": "^0.16.5",
     "colyseus.js": "^0.16.22",
     "dotenv": "^17.2.3",
-    "express": "^4.18.2",
-    "pg": "^8.16.3",
-    "@skjoldjasper/shared": "workspace:*",
-    "@skjoldjasper/db": "workspace:*"
+    "express": "^4.21.2",
+    "pg": "^8.16.3"
   }
 }
