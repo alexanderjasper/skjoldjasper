@@ -302,7 +302,7 @@
         }
     }
 
-    function startEditingSplits(transactionId: string, transactionAmount: number) {
+    function startEditingSplits(transactionId: string) {
         splitError = '';
         const existingSplits = data.details?.state?.splits?.[transactionId] ?? [];
         if (existingSplits.length > 0) {
@@ -632,7 +632,7 @@
                                         </button>
                                         <button
                                                 class="primary-button px-3 py-1 text-sm"
-                                                on:click={() => startEditingSplits(tx.id, tx.amount)}
+                                                on:click={() => startEditingSplits(tx.id)}
                                                 disabled={editingSplits === tx.id}
                                         >
                                             {splits.length > 0 ? 'Rediger Opdelinger' : 'Tildel Opdelinger'}
