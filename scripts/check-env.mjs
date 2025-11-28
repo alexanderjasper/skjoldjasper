@@ -1,3 +1,4 @@
+/* global process */
 import {getServerConfig} from '@skjoldjasper/shared';
 
 try {
