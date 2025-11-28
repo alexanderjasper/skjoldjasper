@@ -28,6 +28,7 @@
     "turbo": "^2.6.1"
   },
   "dependencies": {
-    "@supabase/ssr": "^0.7.0"
+    "@supabase/ssr": "^0.7.0",
+    "@skjoldjasper/shared": "workspace:*"
   }
 }

@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@skjoldjasper/shared':
+        specifier: workspace:*
+        version: link:packages/shared
       '@supabase/ssr':
         specifier: ^0.7.0
         version: 0.7.0(@supabase/supabase-js@2.78.0)
