@@ -9,9 +9,8 @@ export const userProfileSchema = z.object({
 
 export type UserProfile = z.infer<typeof userProfileSchema>;
 
-export * from './config';
-export * from './http';
-export * from './rateLimit';
-export * from './events';
-
+export * from './config.js';
+export * from './http.js';
+export * from './rateLimit.js';
+export * from './events.js';
 
