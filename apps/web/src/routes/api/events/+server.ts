@@ -34,8 +34,6 @@ export const POST: RequestHandler = async ({request, locals, getClientAddress}) 
     }
 
     const userId = locals.user?.id ?? null;
-
-    const ip = getClientAddress();
     const userAgent = request.headers.get('user-agent') ?? undefined;
     const mergedMetadata = {
         ...body.metadata,
