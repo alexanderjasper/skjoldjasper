@@ -1,1 +1,1 @@
-export { getPool } from "@skjoldjasper/db";
+export {getPool} from "@skjoldjasper/db";

@@ -6,10 +6,16 @@
       "type": "node",
       "request": "launch",
       "runtimeExecutable": "/Users/alexander/.nvm/versions/node/v22.16.0/bin/pnpm",
-      "runtimeArgs": ["--dir", "apps/web", "dev:inspect"],
+      "runtimeArgs": [
+        "--dir",
+        "apps/web",
+        "dev:inspect"
+      ],
       "cwd": "${workspaceFolder}",
       "console": "integratedTerminal",
-      "skipFiles": ["<node_internals>/**"],
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
       "env": {
         "FORCE_COLOR": "1"
       },
@@ -24,7 +30,9 @@
       "address": "localhost",
       "localRoot": "${workspaceFolder}",
       "remoteRoot": "${workspaceFolder}",
-      "skipFiles": ["<node_internals>/**"],
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
       "sourceMaps": true,
       "restart": true
     },
@@ -36,7 +44,9 @@
       "address": "localhost",
       "localRoot": "${workspaceFolder}",
       "remoteRoot": "${workspaceFolder}",
-      "skipFiles": ["<node_internals>/**"],
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
       "sourceMaps": true,
       "restart": true
     }

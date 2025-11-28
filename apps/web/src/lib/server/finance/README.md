@@ -27,9 +27,11 @@ High-level overview of the finance/budgeting bounded context.
 
 ## Contribution guidelines
 
-- Keep all finance-specific schemas, commands, queries, and projections inside this directory (and the projector handler). Do **not** move them into `packages/*`.
+- Keep all finance-specific schemas, commands, queries, and projections inside this directory (and
+  the projector handler). Do **not** move them into `packages/*`.
 - Server routes should import domain services from here instead of re-implementing business rules.
-- When adding a new capability, extend the domain modules first (events, commands, state) and expose APIs/routes that call into them.
+- When adding a new capability, extend the domain modules first (events, commands, state) and expose
+  APIs/routes that call into them.
 
 ## Read more
 

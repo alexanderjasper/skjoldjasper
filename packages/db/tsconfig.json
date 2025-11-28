@@ -8,10 +8,15 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "resolveJsonModule": true,
-    "types": ["node"],
+    "types": [
+      "node"
+    ],
     "declaration": true
   },
-  "include": ["src/**/*", "drizzle.config.ts"]
+  "include": [
+    "src/**/*",
+    "drizzle.config.ts"
+  ]
 }
 
 

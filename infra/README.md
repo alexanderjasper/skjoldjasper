@@ -1,4 +1,5 @@
-See the root `README.md` for setup and usage of Postgres + pgBackRest, backups, and restore. This directory holds infrastructure definitions only—keep application/domain code inside `apps/*`.
+See the root `README.md` for setup and usage of Postgres + pgBackRest, backups, and restore. This
+directory holds infrastructure definitions only—keep application/domain code inside `apps/*`.
 
 ## Compose services
 

@@ -27,7 +27,7 @@ services:
       - ./pgbackrest/conf.d:/etc/pgbackrest/conf.d:ro
       - pgbackrest-spool:/var/lib/pgbackrest
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      test: [ "CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -80,7 +80,7 @@ services:
     image: cloudflare/cloudflared:latest
     restart: unless-stopped
     container_name: skjoldjasper-cloudflared
-    command: ["tunnel", "run", "--token", "${CLOUDFLARED_TUNNEL_TOKEN}"]
+    command: [ "tunnel", "run", "--token", "${CLOUDFLARED_TUNNEL_TOKEN}" ]
     env_file:
       - ./.env
     volumes:
@@ -99,7 +99,7 @@ services:
     build:
       context: ./pgbackrest
       dockerfile: Dockerfile
-    profiles: ["backup"]
+    profiles: [ "backup" ]
     container_name: skjoldjasper-pgbackrest
     restart: unless-stopped
     depends_on:

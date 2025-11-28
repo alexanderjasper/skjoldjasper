@@ -60,9 +60,9 @@ GitHub requires authentication for private repositories. Choose one of the follo
    ```
 
 3. **Add the key to GitHub:**
-   - Go to GitHub → Settings → SSH and GPG keys
-   - Click "New SSH key"
-   - Paste your public key and save
+    - Go to GitHub → Settings → SSH and GPG keys
+    - Click "New SSH key"
+    - Paste your public key and save
 
 4. **Test the connection:**
    ```bash
@@ -79,10 +79,10 @@ GitHub requires authentication for private repositories. Choose one of the follo
 ### Option B: Personal Access Token
 
 1. **Create a Personal Access Token on GitHub:**
-   - Go to GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic)
-   - Click "Generate new token (classic)"
-   - Select scopes: `repo` (full control of private repositories)
-   - Generate and copy the token (you won't see it again!)
+    - Go to GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic)
+    - Click "Generate new token (classic)"
+    - Select scopes: `repo` (full control of private repositories)
+    - Generate and copy the token (you won't see it again!)
 
 2. **Clone using HTTPS with token:**
    ```bash
@@ -131,6 +131,7 @@ nano infra/.env
 ```
 
 Edit the following values:
+
 - `POSTGRES_USER` - Database user (default: `app`)
 - `POSTGRES_PASSWORD` - **Change this to a strong password**
 - `POSTGRES_DB` - Database name (default: `appdb`)
@@ -144,10 +145,12 @@ nano apps/web/.env
 ```
 
 Required values:
+
 - `DATABASE_URL` - Will be set automatically by docker-compose, but you can override
 - `PUBLIC_SUPABASE_URL` - Your Supabase project URL
 - `PUBLIC_SUPABASE_ANON_KEY` - Your Supabase anon key
-- `PUBLIC_GAME_SERVER_WS` - WebSocket URL for game server (e.g., `ws://your-domain:2567` or `wss://ws.your-domain` if using Cloudflare Tunnel)
+- `PUBLIC_GAME_SERVER_WS` - WebSocket URL for game server (e.g., `ws://your-domain:2567` or
+  `wss://ws.your-domain` if using Cloudflare Tunnel)
 - `ALLOWED_ORIGINS` - Comma-separated list of allowed origins (e.g., `https://app.your-domain`)
 
 ### 4.3 Game Server Environment
@@ -158,6 +161,7 @@ nano apps/game-server/.env
 ```
 
 Required values:
+
 - `DATABASE_URL` - Will be set automatically by docker-compose
 - `SENTRY_DSN` - (Optional) Sentry DSN for error tracking
 
@@ -169,6 +173,7 @@ nano packages/db/.env
 ```
 
 Set `DATABASE_URL` to match your Postgres connection:
+
 ```
 DATABASE_URL=postgres://app:YOUR_PASSWORD@localhost:5432/appdb
 ```
@@ -177,13 +182,13 @@ DATABASE_URL=postgres://app:YOUR_PASSWORD@localhost:5432/appdb
 
 1. Create a Supabase project at https://supabase.com
 2. Go to Settings → API and copy:
-   - Project URL → `PUBLIC_SUPABASE_URL`
-   - anon/public key → `PUBLIC_SUPABASE_ANON_KEY`
+    - Project URL → `PUBLIC_SUPABASE_URL`
+    - anon/public key → `PUBLIC_SUPABASE_ANON_KEY`
 3. Enable GitHub OAuth provider:
-   - Go to Authentication → Providers → GitHub
-   - Enable GitHub provider
-   - Set callback URL: `https://<project-ref>.supabase.co/auth/v1/callback`
-   - Add your GitHub OAuth App Client ID and Secret
+    - Go to Authentication → Providers → GitHub
+    - Enable GitHub provider
+    - Set callback URL: `https://<project-ref>.supabase.co/auth/v1/callback`
+    - Add your GitHub OAuth App Client ID and Secret
 
 ## Step 6: Deploy the Application
 
@@ -195,6 +200,7 @@ bash infra/deploy-ubuntu.sh
 ```
 
 This script will:
+
 - Stop any existing containers
 - Build and start PostgreSQL
 - Run database migrations
@@ -208,6 +214,7 @@ docker compose -f infra/docker-compose.yml ps
 ```
 
 You should see:
+
 - `skjoldjasper-postgres` - Running
 - `skjoldjasper-web` - Running
 - `skjoldjasper-game-server` - Running
@@ -245,8 +252,8 @@ sudo ufw enable
 1. Install Cloudflare Tunnel on your server or use the Docker container (already configured)
 2. Create a tunnel in Cloudflare Zero Trust dashboard
 3. Configure routes:
-   - `https://app.your-domain` → `http://web:5173`
-   - `wss://ws.your-domain` → `http://game-server:2567`
+    - `https://app.your-domain` → `http://web:5173`
+    - `wss://ws.your-domain` → `http://game-server:2567`
 4. Copy the tunnel token to `infra/.env` as `CLOUDFLARED_TUNNEL_TOKEN`
 5. Restart the cloudflared service:
    ```bash
@@ -286,11 +293,13 @@ bash infra/scripts/pgbackrest-backup.sh full
 ### 9.3 Set Up Automated Backups
 
 Add to crontab:
+
 ```bash
 crontab -e
 ```
 
 Add line for daily backups at 2 AM:
+
 ```
 0 2 * * * cd /path/to/skjoldjasper && bash infra/scripts/pgbackrest-backup.sh diff
 ```
@@ -321,11 +330,13 @@ bash infra/deploy-ubuntu.sh
 
 ### Port conflicts
 
-If ports 5173 or 2567 are already in use, you can modify `infra/docker-compose.yml` to use different ports.
+If ports 5173 or 2567 are already in use, you can modify `infra/docker-compose.yml` to use different
+ports.
 
 ### Permission errors
 
 Make sure your user is in the docker group:
+
 ```bash
 sudo usermod -aG docker $USER
 newgrp docker

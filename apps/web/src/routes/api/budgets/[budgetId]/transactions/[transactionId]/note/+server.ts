@@ -1,48 +1,51 @@
-import type { RequestHandler } from '@sveltejs/kit';
-import { json } from '@sveltejs/kit';
-import { z } from 'zod';
-import { getPool } from '$lib/server/db';
-import { loadBudget } from '$lib/server/finance/repository';
-import { addNote } from '$lib/server/finance/commands';
-import { appendEvent } from '@skjoldjasper/shared';
+import type {RequestHandler} from '@sveltejs/kit';
+import {json} from '@sveltejs/kit';
+import {z} from 'zod';
+import {getPool} from '$lib/server/db';
+import {loadBudget} from '$lib/server/finance/repository';
+import {addNote} from '$lib/server/finance/commands';
+import {appendEvent} from '@skjoldjasper/shared';
 
-const NoteSchema = z.object({ note: z.string().max(2000) });
+const NoteSchema = z.object({note: z.string().max(2000)});
 
-export const POST: RequestHandler = async ({ params, request, locals }) => {
-  const budgetId = params.budgetId as string;
-  const transactionId = params.transactionId as string;
+export const POST: RequestHandler = async ({params, request, locals}) => {
+    const budgetId = params.budgetId as string;
+    const transactionId = params.transactionId as string;
 
-  const body = await request.json().catch(() => null);
-  const parsed = NoteSchema.safeParse(body);
-  if (!parsed.success) return json({ error: 'invalid_body' }, { status: 400 });
+    const body = await request.json().catch(() => null);
+    const parsed = NoteSchema.safeParse(body);
+    if (!parsed.success) return json({error: 'invalid_body'}, {status: 400});
 
-  const userId = locals.user?.id;
-  
-  if (!userId) return json({ error: 'unauthorized' }, { status: 401 });
+    const userId = locals.user?.id;
 
-  const pool = getPool();
-  const state = await loadBudget(pool as any, budgetId);
-  if (!state) return json({ error: 'not_found' }, { status: 404 });
+    if (!userId) return json({error: 'unauthorized'}, {status: 401});
 
-  let eventPayload;
-  try {
-    eventPayload = addNote(state, transactionId, parsed.data.note);
-  } catch (err: any) {
-    return json({ error: 'validation_failed', message: String(err?.message ?? err) }, { status: 400 });
-  }
+    const pool = getPool();
+    const state = await loadBudget(pool as any, budgetId);
+    if (!state) return json({error: 'not_found'}, {status: 404});
 
-  await appendEvent(
-    pool,
-    {
-      context: 'finance',
-      streamCategory: 'budget',
-      streamId: budgetId,
-      type: 'TransactionNoteAdded',
-      version: state.version + 1,
-      payload: eventPayload
-    },
-    { userId }
-  );
+    let eventPayload;
+    try {
+        eventPayload = addNote(state, transactionId, parsed.data.note);
+    } catch (err: any) {
+        return json({
+            error: 'validation_failed',
+            message: String(err?.message ?? err)
+        }, {status: 400});
+    }
 
-  return json({ ok: true }, { status: 201 });
+    await appendEvent(
+        pool,
+        {
+            context: 'finance',
+            streamCategory: 'budget',
+            streamId: budgetId,
+            type: 'TransactionNoteAdded',
+            version: state.version + 1,
+            payload: eventPayload
+        },
+        {userId}
+    );
+
+    return json({ok: true}, {status: 201});
 };
