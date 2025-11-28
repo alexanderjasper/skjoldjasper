@@ -1,10 +1,10 @@
 import {lucia} from '$lib/server/auth';
-import {fail, redirect} from '@sveltejs/kit';
+import {redirect} from '@sveltejs/kit';
 import type {RequestHandler} from './$types';
 
 export const POST: RequestHandler = async ({locals, cookies}) => {
     if (!locals.session) {
-        return fail(401);
+        throw redirect(302, '/login');
     }
     await lucia.invalidateSession(locals.session.id);
     const sessionCookie = lucia.createBlankSessionCookie();
