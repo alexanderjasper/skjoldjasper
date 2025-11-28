@@ -23,10 +23,9 @@
                 const joined = await client.joinOrCreate('my_room', {streamId: params.id});
                 if (disposed) {
                     try {
-                        joined.leave();
+                        await joined.leave();
                     } catch {
                     }
-                    ;
                     return;
                 }
                 room = joined;
