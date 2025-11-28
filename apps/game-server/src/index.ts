@@ -24,4 +24,8 @@ if (!Sentry.getClient()) {
 }
 
 // Create and listen on 2567 (or PORT environment variable.)
-listen(app);
+listen(app).catch((error) => {
+    // Log and report any startup errors
+    console.error("Failed to start Colyseus server:", error);
+    Sentry.captureException(error);
+});
