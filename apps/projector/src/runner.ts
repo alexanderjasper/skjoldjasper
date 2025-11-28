@@ -4,6 +4,8 @@ import { eq } from 'drizzle-orm';
 import { projectorCheckpoints } from '@skjoldjasper/db';
 import { ensureAppliedEventsTable, withIdempotentApply } from './utils/idempotency';
 
+type DrizzleDb = Omit<ReturnType<typeof drizzle>, '$client'>;
+
 export type EventRow = {
   position: string; // pg returns as string
   stream_id: string;
@@ -31,7 +33,7 @@ async function ensureCheckpointTable(client: Client): Promise<void> {
   `);
 }
 
-async function getLastPositionDb(db: ReturnType<typeof drizzle>, name: string): Promise<number> {
+async function getLastPositionDb(db: DrizzleDb, name: string): Promise<number> {
   const rows = await db
     .select({ lastPosition: projectorCheckpoints.lastPosition })
     .from(projectorCheckpoints)
@@ -41,7 +43,7 @@ async function getLastPositionDb(db: ReturnType<typeof drizzle>, name: string): 
   return Number(rows[0].lastPosition ?? 0);
 }
 
-async function setLastPositionDb(db: ReturnType<typeof drizzle>, name: string, position: number): Promise<void> {
+async function setLastPositionDb(db: DrizzleDb, name: string, position: number): Promise<void> {
   await db
     .insert(projectorCheckpoints)
     .values({ name, lastPosition: position, updatedAt: new Date() })
