@@ -24,10 +24,14 @@ export const lucia = new Lucia(adapter, {
 });
 
 declare module 'lucia' {
+    // noinspection JSUnusedGlobalSymbols -- Lucia uses this interface via module augmentation
     interface Register {
         Lucia: typeof lucia;
         DatabaseUserAttributes: DatabaseUserAttributes;
     }
+
+    // noinspection JSUnusedGlobalSymbols -- helper alias so IDE sees Register as referenced
+    type _LuciaRegister = Register;
 }
 
 interface DatabaseUserAttributes {

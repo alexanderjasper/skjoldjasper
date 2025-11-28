@@ -33,7 +33,7 @@ export class MyRoom extends Room<MyRoomState> {
         });
     }
 
-    onJoin(client: Client, options: any) {
+    onJoin(client: Client, _options: any) {
         console.log(client.sessionId, "joined!");
         // add new player if not present
         if (!this.state.players.includes(client.sessionId)) {
@@ -47,7 +47,7 @@ export class MyRoom extends Room<MyRoomState> {
 
     // rate limiting handled by shared token bucket
 
-    onLeave(client: Client, consented: boolean) {
+    onLeave(client: Client, _consented: boolean) {
         console.log(client.sessionId, "left!");
         const idx = this.state.players.indexOf(client.sessionId);
         if (idx >= 0) {
@@ -63,7 +63,7 @@ export class MyRoom extends Room<MyRoomState> {
         }
     }
 
-    override async onAuth(client: Client, options: any, request?: any): Promise<boolean> {
+    override async onAuth(client: Client, options: any, _request?: any): Promise<boolean> {
         // on first auth per connection, attempt to restore from snapshot+tail
         // ensure stream id is determined here as well (for clients using join options)
         this.streamIdForEvents = String(options?.streamId ?? (this.streamIdForEvents || this.roomId));

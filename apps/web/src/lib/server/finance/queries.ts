@@ -214,9 +214,12 @@ export async function getBudgetVsActual(pool: Pool, budgetId: string): Promise<C
     const {state} = details;
 
     const actualByCategory = new Map<string, number>();
-    for (const [txId, splits] of Object.entries(state.splits || {})) {
+    for (const [, splits] of Object.entries(state.splits || {})) {
         for (const split of splits) {
-            actualByCategory.set(split.categoryId, (actualByCategory.get(split.categoryId) ?? 0) + Number(split.amount));
+            actualByCategory.set(
+                split.categoryId,
+                (actualByCategory.get(split.categoryId) ?? 0) + Number(split.amount)
+            );
         }
     }
 

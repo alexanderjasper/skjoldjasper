@@ -1,23 +1,12 @@
 import {createHash} from 'crypto';
 import type {BudgetState, DuplicateWarning} from './types';
 import type {
-    BudgetCreated,
     CategoryAdded,
     CategoryTargetSet,
-    MemberAdded,
     TransactionNoteAdded,
     TransactionsImported,
     TransactionSplitAssigned
 } from './events';
-
-export function createBudget(name: string, currency: string, userId: string): BudgetCreated {
-    return {name, currency, creatorUserId: userId};
-}
-
-export function addMember(state: BudgetState, userId: string): MemberAdded | null {
-    if (state.members.has(userId)) return null;
-    return {userId};
-}
 
 export function addCategory(
     state: BudgetState,
@@ -50,7 +39,7 @@ export function setCategoryTarget(
     }
 
     // Check if any category has this as a parent
-    for (const [id, cat] of state.categories.entries()) {
+    for (const [, cat] of state.categories.entries()) {
         if (cat.parentId === categoryId) {
             throw new Error('Cannot set target on parent category. Only leaf categories can have targets.');
         }

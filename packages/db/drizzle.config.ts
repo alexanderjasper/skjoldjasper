@@ -4,6 +4,7 @@ import * as dotenv from 'dotenv';
 // Resolve relative to process.cwd() which is the package dir when using --dir
 dotenv.config({path: '.env'});
 
+// noinspection JSUnusedGlobalSymbols -- used by drizzle-kit CLI
 export default defineConfig({
     dialect: 'postgresql',
     schema: './src/schema.ts',

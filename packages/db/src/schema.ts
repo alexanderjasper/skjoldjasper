@@ -65,6 +65,7 @@ export const events = pgTable(
 );
 
 // Periodic snapshots per stream accelerate rebuilds.
+// noinspection JSUnusedGlobalSymbols -- schema used by Drizzle and other packages via compiled output
 export const aggregateSnapshots = pgTable(
     'aggregate_snapshots',
     {
@@ -78,8 +79,17 @@ export const aggregateSnapshots = pgTable(
     (t) => {
         return {
             // One snapshot per stream version
-            snapshotUnique: uniqueIndex('aggregate_snapshots_stream_version_uidx').on(t.context, t.streamCategory, t.streamId, t.version),
-            byStream: index('aggregate_snapshots_stream_idx').on(t.context, t.streamCategory, t.streamId)
+            snapshotUnique: uniqueIndex('aggregate_snapshots_stream_version_uidx').on(
+                t.context,
+                t.streamCategory,
+                t.streamId,
+                t.version
+            ),
+            byStream: index('aggregate_snapshots_stream_idx').on(
+                t.context,
+                t.streamCategory,
+                t.streamId
+            )
         };
     }
 );

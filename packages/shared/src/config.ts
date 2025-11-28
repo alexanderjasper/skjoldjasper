@@ -1,6 +1,4 @@
 import {z} from 'zod';
-// Minimal process typing to avoid requiring @types/node in this package
-declare const process: { env: Record<string, string | undefined> } | undefined;
 
 export type RateLimitConfig = {
     capacity: number;
