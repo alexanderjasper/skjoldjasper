@@ -90,6 +90,15 @@ export async function getBudgetsForUser(pool: Pool, userId: string): Promise<Bud
 }
 
 function applyEventToState(state: BudgetSnapshotState, type: string, payload: any): void {
+    // Ensure all state collections are initialized (might be missing in old snapshots)
+    if (!state.categories) state.categories = {};
+    if (!state.transactions) state.transactions = {};
+    if (!state.splits) state.splits = {};
+    if (!state.notes) state.notes = {};
+    if (!state.savingGoals) state.savingGoals = {};
+    if (!state.accounts) state.accounts = {};
+    if (!state.members) state.members = [];
+
     switch (type) {
         case 'BudgetCreated': {
             state.name = payload.name;
@@ -159,7 +168,7 @@ async function buildStateFromEvents(pool: Pool, budgetId: string): Promise<{
     createdAt: Date
 } | null> {
     const {rows} = await pool.query(
-        `SELECT type, payload, created_at
+        `SELECT type, payload, created_at, version
          FROM events
          WHERE context = 'finance'
            AND stream_category = 'budget'
@@ -184,14 +193,15 @@ async function buildStateFromEvents(pool: Pool, budgetId: string): Promise<{
 
     for (const row of rows) {
         applyEventToState(state, row.type as string, row.payload);
+        state.version = Number(row.version ?? state.version);
     }
 
     return {state, createdAt: rows[0].created_at as Date};
 }
 
 export async function getBudgetDetails(pool: Pool, budgetId: string) {
-    const {rows} = await pool.query(
-        `SELECT payload, created_at
+    const {rows: snapshotRows} = await pool.query(
+        `SELECT version, payload, created_at
          FROM aggregate_snapshots
          WHERE context = 'finance'
            AND stream_category = 'budget'
@@ -200,12 +210,40 @@ export async function getBudgetDetails(pool: Pool, budgetId: string) {
         [budgetId]
     );
 
-    if (rows.length === 0) {
-        return await buildStateFromEvents(pool, budgetId);
+    let state: BudgetSnapshotState;
+    let startVersion = 0;
+    let createdAt: Date;
+
+    if (snapshotRows.length === 0) {
+        const rebuilt = await buildStateFromEvents(pool, budgetId);
+        if (!rebuilt) return null;
+        state = rebuilt.state;
+        createdAt = rebuilt.createdAt;
+        startVersion = state.version;
+    } else {
+        state = snapshotRows[0].payload as BudgetSnapshotState;
+        startVersion = Number(snapshotRows[0].version);
+        createdAt = snapshotRows[0].created_at as Date;
     }
 
-    const state = rows[0].payload as BudgetSnapshotState;
-    return {budgetId, state, createdAt: rows[0].created_at as Date};
+    // Load any events after the snapshot
+    const {rows: eventRows} = await pool.query(
+        `SELECT type, payload, created_at, version
+         FROM events
+         WHERE context = 'finance'
+           AND stream_category = 'budget'
+           AND stream_id = $1
+           AND version > $2
+         ORDER BY version ASC`,
+        [budgetId, startVersion]
+    );
+
+    for (const row of eventRows) {
+        applyEventToState(state, row.type as string, row.payload);
+        state.version = Number(row.version);
+    }
+
+    return {budgetId, state, createdAt};
 }
 
 export async function getBudgetVsActual(pool: Pool, budgetId: string): Promise<CategoryActual[]> {

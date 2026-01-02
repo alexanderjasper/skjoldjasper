@@ -470,12 +470,12 @@
                                     <div class="grid grid-cols-2 gap-3 text-sm">
                                         <div
                                                 class="flex flex-col {editingTarget !== row.categoryId && !row.isParent ? 'cursor-pointer' : ''}"
-                                                on:click={() => editingTarget !== row.categoryId && !row.isParent && startEditingTarget(row.categoryId, row.yearlyTarget)}
+                                                on:click={() => editingTarget !== row.categoryId && !row.isParent && startEditingTarget(row.categoryId, row.displayTarget)}
                                                 role={editingTarget !== row.categoryId && !row.isParent ? "button" : undefined}
                                                 tabindex={editingTarget !== row.categoryId && !row.isParent ? 0 : undefined}
-                                                on:keydown={(e) => editingTarget !== row.categoryId && !row.isParent && e.key === 'Enter' && startEditingTarget(row.categoryId, row.yearlyTarget)}
+                                                on:keydown={(e) => editingTarget !== row.categoryId && !row.isParent && e.key === 'Enter' && startEditingTarget(row.categoryId, row.displayTarget)}
                                         >
-                                            <span class="text-xs text-slate-600 uppercase tracking-wide">Mål</span>
+                                            <span class="text-xs text-slate-600 uppercase tracking-wide">Mål (mnd)</span>
                                             {#if editingTarget === row.categoryId}
                                                 <div class="flex items-center gap-2 mt-1"
                                                      on:click={(e) => e.stopPropagation()}
@@ -495,25 +495,18 @@
                                                     >
                                                         {savingTarget === row.categoryId ? '...' : '✓'}
                                                     </button>
-                                                    <button
-                                                            class="secondary-button px-2 py-1 text-xs"
-                                                            on:click={(e) => { e.stopPropagation(); cancelEditingTarget(); }}
-                                                            disabled={savingTarget === row.categoryId}
-                                                    >
-                                                        ✕
-                                                    </button>
                                                 </div>
                                             {:else}
                                                 <div class="text-slate-900 font-medium">
                                                     {#if row.isParent}
                                                         {#if row.calculatedTarget !== undefined && row.calculatedTarget !== null}
-                                                            <span class="text-slate-600"
-                                                                  title="Sum af underkategorier">{formatNumber(row.calculatedTarget)}</span>
+                                                                        <span class="text-slate-600"
+                                                                              title="Sum af underkategorier">{formatNumber(row.calculatedTarget)}</span>
                                                         {:else}
                                                             <span class="text-slate-400 italic text-xs">Ingen mål</span>
                                                         {/if}
-                                                    {:else if row.yearlyTarget !== undefined && row.yearlyTarget !== null}
-                                                        {formatNumber(row.yearlyTarget)}
+                                                    {:else if row.displayTarget !== undefined && row.displayTarget !== null}
+                                                        {formatNumber(row.displayTarget)}
                                                     {:else}
                                                         <span class="text-slate-400 italic text-xs">Klik for at angive</span>
                                                     {/if}
@@ -543,7 +536,7 @@
                 <div class="md:p-4 space-y-3 md:space-y-4">
                     <div class="flex flex-col gap-3 sm:flex-row">
                         <input
-                                class="flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-100 placeholder-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+                                class="flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 placeholder-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
                                 placeholder="Kategorinavn"
                                 bind:value={catName}
                         />
@@ -623,7 +616,7 @@
                                     </div>
                                     <div class="flex flex-wrap items-center gap-2">
                                         <input
-                                                class="rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm text-slate-100 placeholder-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 w-full sm:w-32"
+                                                class="rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm text-slate-900 placeholder-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 w-full sm:w-32"
                                                 placeholder="Note"
                                                 bind:value={noteText[tx.id]}
                                         />
@@ -647,7 +640,7 @@
                                         {#each splitRows as row, index}
                                             <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                                                 <select
-                                                        class="rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm text-slate-100 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 flex-1"
+                                                        class="rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 flex-1"
                                                         bind:value={row.categoryId}
                                                 >
                                                     <option value="">Vælg kategori</option>
@@ -658,7 +651,7 @@
                                                 <input
                                                         type="number"
                                                         step="0.01"
-                                                        class="rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm text-slate-100 placeholder-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 w-full sm:w-24 text-right"
+                                                        class="rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm text-slate-900 placeholder-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 w-full sm:w-24 text-right"
                                                         placeholder="Beløb"
                                                         bind:value={row.amount}
                                                 />
@@ -720,7 +713,7 @@
                         <p class="text-sm text-emerald-600">{importMsg}</p>
                     {/if}
                     <textarea
-                            class="w-full rounded-lg border border-slate-300 bg-white p-3 font-mono text-sm text-slate-100 placeholder-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+                            class="w-full rounded-lg border border-slate-300 bg-white p-3 font-mono text-sm text-slate-900 placeholder-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
                             rows="8"
                             bind:value={csvText}
                             placeholder="Indsæt eksporteret CSV her..."
