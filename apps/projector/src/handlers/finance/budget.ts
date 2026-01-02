@@ -2,7 +2,13 @@ import {Client} from 'pg';
 import type {EventRow, ProjectorHandler} from '../../runner';
 
 // Plain JSON-friendly state for snapshots
-type Category = { id: string; name: string; parentId: string | null; yearlyTarget?: number };
+type Category = {
+    id: string;
+    name: string;
+    parentId: string | null;
+    type: 'income' | 'expense' | 'savings';
+    target?: { amount: number; period: 'monthly' | 'yearly' }
+};
 type Transaction = { id: string; date: string; description: string; amount: number };
 
 type BudgetSnapshotState = {
@@ -14,6 +20,19 @@ type BudgetSnapshotState = {
     transactions: Record<string, Transaction>;
     splits: Record<string, Array<{ categoryId: string; amount: number }>>;
     notes: Record<string, string>;
+    savingGoals: Record<string, {
+        id: string;
+        name: string;
+        targetAmount: number;
+        targetDate: string | null;
+        categoryId: string | null
+    }>;
+    accounts: Record<string, {
+        id: string;
+        name: string;
+        balance: number;
+        lastUpdated: string
+    }>;
     version: number;
 };
 
@@ -35,11 +54,22 @@ function createEmptyState(): BudgetSnapshotState {
         transactions: {},
         splits: {},
         notes: {},
+        savingGoals: {},
+        accounts: {},
         version: 0
     };
 }
 
 function applyEvent(state: BudgetSnapshotState, type: string, payload: any): void {
+    // Ensure all state collections are initialized (might be missing in old snapshots)
+    if (!state.categories) state.categories = {};
+    if (!state.transactions) state.transactions = {};
+    if (!state.splits) state.splits = {};
+    if (!state.notes) state.notes = {};
+    if (!state.savingGoals) state.savingGoals = {};
+    if (!state.accounts) state.accounts = {};
+    if (!state.members) state.members = [];
+
     switch (type) {
         case 'BudgetCreated': {
             state.name = payload.name;
@@ -57,18 +87,41 @@ function applyEvent(state: BudgetSnapshotState, type: string, payload: any): voi
             const c: Category = {
                 id: payload.categoryId,
                 name: payload.name,
-                parentId: payload.parentId ?? null
+                parentId: payload.parentId ?? null,
+                type: payload.type || 'expense'
             };
             state.categories[c.id] = c;
             break;
         }
         case 'CategoryTargetSet': {
-            const {categoryId, yearlyTarget} = payload as {
+            const {categoryId, amount, period} = payload as {
                 categoryId: string;
-                yearlyTarget: number
+                amount: number;
+                period?: 'monthly' | 'yearly'
             };
             const c = state.categories[categoryId];
-            if (c) c.yearlyTarget = yearlyTarget;
+            if (c) {
+                c.target = {amount, period: period || 'monthly'};
+            }
+            break;
+        }
+        case 'SavingGoalCreated': {
+            state.savingGoals[payload.goalId] = {
+                id: payload.goalId,
+                name: payload.name,
+                targetAmount: payload.targetAmount,
+                targetDate: payload.targetDate,
+                categoryId: payload.categoryId
+            };
+            break;
+        }
+        case 'AccountBalanceAdjusted': {
+            state.accounts[payload.accountId] = {
+                id: payload.accountId,
+                name: payload.name,
+                balance: payload.balance,
+                lastUpdated: payload.date
+            };
             break;
         }
         case 'TransactionsImported': {
