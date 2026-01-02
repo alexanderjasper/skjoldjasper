@@ -1,0 +1,23 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="SvelteKit Dev (inspect) Server" type="NodeJSConfigurationType" path-to-js-file="node_modules/vite/bin/vite.js" working-dir="$PROJECT_DIR$/apps/web">
+    <envs>
+      <env name="FORCE_COLOR" value="1" />
+      <env name="DATABASE_URL" value="postgres://app:app-password-change-me@localhost:5433/appdb" />
+    </envs>
+    <EXTENSION ID="com.intellij.javascript.debugger.execution.StartBrowserRunConfigurationExtension">
+      <browser with-js-debugger="true" />
+    </EXTENSION>
+    <EXTENSION ID="com.intellij.lang.javascript.build_tools.npm.rc.NodePackageProjectRunConfigurationExtension">
+      <package-json value="apps/web/package.json" />
+      <command value="run" />
+      <scripts>
+        <script value="dev:inspect" />
+      </scripts>
+      <node-interpreter value="project" />
+      <envs />
+    </EXTENSION>
+    <method v="2">
+      <option name="RunConfigurationTask" enabled="true" run_configuration_name="Start Database" run_configuration_type="ShConfigurationType" />
+    </method>
+  </configuration>
+</component>

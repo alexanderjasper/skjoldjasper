@@ -1,0 +1,5 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Projector (attach)" type="NodeRemoteRunConfigurationType" host="localhost" port="9231">
+    <method v="2" />
+  </configuration>
+</component>
