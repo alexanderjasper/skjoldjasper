@@ -27,4 +27,5 @@ yarn-debug.log*
 coverage/
 
 # IDE directories
-.idea/
+.idea/*
+!.idea/runConfigurations/

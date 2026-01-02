@@ -1,0 +1,5 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Game Server (attach)" type="NodeRemoteRunConfigurationType" host="localhost" port="9230">
+    <method v="2" />
+  </configuration>
+</component>
