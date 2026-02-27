@@ -1,51 +1,52 @@
 import type {RequestHandler} from '@sveltejs/kit';
 import {json} from '@sveltejs/kit';
 import {z} from 'zod';
-import {getPool} from '$lib/server/db';
-import {loadBudget} from '$lib/server/finance/repository';
-import {addNote} from '$lib/server/finance/commands';
-import {appendEvent} from '@skjoldjasper/shared';
+import {getPool} from '@skjoldjasper/db';
+import {validateTransaction} from '$lib/server/finance/commands';
+import {logAudit} from '$lib/server/finance/audit';
 
-const NoteSchema = z.object({note: z.string().max(2000)});
+const UpdateNoteSchema = z.object({
+    note: z.string().min(0)
+});
 
-export const POST: RequestHandler = async ({params, request, locals}) => {
-    const budgetId = params.budgetId as string;
-    const transactionId = params.transactionId as string;
-
-    const body = await request.json().catch(() => null);
-    const parsed = NoteSchema.safeParse(body);
-    if (!parsed.success) return json({error: 'invalid_body'}, {status: 400});
-
+export const PATCH: RequestHandler = async ({params, request, locals}) => {
+    const {budgetId, transactionId} = params;
     const userId = locals.user?.id;
-
     if (!userId) return json({error: 'unauthorized'}, {status: 401});
 
-    const pool = getPool();
-    const state = await loadBudget(pool as any, budgetId);
-    if (!state) return json({error: 'not_found'}, {status: 404});
+    const body = await request.json().catch(() => null);
+    const parsed = UpdateNoteSchema.safeParse(body);
+    if (!parsed.success) return json({error: 'invalid_body'}, {status: 400});
 
-    let eventPayload;
+    const pool = getPool();
+
+    // Validate transaction exists and belongs to budget
     try {
-        eventPayload = addNote(state, transactionId, parsed.data.note);
+        await validateTransaction(pool, transactionId, budgetId);
     } catch (err: any) {
-        return json({
-            error: 'validation_failed',
-            message: String(err?.message ?? err)
-        }, {status: 400});
+        return json({error: 'not_found'}, {status: 404});
     }
 
-    await appendEvent(
-        pool,
-        {
-            context: 'finance',
-            streamCategory: 'budget',
-            streamId: budgetId,
-            type: 'TransactionNoteAdded',
-            version: state.version + 1,
-            payload: eventPayload
-        },
-        {userId}
+    // Get existing transaction
+    const existingResult = await pool.query(
+        `SELECT id, budget_id, date, description, amount, note FROM transactions WHERE id = $1`,
+        [transactionId]
     );
 
-    return json({ok: true}, {status: 201});
+    const beforeData = existingResult.rows[0];
+
+    // Update note
+    await pool.query(`UPDATE transactions SET note = $1 WHERE id = $2`, [parsed.data.note, transactionId]);
+
+    // Log audit
+    await logAudit(pool, {
+        tableName: 'transactions',
+        recordId: transactionId,
+        operation: 'UPDATE',
+        changedByUserId: userId,
+        beforeData,
+        afterData: {...beforeData, note: parsed.data.note}
+    });
+
+    return json({ok: true});
 };
