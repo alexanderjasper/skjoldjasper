@@ -1,0 +1,21 @@
+# Production overrides for docker-compose.yml
+# Enables WAL archiving to pgBackRest for backup/recovery
+
+services:
+  postgres:
+    command: [
+      "postgres",
+      "-c", "wal_level=replica",
+      "-c", "archive_mode=on",
+      "-c", "archive_timeout=60s",
+      "-c", "archive_command=pgbackrest --stanza=main archive-push %p"
+    ]
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - postgres-run:/var/run/postgresql
+      - ./pgbackrest/conf.d:/etc/pgbackrest/conf.d:ro
+      - pgbackrest-spool:/var/lib/pgbackrest
+
+  pgbackrest:
+    # Enable pgBackRest in production (not behind --profile backup)
+    profiles: []
