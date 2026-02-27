@@ -1,52 +1,80 @@
 import type {RequestHandler} from '@sveltejs/kit';
 import {json} from '@sveltejs/kit';
 import {z} from 'zod';
-import {getPool} from '$lib/server/db';
-import {loadBudget} from '$lib/server/finance/repository';
-import {assignSplits} from '$lib/server/finance/commands';
-import {appendEvent} from '@skjoldjasper/shared';
+import {getPool} from '@skjoldjasper/db';
+import {validateTransaction, validateSplitCategories, validateSplitTotal} from '$lib/server/finance/commands';
+import {logAudit} from '$lib/server/finance/audit';
 
-const SplitsSchema = z.object({
-    splits: z.array(z.object({categoryId: z.string().min(1), amount: z.number()})).min(1)
+const UpdateSplitsSchema = z.object({
+    splits: z.array(z.object({
+        categoryId: z.string().min(1),
+        amount: z.number()
+    }))
 });
 
 export const POST: RequestHandler = async ({params, request, locals}) => {
-    const budgetId = params.budgetId as string;
-    const transactionId = params.transactionId as string;
-    const body = await request.json().catch(() => null);
-    const parsed = SplitsSchema.safeParse(body);
-    if (!parsed.success) return json({error: 'invalid_body'}, {status: 400});
-
+    const {budgetId, transactionId} = params;
     const userId = locals.user?.id;
-
     if (!userId) return json({error: 'unauthorized'}, {status: 401});
 
-    const pool = getPool();
-    const state = await loadBudget(pool as any, budgetId);
-    if (!state) return json({error: 'not_found'}, {status: 404});
+    const body = await request.json().catch(() => null);
+    const parsed = UpdateSplitsSchema.safeParse(body);
+    if (!parsed.success) return json({error: 'invalid_body'}, {status: 400});
 
-    let eventPayload;
+    const pool = getPool();
+
+    // Validate transaction exists
     try {
-        eventPayload = assignSplits(state, transactionId, parsed.data.splits);
+        await validateTransaction(pool, transactionId, budgetId);
     } catch (err: any) {
-        return json({
-            error: 'validation_failed',
-            message: String(err?.message ?? err)
-        }, {status: 400});
+        return json({error: 'not_found'}, {status: 404});
     }
 
-    await appendEvent(
-        pool,
-        {
-            context: 'finance',
-            streamCategory: 'budget',
-            streamId: budgetId,
-            type: 'TransactionSplitAssigned',
-            version: state.version + 1,
-            payload: eventPayload
-        },
-        {userId}
+    // Validate all categories exist
+    const categoryIds = parsed.data.splits.map((s) => s.categoryId);
+    try {
+        await validateSplitCategories(pool, budgetId, categoryIds);
+    } catch (err: any) {
+        return json({error: 'validation_failed', message: String(err?.message ?? err)}, {status: 400});
+    }
+
+    // Validate total matches transaction amount
+    const totalAmount = parsed.data.splits.reduce((sum, s) => sum + s.amount, 0);
+    try {
+        await validateSplitTotal(pool, transactionId, totalAmount);
+    } catch (err: any) {
+        return json({error: 'validation_failed', message: String(err?.message ?? err)}, {status: 400});
+    }
+
+    // Get existing splits for audit
+    const existingResult = await pool.query(
+        `SELECT category_id, amount FROM transaction_splits WHERE transaction_id = $1`,
+        [transactionId]
     );
 
-    return json({ok: true}, {status: 201});
+    const beforeData = existingResult.rows;
+
+    // Delete existing splits
+    await pool.query(`DELETE FROM transaction_splits WHERE transaction_id = $1`, [transactionId]);
+
+    // Insert new splits
+    for (const split of parsed.data.splits) {
+        await pool.query(
+            `INSERT INTO transaction_splits (transaction_id, category_id, amount) VALUES ($1, $2, $3)`,
+            [transactionId, split.categoryId, split.amount]
+        );
+    }
+
+    // Log audit (one per split)
+    for (const split of parsed.data.splits) {
+        await logAudit(pool, {
+            tableName: 'transaction_splits',
+            recordId: `${transactionId}:${split.categoryId}`,
+            operation: 'INSERT',
+            changedByUserId: userId,
+            afterData: {transaction_id: transactionId, category_id: split.categoryId, amount: split.amount}
+        });
+    }
+
+    return json({ok: true});
 };

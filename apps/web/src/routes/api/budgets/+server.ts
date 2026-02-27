@@ -1,8 +1,9 @@
 import type {RequestHandler} from '@sveltejs/kit';
 import {json} from '@sveltejs/kit';
 import {z} from 'zod';
-import {appendEvent} from '@skjoldjasper/shared';
-import {getPool} from '$lib/server/db';
+import {getPool} from '@skjoldjasper/db';
+import {getBudgetsForUser} from '$lib/server/finance/queries';
+import {logAudit} from '$lib/server/finance/audit';
 
 const CreateBudgetSchema = z.object({name: z.string().min(1), currency: z.string().min(1)});
 
@@ -11,27 +12,7 @@ export const GET: RequestHandler = async ({locals}) => {
     if (!userId) return json({budgets: []});
 
     const pool = getPool();
-    const {rows} = await pool.query(
-        `SELECT DISTINCT
-         ON (stream_id) stream_id, payload, created_at
-         FROM aggregate_snapshots
-         WHERE context = 'finance' AND stream_category = 'budget'
-         ORDER BY stream_id, version DESC`
-    );
-
-    const budgets = rows
-        .map((r) => ({
-            id: r.stream_id as string,
-            payload: r.payload as any,
-            createdAt: r.created_at as string
-        }))
-        .filter((r) => Array.isArray(r.payload?.members) && r.payload.members.includes(userId))
-        .map((r) => ({
-            id: r.id,
-            name: r.payload.name as string,
-            currency: r.payload.currency as string,
-            createdAt: r.createdAt
-        }));
+    const budgets = await getBudgetsForUser(pool, userId);
 
     return json({budgets});
 };
@@ -47,18 +28,26 @@ export const POST: RequestHandler = async ({request, locals}) => {
     const pool = getPool();
     const budgetId = `budget-${crypto.randomUUID()}`;
 
-    await appendEvent(
-        pool,
-        {
-            context: 'finance',
-            streamCategory: 'budget',
-            streamId: budgetId,
-            type: 'BudgetCreated',
-            version: 0,
-            payload: {name: parsed.data.name, currency: parsed.data.currency, creatorUserId: userId}
-        },
-        {userId}
+    // Insert budget
+    await pool.query(
+        `INSERT INTO budgets (id, name, currency, creator_user_id) VALUES ($1, $2, $3, $4)`,
+        [budgetId, parsed.data.name, parsed.data.currency, userId]
     );
+
+    // Add creator as a member
+    await pool.query(`INSERT INTO budget_members (budget_id, user_id) VALUES ($1, $2)`, [
+        budgetId,
+        userId
+    ]);
+
+    // Log audit entry
+    await logAudit(pool, {
+        tableName: 'budgets',
+        recordId: budgetId,
+        operation: 'INSERT',
+        changedByUserId: userId,
+        afterData: {id: budgetId, name: parsed.data.name, currency: parsed.data.currency, creator_user_id: userId}
+    });
 
     return json({id: budgetId}, {status: 201});
 };
