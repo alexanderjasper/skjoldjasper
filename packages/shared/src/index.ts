@@ -13,5 +13,4 @@ export type UserProfile = z.infer<typeof userProfileSchema>;
 export * from './config.js';
 export * from './http.js';
 export * from './rateLimit.js';
-export * from './events.js';
 
