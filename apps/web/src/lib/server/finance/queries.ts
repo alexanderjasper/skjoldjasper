@@ -1,27 +1,42 @@
 import type {Pool} from 'pg';
 
 export interface BudgetSummary {
-    streamId: string;
+    id: string;
     name: string;
     currency: string;
     createdAt: Date;
 }
 
-export interface BudgetSnapshotState {
+export interface Category {
+    id: string;
+    name: string;
+    parentId: string | null;
+    yearlyTarget?: number;
+}
+
+export interface Transaction {
+    id: string;
+    date: Date;
+    description: string;
+    amount: number;
+    note?: string;
+}
+
+export interface TransactionSplit {
+    categoryId: string;
+    amount: number;
+}
+
+export interface BudgetDetails {
+    id: string;
     name: string;
     currency: string;
     creatorUserId: string;
+    createdAt: Date;
     members: string[];
-    categories: Record<string, {
-        id: string;
-        name: string;
-        parentId: string | null;
-        yearlyTarget?: number
-    }>;
-    transactions: Record<string, { id: string; date: string; description: string; amount: number }>;
-    splits: Record<string, Array<{ categoryId: string; amount: number }>>;
-    notes: Record<string, string>;
-    version: number;
+    categories: Category[];
+    transactions: Transaction[];
+    splits: Record<string, TransactionSplit[]>;
 }
 
 export interface CategoryActual {
@@ -32,260 +47,144 @@ export interface CategoryActual {
     actualSpent: number;
 }
 
-async function getLatestSnapshots(pool: Pool) {
-    const {rows} = await pool.query(
-        `SELECT DISTINCT
-         ON (stream_id)
-             stream_id,
-             payload,
-             created_at
-         FROM aggregate_snapshots
-         WHERE context = 'finance' AND stream_category = 'budget'
-         ORDER BY stream_id, version DESC`
-    );
-    return rows as Array<{ stream_id: string; payload: any; created_at: Date }>;
-}
-
+/**
+ * Get all budgets accessible to a given user (via budget_members).
+ */
 export async function getBudgetsForUser(pool: Pool, userId: string): Promise<BudgetSummary[]> {
-    const rows = await getLatestSnapshots(pool);
-    const snapshotResults: BudgetSummary[] = [];
-    const seenStreamIds = new Set<string>();
-
-    for (const r of rows) {
-        const state = r.payload as BudgetSnapshotState;
-        if (Array.isArray(state.members) && state.members.includes(userId)) {
-            snapshotResults.push({
-                streamId: r.stream_id,
-                name: state.name,
-                currency: state.currency,
-                createdAt: r.created_at
-            });
-            seenStreamIds.add(r.stream_id);
-        }
-    }
-
-    const {rows: eventRows} = await pool.query(
-        `SELECT DISTINCT stream_id
-         FROM events
-         WHERE context = 'finance'
-           AND stream_category = 'budget'`
+    const result = await pool.query(
+        `SELECT b.id, b.name, b.currency, b.created_at
+         FROM budgets b
+         INNER JOIN budget_members bm ON b.id = bm.budget_id
+         WHERE bm.user_id = $1
+         ORDER BY b.created_at DESC`,
+        [userId]
     );
 
-    for (const eventRow of eventRows) {
-        const streamId = eventRow.stream_id as string;
-        if (!seenStreamIds.has(streamId)) {
-            const rebuilt = await buildStateFromEvents(pool, streamId);
-            if (rebuilt && Array.isArray(rebuilt.state.members) && rebuilt.state.members.includes(userId)) {
-                snapshotResults.push({
-                    streamId,
-                    name: rebuilt.state.name,
-                    currency: rebuilt.state.currency,
-                    createdAt: rebuilt.createdAt
-                });
-            }
-        }
-    }
-
-    return snapshotResults;
+    return result.rows.map((r) => ({
+        id: r.id,
+        name: r.name,
+        currency: r.currency,
+        createdAt: new Date(r.created_at)
+    }));
 }
 
-function applyEventToState(state: BudgetSnapshotState, type: string, payload: any): void {
-    // Ensure all state collections are initialized (might be missing in old snapshots)
-    if (!state.categories) state.categories = {};
-    if (!state.transactions) state.transactions = {};
-    if (!state.splits) state.splits = {};
-    if (!state.notes) state.notes = {};
-    if (!state.savingGoals) state.savingGoals = {};
-    if (!state.accounts) state.accounts = {};
-    if (!state.members) state.members = [];
-
-    switch (type) {
-        case 'BudgetCreated': {
-            state.name = payload.name;
-            state.currency = payload.currency;
-            state.creatorUserId = payload.creatorUserId;
-            if (!state.members.includes(payload.creatorUserId)) state.members.push(payload.creatorUserId);
-            break;
-        }
-        case 'MemberAdded': {
-            const userId: string = payload.userId;
-            if (!state.members.includes(userId)) state.members.push(userId);
-            break;
-        }
-        case 'CategoryAdded': {
-            const c = {
-                id: payload.categoryId,
-                name: payload.name,
-                parentId: payload.parentId ?? null
-            };
-            state.categories[c.id] = c;
-            break;
-        }
-        case 'CategoryTargetSet': {
-            const {categoryId, yearlyTarget} = payload as {
-                categoryId: string;
-                yearlyTarget: number
-            };
-            const c = state.categories[categoryId];
-            if (c) c.yearlyTarget = yearlyTarget;
-            break;
-        }
-        case 'TransactionsImported': {
-            const txs = (payload.transactions ?? []) as Array<{
-                transactionId: string;
-                date: string;
-                description: string;
-                amount: number
-            }>;
-            for (const t of txs) {
-                state.transactions[t.transactionId] = {
-                    id: t.transactionId,
-                    date: t.date,
-                    description: t.description,
-                    amount: t.amount
-                };
-            }
-            break;
-        }
-        case 'TransactionSplitAssigned': {
-            const {transactionId, splits} = payload as {
-                transactionId: string;
-                splits: Array<{ categoryId: string; amount: number }>
-            };
-            state.splits[transactionId] = splits;
-            break;
-        }
-        case 'TransactionNoteAdded': {
-            const {transactionId, note} = payload as { transactionId: string; note: string };
-            state.notes[transactionId] = note;
-            break;
-        }
-    }
-}
-
-async function buildStateFromEvents(pool: Pool, budgetId: string): Promise<{
-    state: BudgetSnapshotState;
-    createdAt: Date
-} | null> {
-    const {rows} = await pool.query(
-        `SELECT type, payload, created_at, version
-         FROM events
-         WHERE context = 'finance'
-           AND stream_category = 'budget'
-           AND stream_id = $1
-         ORDER BY position ASC`,
+/**
+ * Get full budget details: budget metadata, categories, transactions, splits.
+ */
+export async function getBudgetDetails(
+    pool: Pool,
+    budgetId: string
+): Promise<BudgetDetails | null> {
+    // Load budget
+    const budgetResult = await pool.query(
+        `SELECT id, name, currency, creator_user_id, created_at FROM budgets WHERE id = $1`,
         [budgetId]
     );
 
-    if (rows.length === 0) return null;
-
-    const state: BudgetSnapshotState = {
-        name: '',
-        currency: '',
-        creatorUserId: '',
-        members: [],
-        categories: {},
-        transactions: {},
-        splits: {},
-        notes: {},
-        version: rows.length
-    };
-
-    for (const row of rows) {
-        applyEventToState(state, row.type as string, row.payload);
-        state.version = Number(row.version ?? state.version);
+    if (budgetResult.rows.length === 0) {
+        return null;
     }
 
-    return {state, createdAt: rows[0].created_at as Date};
-}
+    const b = budgetResult.rows[0];
 
-export async function getBudgetDetails(pool: Pool, budgetId: string) {
-    const {rows: snapshotRows} = await pool.query(
-        `SELECT version, payload, created_at
-         FROM aggregate_snapshots
-         WHERE context = 'finance'
-           AND stream_category = 'budget'
-           AND stream_id = $1
-         ORDER BY version DESC LIMIT 1`,
+    // Load budget members
+    const membersResult = await pool.query(`SELECT user_id FROM budget_members WHERE budget_id = $1`, [
+        budgetId
+    ]);
+    const members = membersResult.rows.map((r) => r.user_id);
+
+    // Load categories
+    const categoriesResult = await pool.query(
+        `SELECT id, name, parent_id, yearly_target FROM categories WHERE budget_id = $1`,
         [budgetId]
     );
 
-    let state: BudgetSnapshotState;
-    let startVersion = 0;
-    let createdAt: Date;
-
-    if (snapshotRows.length === 0) {
-        const rebuilt = await buildStateFromEvents(pool, budgetId);
-        if (!rebuilt) return null;
-        state = rebuilt.state;
-        createdAt = rebuilt.createdAt;
-        startVersion = state.version;
-    } else {
-        state = snapshotRows[0].payload as BudgetSnapshotState;
-        startVersion = Number(snapshotRows[0].version);
-        createdAt = snapshotRows[0].created_at as Date;
-    }
-
-    // Load any events after the snapshot
-    const {rows: eventRows} = await pool.query(
-        `SELECT type, payload, created_at, version
-         FROM events
-         WHERE context = 'finance'
-           AND stream_category = 'budget'
-           AND stream_id = $1
-           AND version > $2
-         ORDER BY version ASC`,
-        [budgetId, startVersion]
+    // Load transactions
+    const transactionsResult = await pool.query(
+        `SELECT id, date, description, amount, note FROM transactions WHERE budget_id = $1 ORDER BY date`,
+        [budgetId]
     );
 
-    for (const row of eventRows) {
-        applyEventToState(state, row.type as string, row.payload);
-        state.version = Number(row.version);
-    }
+    // Load transaction splits
+    const splitsResult = await pool.query(
+        `SELECT transaction_id, category_id, amount FROM transaction_splits WHERE transaction_id = ANY
+         (SELECT id FROM transactions WHERE budget_id = $1)`,
+        [budgetId]
+    );
 
-    return {budgetId, state, createdAt};
-}
-
-export async function getBudgetVsActual(pool: Pool, budgetId: string): Promise<CategoryActual[]> {
-    const details = await getBudgetDetails(pool, budgetId);
-    if (!details) return [];
-    const {state} = details;
-
-    const actualByCategory = new Map<string, number>();
-    for (const [, splits] of Object.entries(state.splits || {})) {
-        for (const split of splits) {
-            actualByCategory.set(
-                split.categoryId,
-                (actualByCategory.get(split.categoryId) ?? 0) + Number(split.amount)
-            );
+    const splitsMap = new Map<string, TransactionSplit[]>();
+    for (const s of splitsResult.rows) {
+        if (!splitsMap.has(s.transaction_id)) {
+            splitsMap.set(s.transaction_id, []);
         }
-    }
-
-    const results: CategoryActual[] = [];
-    for (const [catId, cat] of Object.entries(state.categories || {})) {
-        results.push({
-            categoryId: catId,
-            categoryName: cat.name,
-            parentId: cat.parentId,
-            yearlyTarget: cat.yearlyTarget,
-            actualSpent: actualByCategory.get(catId) ?? 0
+        splitsMap.get(s.transaction_id)!.push({
+            categoryId: s.category_id,
+            amount: parseFloat(s.amount)
         });
     }
 
-    function buildTree(items: CategoryActual[]): CategoryActual[] {
-        const itemMap = new Map(items.map(i => [i.categoryId, i]));
-        const roots: CategoryActual[] = [];
+    return {
+        id: b.id,
+        name: b.name,
+        currency: b.currency,
+        creatorUserId: b.creator_user_id,
+        createdAt: new Date(b.created_at),
+        members,
+        categories: categoriesResult.rows.map((r) => ({
+            id: r.id,
+            name: r.name,
+            parentId: r.parent_id,
+            yearlyTarget: r.yearly_target
+        })),
+        transactions: transactionsResult.rows.map((r) => ({
+            id: r.id,
+            date: new Date(r.date),
+            description: r.description,
+            amount: parseFloat(r.amount),
+            note: r.note
+        })),
+        splits: splitsMap
+    };
+}
 
-        function addToTree(item: CategoryActual, result: CategoryActual[]) {
-            result.push(item);
-            const children = items.filter(i => i.parentId === item.categoryId);
-            children.forEach(child => addToTree(child, result));
-        }
+/**
+ * Calculate actual spending per category (from transaction_splits).
+ * Returns a tree view with parent-child relationships.
+ */
+export async function getBudgetVsActual(pool: Pool, budgetId: string): Promise<CategoryActual[]> {
+    // Load all categories
+    const categoriesResult = await pool.query(
+        `SELECT id, name, parent_id, yearly_target FROM categories WHERE budget_id = $1`,
+        [budgetId]
+    );
 
-        items.filter(i => !i.parentId || !itemMap.has(i.parentId)).forEach(root => addToTree(root, roots));
-        return roots;
+    // Load all transaction splits for this budget
+    const splitsResult = await pool.query(
+        `SELECT ts.category_id, ts.amount
+         FROM transaction_splits ts
+         INNER JOIN transactions t ON ts.transaction_id = t.id
+         WHERE t.budget_id = $1`,
+        [budgetId]
+    );
+
+    // Calculate actual per category
+    const actualByCategory = new Map<string, number>();
+    for (const s of splitsResult.rows) {
+        actualByCategory.set(
+            s.category_id,
+            (actualByCategory.get(s.category_id) ?? 0) + parseFloat(s.amount)
+        );
     }
 
-    return buildTree(results);
+    // Build result list
+    const results: CategoryActual[] = categoriesResult.rows.map((r) => ({
+        categoryId: r.id,
+        categoryName: r.name,
+        parentId: r.parent_id,
+        yearlyTarget: r.yearly_target,
+        actualSpent: actualByCategory.get(r.id) ?? 0
+    }));
+
+    return results;
 }
 
