@@ -17,18 +17,6 @@ export interface TransactionSplit {
     amount: number;
 }
 
-export interface BudgetState {
-    name: string;
-    currency: string;
-    creatorUserId: string;
-    members: Set<string>;
-    categories: Map<string, Category>;
-    transactions: Map<string, Transaction>;
-    splits: Map<string, TransactionSplit[]>;
-    notes: Map<string, string>;
-    version: number;
-}
-
 export interface DuplicateWarning {
     transactionId: string;
     date: string;
