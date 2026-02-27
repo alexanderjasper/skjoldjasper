@@ -4,7 +4,6 @@
   "main": "index.js",
   "scripts": {
     "setup": "bash scripts/setup.sh",
-    "install": "pnpm install",
     "build": "pnpm build",
     "dev": "turbo run dev --parallel --filter=web --filter=game-server",
     "dev:db": "cd infra && docker compose up -d postgres",
