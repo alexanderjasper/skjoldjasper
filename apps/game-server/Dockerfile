@@ -2,6 +2,9 @@ FROM node:22-alpine
 
 WORKDIR /workspace
 
+# Install git (needed for pnpm to install git-based dependencies like uWebSockets.js)
+RUN apk add --no-cache git
+
 RUN corepack enable
 
 COPY . .
