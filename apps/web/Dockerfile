@@ -5,8 +5,8 @@ WORKDIR /workspace
 # Install git (needed for pnpm to install git-based dependencies)
 RUN apk add --no-cache git
 
-# Enable corepack so pnpm from packageManager is available
-RUN corepack enable
+# Enable corepack and prepare pnpm
+RUN corepack enable && corepack prepare pnpm@10.20.0 --activate
 
 # Copy entire repo (simple, not optimized for build cache)
 COPY . .
