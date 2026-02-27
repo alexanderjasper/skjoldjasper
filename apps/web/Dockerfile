@@ -2,6 +2,9 @@ FROM node:22-alpine
 
 WORKDIR /workspace
 
+# Install git (needed for pnpm to install git-based dependencies)
+RUN apk add --no-cache git
+
 # Enable corepack so pnpm from packageManager is available
 RUN corepack enable
 
@@ -14,10 +17,10 @@ RUN pnpm -w install --no-frozen-lockfile --filter web... --filter @skjoldjasper/
 # Build shared/db packages
 RUN pnpm -w --filter @skjoldjasper/shared --filter @skjoldjasper/db build
 
-# Install projector deps
-RUN pnpm --dir apps/projector install --no-frozen-lockfile
+# Install web deps
+RUN pnpm --dir apps/web install --no-frozen-lockfile
 
-# Run projector and web together
-CMD ["sh", "-lc", "pnpm --dir apps/projector run & pnpm --dir apps/web dev -- --host 0.0.0.0 --port 5173 --strictPort"]
+# Start web server
+CMD ["pnpm", "--dir", "apps/web", "dev", "--", "--host", "0.0.0.0", "--port", "5173"]
 
 
