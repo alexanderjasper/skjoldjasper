@@ -39,7 +39,6 @@
     "@colyseus/playground": "^0.16.4",
     "@colyseus/schema": "^3.0.69",
     "@colyseus/tools": "^0.16.14",
-    "@sentry/node": "^10.27.0",
     "@skjoldjasper/db": "workspace:*",
     "@skjoldjasper/shared": "workspace:*",
     "colyseus": "^0.16.5",
