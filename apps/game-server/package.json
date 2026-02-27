@@ -1,8 +1,8 @@
 {
   "private": true,
-  "name": "my-app",
+  "name": "game-server",
   "version": "1.0.0",
-  "description": "npm init template for bootstrapping an empty Colyseus project",
+  "description": "Colyseus game server for skjoldjasper",
   "main": "build/index.js",
   "engines": {
     "node": ">= 20.9.0"
