@@ -3,8 +3,8 @@ import {getPool} from '$lib/server/db';
 
 export const load: PageServerLoad = async () => {
     const pool = getPool();
-    const {rows} = await pool.query<{ stream_id: string; counter: number }>(
-        'SELECT stream_id, counter FROM game_room_view ORDER BY counter DESC NULLS LAST LIMIT 50'
+    const {rows} = await pool.query<{ room_id: string; counter: number }>(
+        'SELECT room_id, counter FROM game_room_states ORDER BY counter DESC NULLS LAST LIMIT 50'
     );
     return {rooms: rows};
 };

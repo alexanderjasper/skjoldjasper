@@ -83,9 +83,10 @@
         return result;
     }
 
-    $: categoryTree = data.details?.state?.categories ? buildCategoryTree(data.details.state.categories) : [];
+    $: categoriesById = (data.details?.state?.categories ?? {}) as Record<string, Category>;
+    $: categoryTree = Object.keys(categoriesById).length > 0 ? buildCategoryTree(categoriesById) : [];
     $: flatCategories = flattenTree(categoryTree);
-    $: categories = Object.values(data.details?.state?.categories ?? {}) as Category[];
+    $: categories = Object.values(categoriesById) as Category[];
     $: transactions = Object.values(data.details?.state?.transactions ?? {}) as Transaction[];
 
     function computeDepth(item: { categoryId: string; parentId: string | null }, allItems: Array<{
@@ -103,13 +104,11 @@
     }
 
     function hasChildren(categoryId: string): boolean {
-        const categories = data.details?.state?.categories ?? {};
-        return (Object.values(categories) as Category[]).some((cat: Category) => cat.parentId === categoryId);
+        return (Object.values(categoriesById) as Category[]).some((cat: Category) => cat.parentId === categoryId);
     }
 
     function calculateParentTarget(categoryId: string): number | undefined {
-        const categories = data.details?.state?.categories ?? {};
-        const children = (Object.values(categories) as Category[]).filter((cat: Category) => cat.parentId === categoryId);
+        const children = (Object.values(categoriesById) as Category[]).filter((cat: Category) => cat.parentId === categoryId);
         if (children.length === 0) return undefined;
 
         const sum = children.reduce((total: number, child: Category) => {
@@ -124,9 +123,8 @@
     }
 
     function calculateParentActual(categoryId: string): number {
-        const categories = data.details?.state?.categories ?? {};
         const overview = data.overview ?? [];
-        const children = (Object.values(categories) as Category[]).filter((cat: Category) => cat.parentId === categoryId);
+        const children = (Object.values(categoriesById) as Category[]).filter((cat: Category) => cat.parentId === categoryId);
         if (children.length === 0) return 0;
 
         return children.reduce((total: number, child: Category) => {
@@ -187,7 +185,7 @@
         noteError = '';
         const note = (noteText[txId] ?? '').trim();
         const res = await fetch(`/api/budgets/${encodeURIComponent(data.budgetId)}/transactions/${encodeURIComponent(txId)}/note`, {
-            method: 'POST',
+            method: 'PATCH',
             headers: {'content-type': 'application/json'},
             credentials: 'same-origin',
             body: JSON.stringify({note})
@@ -204,11 +202,13 @@
         importError = '';
         importMsg = '';
         duplicates = [];
+        const file = new File([csvText], 'import.csv', {type: 'text/plain'});
+        const formData = new FormData();
+        formData.set('file', file);
         const res = await fetch(`/api/budgets/${encodeURIComponent(data.budgetId)}/import`, {
             method: 'POST',
-            headers: {'content-type': 'text/plain'},
             credentials: 'same-origin',
-            body: csvText
+            body: formData
         });
         if (res.status === 409) {
             const j = await res.json();
@@ -228,11 +228,13 @@
     }
 
     async function importConfirmed() {
+        const file = new File([csvText], 'import.csv', {type: 'text/plain'});
+        const formData = new FormData();
+        formData.set('file', file);
         const res = await fetch(`/api/budgets/${encodeURIComponent(data.budgetId)}/import?confirm=1`, {
             method: 'POST',
-            headers: {'content-type': 'text/plain'},
             credentials: 'same-origin',
-            body: csvText
+            body: formData
         });
         if (!res.ok) {
             const j = await res.json().catch(() => ({}));
@@ -482,7 +484,7 @@
                                                      role="presentation">
                                                     <input
                                                             type="number"
-                                                            class="flex-1 rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm text-slate-100 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+                                                            class="flex-1 rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
                                                             bind:value={targetValue[row.categoryId]}
                                                             on:keydown={(e) => e.key === 'Enter' && saveTarget(row.categoryId)}
                                                             on:keydown={(e) => e.key === 'Escape' && cancelEditingTarget()}
@@ -541,7 +543,7 @@
                                 bind:value={catName}
                         />
                         <select
-                                class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-100 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 w-full sm:w-64"
+                                class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 w-full sm:w-64"
                                 bind:value={parentId}
                         >
                             <option value={null}>Ingen forælder</option>
@@ -601,7 +603,7 @@
                                                 <span class="font-medium">Opdelinger:</span>
                                                 {#each splits as split}
                                                     {@const
-                                                        cat = categories[split.categoryId]}
+                                                        cat = categoriesById[split.categoryId]}
                                                     <span class="ml-2">
                           {cat?.name ?? split.categoryId}: <span
                                                             class="text-right inline-block min-w-[60px]">{formatNumber(split.amount)}</span>

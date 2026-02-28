@@ -4,6 +4,7 @@ import {z} from 'zod';
 import {getPool} from '@skjoldjasper/db';
 import {validateTransaction, validateSplitCategories, validateSplitTotal} from '$lib/server/finance/commands';
 import {logAudit} from '$lib/server/finance/audit';
+import {hasBudgetAccess} from '$lib/server/finance/access';
 
 const UpdateSplitsSchema = z.object({
     splits: z.array(z.object({
@@ -13,7 +14,8 @@ const UpdateSplitsSchema = z.object({
 });
 
 export const POST: RequestHandler = async ({params, request, locals}) => {
-    const {budgetId, transactionId} = params;
+    const budgetId = params.budgetId as string;
+    const transactionId = params.transactionId as string;
     const userId = locals.user?.id;
     if (!userId) return json({error: 'unauthorized'}, {status: 401});
 
@@ -22,6 +24,8 @@ export const POST: RequestHandler = async ({params, request, locals}) => {
     if (!parsed.success) return json({error: 'invalid_body'}, {status: 400});
 
     const pool = getPool();
+    const canAccess = await hasBudgetAccess(pool, budgetId, userId);
+    if (!canAccess) return json({error: 'forbidden'}, {status: 403});
 
     // Validate transaction exists
     try {

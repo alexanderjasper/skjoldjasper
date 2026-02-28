@@ -4,6 +4,7 @@ import {z} from 'zod';
 import {getPool} from '@skjoldjasper/db';
 import {logAudit} from '$lib/server/finance/audit';
 import {validateParentCategory, validateLeafCategory} from '$lib/server/finance/commands';
+import {hasBudgetAccess} from '$lib/server/finance/access';
 
 const AddCategorySchema = z.object({
     name: z.string().min(1),
@@ -25,12 +26,8 @@ export const POST: RequestHandler = async ({params, request, locals}) => {
     if (!userId) return json({error: 'unauthorized'}, {status: 401});
 
     const pool = getPool();
-
-    // Verify budget exists
-    const budgetCheck = await pool.query('SELECT 1 FROM budgets WHERE id = $1', [budgetId]);
-    if (budgetCheck.rows.length === 0) {
-        return json({error: 'not_found'}, {status: 404});
-    }
+    const canAccess = await hasBudgetAccess(pool, budgetId, userId);
+    if (!canAccess) return json({error: 'forbidden'}, {status: 403});
 
     // Validate parent category exists (if provided)
     try {
@@ -74,12 +71,8 @@ export const PATCH: RequestHandler = async ({params, request, locals}) => {
     if (!userId) return json({error: 'unauthorized'}, {status: 401});
 
     const pool = getPool();
-
-    // Verify budget exists
-    const budgetCheck = await pool.query('SELECT 1 FROM budgets WHERE id = $1', [budgetId]);
-    if (budgetCheck.rows.length === 0) {
-        return json({error: 'not_found'}, {status: 404});
-    }
+    const canAccess = await hasBudgetAccess(pool, budgetId, userId);
+    if (!canAccess) return json({error: 'forbidden'}, {status: 403});
 
     // Get existing category data
     const catResult = await pool.query(
