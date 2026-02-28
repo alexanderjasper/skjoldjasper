@@ -3,13 +3,19 @@
      .\infra\update-windows.ps1
 
    What it does:
-   - Rebuilds and restarts web, game-server, and cloudflared (and postgres if needed)
+  - Rebuilds and restarts postgres, web, and game-server
+  - Starts cloudflared only if token is configured
 #>
 
 $ErrorActionPreference = "Stop"
 
-Write-Host "Rebuilding and restarting postgres, web, game-server, and cloudflared..." -ForegroundColor Yellow
-docker compose -f infra\docker-compose.yml up -d --build postgres web game-server cloudflared
+if ($env:CLOUDFLARED_TUNNEL_TOKEN) {
+    Write-Host "Rebuilding and restarting postgres, web, game-server, and cloudflared..." -ForegroundColor Yellow
+    docker compose -f infra\docker-compose.yml up -d --build postgres web game-server cloudflared
+} else {
+    Write-Host "Rebuilding and restarting postgres, web, and game-server..." -ForegroundColor Yellow
+    docker compose -f infra\docker-compose.yml up -d --build postgres web game-server
+}
 
 Write-Host ""
 Write-Host "Containers running:" -ForegroundColor Cyan

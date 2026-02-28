@@ -18,6 +18,6 @@ docker compose up -d postgres
 # Dev stack (web, game-server)
 docker compose up -d web game-server
 
-# Optional: Cloudflare Tunnel (requires config.yml + credentials JSON)
-docker compose up -d cloudflared
+# Optional: Cloudflare Tunnel (requires CLOUDFLARED_TUNNEL_TOKEN in infra/.env)
+docker compose --profile tunnel up -d cloudflared
 ```

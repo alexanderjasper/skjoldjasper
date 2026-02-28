@@ -5,7 +5,7 @@
       "name": "SvelteKit Dev (inspect)",
       "type": "node",
       "request": "launch",
-      "runtimeExecutable": "/Users/alexander/.nvm/versions/node/v22.16.0/bin/pnpm",
+      "runtimeExecutable": "pnpm",
       "runtimeArgs": [
         "--dir",
         "apps/web",
@@ -35,20 +35,6 @@
       ],
       "sourceMaps": true,
       "restart": true
-    },
-    {
-      "name": "Projector (attach)",
-      "type": "node",
-      "request": "attach",
-      "port": 9231,
-      "address": "localhost",
-      "localRoot": "${workspaceFolder}",
-      "remoteRoot": "${workspaceFolder}",
-      "skipFiles": [
-        "<node_internals>/**"
-      ],
-      "sourceMaps": true,
-      "restart": true
     }
   ],
   "compounds": [
@@ -56,8 +42,7 @@
       "name": "All Apps (inspect)",
       "configurations": [
         "SvelteKit Dev (inspect)",
-        "Game Server (attach)",
-        "Projector (attach)"
+        "Game Server (attach)"
       ],
       "stopAll": true
     }
