@@ -123,6 +123,8 @@ export async function getBudgetDetails(
         });
     }
 
+    const splits = Object.fromEntries(splitsMap.entries());
+
     return {
         id: b.id,
         name: b.name,
@@ -143,7 +145,7 @@ export async function getBudgetDetails(
             amount: parseFloat(r.amount),
             note: r.note
         })),
-        splits: splitsMap
+        splits
     };
 }
 
