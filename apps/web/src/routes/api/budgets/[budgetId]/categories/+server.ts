@@ -8,7 +8,8 @@ import {hasBudgetAccess} from '$lib/server/finance/access';
 
 const AddCategorySchema = z.object({
     name: z.string().min(1),
-    parentId: z.string().min(1).nullable().optional()
+    parentId: z.string().min(1).nullable().optional(),
+    confirmWipeParentGoal: z.boolean().optional()
 });
 
 const SetTargetSchema = z.object({
@@ -34,6 +35,47 @@ export const POST: RequestHandler = async ({params, request, locals}) => {
         await validateParentCategory(pool, budgetId, parsed.data.parentId ?? null);
     } catch (err: any) {
         return json({error: 'validation_failed', message: String(err?.message ?? err)}, {status: 400});
+    }
+
+    let parentBeforeData: any = null;
+    let wipeParentGoal = false;
+    if (parsed.data.parentId) {
+        const parentResult = await pool.query(
+            `SELECT id, budget_id, name, parent_id, yearly_target FROM categories WHERE id = $1 AND budget_id = $2`,
+            [parsed.data.parentId, budgetId]
+        );
+        if (parentResult.rows.length > 0) {
+            parentBeforeData = parentResult.rows[0];
+            const hasParentGoal =
+                parentBeforeData.yearly_target !== null && parentBeforeData.yearly_target !== undefined;
+            if (hasParentGoal && !parsed.data.confirmWipeParentGoal) {
+                return json(
+                    {
+                        error: 'parent_goal_will_be_removed',
+                        message: 'Forældrekategori har et mål, som vil blive fjernet',
+                        parentCategoryId: parentBeforeData.id,
+                        parentCategoryName: parentBeforeData.name
+                    },
+                    {status: 409}
+                );
+            }
+            wipeParentGoal = hasParentGoal && !!parsed.data.confirmWipeParentGoal;
+        }
+    }
+
+    if (wipeParentGoal && parentBeforeData) {
+        await pool.query(`UPDATE categories SET yearly_target = NULL WHERE id = $1 AND budget_id = $2`, [
+            parentBeforeData.id,
+            budgetId
+        ]);
+        await logAudit(pool, {
+            tableName: 'categories',
+            recordId: parentBeforeData.id,
+            operation: 'UPDATE',
+            changedByUserId: userId,
+            beforeData: parentBeforeData,
+            afterData: {...parentBeforeData, yearly_target: null}
+        });
     }
 
     const categoryId = crypto.randomUUID();

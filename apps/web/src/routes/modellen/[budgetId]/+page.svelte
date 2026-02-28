@@ -167,15 +167,31 @@
             addCatError = 'Navn er påkrævet';
             return;
         }
-        const res = await fetch(`/api/budgets/${encodeURIComponent(data.budgetId)}/categories`, {
-            method: 'POST',
-            headers: {'content-type': 'application/json'},
-            credentials: 'same-origin',
-            body: JSON.stringify({name, parentId})
-        });
+        const createCategory = async (confirmWipeParentGoal: boolean) => {
+            return fetch(`/api/budgets/${encodeURIComponent(data.budgetId)}/categories`, {
+                method: 'POST',
+                headers: {'content-type': 'application/json'},
+                credentials: 'same-origin',
+                body: JSON.stringify({name, parentId, confirmWipeParentGoal})
+            });
+        };
+
+        let res = await createCategory(false);
+        if (res.status === 409) {
+            const j = await res.json().catch(() => ({}));
+            if (j?.error === 'parent_goal_will_be_removed') {
+                const parentName = j?.parentCategoryName ?? 'forældrekategorien';
+                const ok = window.confirm(
+                    `Forældrekategorien "${parentName}" har et mål, som bliver fjernet. Vil du fortsætte?`
+                );
+                if (!ok) return;
+                res = await createCategory(true);
+            }
+        }
+
         if (!res.ok) {
             const j = await res.json().catch(() => ({}));
-            addCatError = j?.error ?? 'Kunne ikke tilføje kategori';
+            addCatError = j?.message ?? j?.error ?? 'Kunne ikke tilføje kategori';
             return;
         }
         location.reload();
