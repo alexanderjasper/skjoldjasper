@@ -15,9 +15,18 @@
     let catName = '';
     let parentId: string | null = null;
     let addCatError = '';
+    let categoryActionError = '';
+    let editingCategoryId: string | null = null;
+    let editCategoryName = '';
+    let editCategoryParentId: string | null = null;
 
     let noteText: Record<string, string> = {};
     let noteError = '';
+    let transactionActionError = '';
+    let editingTransactionId: string | null = null;
+    let editTransactionDate = '';
+    let editTransactionDescription = '';
+    let editTransactionAmount = '';
 
     let csvText = '';
     let importMsg = '';
@@ -81,6 +90,20 @@
             }
         }
         return result;
+    }
+
+    function collectDescendantIds(categoryId: string): Set<string> {
+        const out = new Set<string>();
+        const walk = (parentId: string) => {
+            for (const cat of categories) {
+                if (cat.parentId === parentId) {
+                    out.add(cat.id);
+                    walk(cat.id);
+                }
+            }
+        };
+        walk(categoryId);
+        return out;
     }
 
     $: categoriesById = (data.details?.state?.categories ?? {}) as Record<string, Category>;
@@ -162,6 +185,7 @@
 
     async function addCategory() {
         addCatError = '';
+        categoryActionError = '';
         const name = catName.trim();
         if (!name) {
             addCatError = 'Navn er påkrævet';
@@ -192,6 +216,112 @@
         if (!res.ok) {
             const j = await res.json().catch(() => ({}));
             addCatError = j?.message ?? j?.error ?? 'Kunne ikke tilføje kategori';
+            return;
+        }
+        location.reload();
+    }
+
+    function startEditingCategory(cat: Category) {
+        categoryActionError = '';
+        editingCategoryId = cat.id;
+        editCategoryName = cat.name;
+        editCategoryParentId = cat.parentId ?? null;
+    }
+
+    function cancelEditingCategory() {
+        editingCategoryId = null;
+        editCategoryName = '';
+        editCategoryParentId = null;
+        categoryActionError = '';
+    }
+
+    async function saveCategory(categoryId: string) {
+        categoryActionError = '';
+        const name = editCategoryName.trim();
+        if (!name) {
+            categoryActionError = 'Navn er påkrævet';
+            return;
+        }
+
+        const updateCategory = async (confirmWipeParentGoal: boolean) => {
+            return fetch(`/api/budgets/${encodeURIComponent(data.budgetId)}/categories`, {
+                method: 'PATCH',
+                headers: {'content-type': 'application/json'},
+                credentials: 'same-origin',
+                body: JSON.stringify({
+                    categoryId,
+                    name,
+                    parentId: editCategoryParentId,
+                    confirmWipeParentGoal
+                })
+            });
+        };
+
+        let res = await updateCategory(false);
+        if (res.status === 409) {
+            const j = await res.json().catch(() => ({}));
+            if (j?.error === 'parent_goal_will_be_removed') {
+                const parentName = j?.parentCategoryName ?? 'forældrekategorien';
+                const ok = window.confirm(
+                    `Forældrekategorien "${parentName}" har et mål, som bliver fjernet. Vil du fortsætte?`
+                );
+                if (!ok) return;
+                res = await updateCategory(true);
+            }
+        }
+
+        if (!res.ok) {
+            const j = await res.json().catch(() => ({}));
+            categoryActionError = j?.message ?? j?.error ?? 'Kunne ikke gemme kategori';
+            return;
+        }
+        location.reload();
+    }
+
+    async function deleteCategory(categoryId: string) {
+        categoryActionError = '';
+        const cat = categoriesById[categoryId];
+        if (!cat) return;
+        const ok = window.confirm(`Slet kategori "${cat.name}"?`);
+        if (!ok) return;
+
+        const callDelete = async (
+            confirmDeleteWithChildren: boolean,
+            confirmDeleteWithSplits: boolean
+        ) => {
+            return fetch(`/api/budgets/${encodeURIComponent(data.budgetId)}/categories`, {
+                method: 'DELETE',
+                headers: {'content-type': 'application/json'},
+                credentials: 'same-origin',
+                body: JSON.stringify({
+                    categoryId,
+                    confirmDeleteWithChildren,
+                    confirmDeleteWithSplits
+                })
+            });
+        };
+
+        let res = await callDelete(false, false);
+        if (res.status === 409) {
+            const j = await res.json().catch(() => ({}));
+            if (j?.error === 'category_delete_requires_confirmation') {
+                const childMsg =
+                    j?.descendantCount > 0
+                        ? `Dette sletter også ${j.descendantCount} underkategori(er). `
+                        : '';
+                const splitMsg =
+                    j?.splitCount > 0
+                        ? `Dette fjerner også ${j.splitCount} opdeling(er) fra transaktioner. `
+                        : '';
+                const ok2 = window.confirm(`${childMsg}${splitMsg}Fortsæt med sletning?`);
+                if (!ok2) return;
+                res = await callDelete(true, true);
+            }
+        }
+
+        if (!res.ok) {
+            const j = await res.json().catch(() => ({}));
+            categoryActionError = j?.message ?? j?.error ?? 'Kunne ikke slette kategori';
             return;
         }
         location.reload();
@@ -417,6 +547,102 @@
         }
     }
 
+    function startEditingTransaction(tx: Transaction) {
+        transactionActionError = '';
+        editingTransactionId = tx.id;
+        editTransactionDate = tx.date;
+        editTransactionDescription = tx.description;
+        editTransactionAmount = tx.amount.toString();
+    }
+
+    function cancelEditingTransaction() {
+        editingTransactionId = null;
+        transactionActionError = '';
+    }
+
+    async function saveTransaction(transactionId: string) {
+        transactionActionError = '';
+        const date = editTransactionDate.trim();
+        const description = editTransactionDescription.trim();
+        const amount = parseFloat(editTransactionAmount);
+
+        if (!date || !description || !isFinite(amount)) {
+            transactionActionError = 'Dato, beskrivelse og beløb er påkrævet';
+            return;
+        }
+
+        const updateTransaction = async (confirmClearSplits: boolean) => {
+            return fetch(
+                `/api/budgets/${encodeURIComponent(data.budgetId)}/transactions/${encodeURIComponent(transactionId)}`,
+                {
+                    method: 'PATCH',
+                    headers: {'content-type': 'application/json'},
+                    credentials: 'same-origin',
+                    body: JSON.stringify({date, description, amount, confirmClearSplits})
+                }
+            );
+        };
+
+        let res = await updateTransaction(false);
+        if (res.status === 409) {
+            const j = await res.json().catch(() => ({}));
+            if (j?.error === 'transaction_update_requires_confirmation') {
+                const ok = window.confirm(
+                    `Beløb matcher ikke eksisterende opdelinger. ${j?.splitCount ?? 0} opdeling(er) bliver fjernet. Fortsæt?`
+                );
+                if (!ok) return;
+                res = await updateTransaction(true);
+            }
+        }
+
+        if (!res.ok) {
+            const j = await res.json().catch(() => ({}));
+            transactionActionError = j?.message ?? j?.error ?? 'Kunne ikke gemme transaktion';
+            return;
+        }
+        location.reload();
+    }
+
+    async function deleteTransaction(transactionId: string) {
+        transactionActionError = '';
+        const tx = transactions.find((t) => t.id === transactionId);
+        const ok = window.confirm(
+            `Slet transaktion "${tx?.description ?? transactionId}" på ${tx?.date ?? ''}?`
+        );
+        if (!ok) return;
+
+        const callDelete = async (confirmDeleteSplits: boolean) => {
+            return fetch(
+                `/api/budgets/${encodeURIComponent(data.budgetId)}/transactions/${encodeURIComponent(transactionId)}`,
+                {
+                    method: 'DELETE',
+                    headers: {'content-type': 'application/json'},
+                    credentials: 'same-origin',
+                    body: JSON.stringify({confirmDeleteSplits})
+                }
+            );
+        };
+
+        let res = await callDelete(false);
+        if (res.status === 409) {
+            const j = await res.json().catch(() => ({}));
+            if (j?.error === 'transaction_delete_requires_confirmation') {
+                const ok2 = window.confirm(
+                    `Denne transaktion har ${j?.splitCount ?? 0} opdeling(er), som også bliver slettet. Fortsæt?`
+                );
+                if (!ok2) return;
+                res = await callDelete(true);
+            }
+        }
+
+        if (!res.ok) {
+            const j = await res.json().catch(() => ({}));
+            transactionActionError = j?.message ?? j?.error ?? 'Kunne ikke slette transaktion';
+            return;
+        }
+        location.reload();
+    }
+
 </script>
 
 {#if data.notFound}
@@ -573,6 +799,9 @@
                     {#if addCatError}
                         <p class="text-sm text-red-600">{addCatError}</p>
                     {/if}
+                    {#if categoryActionError}
+                        <p class="text-sm text-red-600">{categoryActionError}</p>
+                    {/if}
                     <div class="space-y-1">
                         {#each flatCategories as cat}
                             <div class="flex items-center py-2 px-2 md:px-3 rounded-lg bg-slate-50/50"
@@ -580,10 +809,44 @@
                                 {#if cat.depth > 0}
                                     <span class="text-slate-400 mr-2 text-xs">└</span>
                                 {/if}
-                                <span class="text-slate-900 {cat.depth === 0 ? 'font-semibold' : 'font-medium'}">{cat.name}</span>
-                                {#if cat.yearlyTarget}
-                                    <span class="ml-2 text-sm text-slate-600">(Mål: {formatNumber(cat.yearlyTarget)}
-                                        )</span>
+                                {#if editingCategoryId === cat.id}
+                                    <div class="flex-1 flex flex-col gap-2 sm:flex-row sm:items-center">
+                                        <input
+                                                class="flex-1 rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm text-slate-900"
+                                                bind:value={editCategoryName}
+                                        />
+                                        <select
+                                                class="rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm text-slate-900"
+                                                bind:value={editCategoryParentId}
+                                        >
+                                            <option value={null}>Ingen forælder</option>
+                                            {#each categories.filter((candidate) => candidate.id !== cat.id && !collectDescendantIds(cat.id).has(candidate.id)) as candidate}
+                                                <option value={candidate.id}>{candidate.name}</option>
+                                            {/each}
+                                        </select>
+                                        <div class="flex items-center gap-2">
+                                            <button class="primary-button px-2 py-1 text-xs"
+                                                    on:click={() => saveCategory(cat.id)}>Gem
+                                            </button>
+                                            <button class="secondary-button px-2 py-1 text-xs"
+                                                    on:click={cancelEditingCategory}>Annuller
+                                            </button>
+                                        </div>
+                                    </div>
+                                {:else}
+                                    <span class="text-slate-900 {cat.depth === 0 ? 'font-semibold' : 'font-medium'}">{cat.name}</span>
+                                    {#if cat.yearlyTarget}
+                                        <span class="ml-2 text-sm text-slate-600">(Mål: {formatNumber(cat.yearlyTarget)}
+                                            )</span>
+                                    {/if}
+                                    <div class="ml-auto flex items-center gap-2">
+                                        <button class="secondary-button px-2 py-1 text-xs"
+                                                on:click={() => startEditingCategory(cat)}>Rediger
+                                        </button>
+                                        <button class="px-2 py-1 text-xs rounded-lg border border-red-300 text-red-700 hover:bg-red-50 transition"
+                                                on:click={() => deleteCategory(cat.id)}>Slet
+                                        </button>
+                                    </div>
                                 {/if}
                             </div>
                         {/each}
@@ -603,6 +866,9 @@
                     {#if splitError}
                         <p class="text-sm text-red-600">{splitError}</p>
                     {/if}
+                    {#if transactionActionError}
+                        <p class="text-sm text-red-600">{transactionActionError}</p>
+                    {/if}
                     <ul class="divide-y divide-slate-800">
                         {#each transactions as tx}
                             {@const splits = data.details?.state?.splits?.[tx.id] ?? []}
@@ -610,10 +876,31 @@
                             <li class="py-3 space-y-3">
                                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                                     <div class="min-w-0 flex-1">
-                                        <div class="font-medium text-slate-900 truncate">{tx.description}</div>
-                                        <div class="text-xs text-slate-600">{tx.date} · <span
-                                                class="text-right inline-block min-w-[80px]">{formatNumber(tx.amount)}</span>
-                                        </div>
+                                        {#if editingTransactionId === tx.id}
+                                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                                <input
+                                                        type="date"
+                                                        class="rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm text-slate-900"
+                                                        bind:value={editTransactionDate}
+                                                />
+                                                <input
+                                                        class="rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm text-slate-900"
+                                                        bind:value={editTransactionDescription}
+                                                        placeholder="Beskrivelse"
+                                                />
+                                                <input
+                                                        type="number"
+                                                        step="0.01"
+                                                        class="rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm text-slate-900 text-right"
+                                                        bind:value={editTransactionAmount}
+                                                />
+                                            </div>
+                                        {:else}
+                                            <div class="font-medium text-slate-900 truncate">{tx.description}</div>
+                                            <div class="text-xs text-slate-600">{tx.date} · <span
+                                                    class="text-right inline-block min-w-[80px]">{formatNumber(tx.amount)}</span>
+                                            </div>
+                                        {/if}
                                         {#if splits.length > 0}
                                             <div class="mt-2 text-xs text-slate-700">
                                                 <span class="font-medium">Opdelinger:</span>
@@ -633,21 +920,39 @@
                                         {/if}
                                     </div>
                                     <div class="flex flex-wrap items-center gap-2">
-                                        <input
-                                                class="rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm text-slate-900 placeholder-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 w-full sm:w-32"
-                                                placeholder="Note"
-                                                bind:value={noteText[tx.id]}
-                                        />
-                                        <button class="secondary-button px-3 py-1 text-sm"
-                                                on:click={() => saveNote(tx.id)}>Gem Note
-                                        </button>
-                                        <button
-                                                class="primary-button px-3 py-1 text-sm"
-                                                on:click={() => startEditingSplits(tx.id)}
-                                                disabled={editingSplits === tx.id}
-                                        >
-                                            {splits.length > 0 ? 'Rediger Opdelinger' : 'Tildel Opdelinger'}
-                                        </button>
+                                        {#if editingTransactionId === tx.id}
+                                            <button class="primary-button px-3 py-1 text-sm"
+                                                    on:click={() => saveTransaction(tx.id)}>Gem
+                                            </button>
+                                            <button class="secondary-button px-3 py-1 text-sm"
+                                                    on:click={cancelEditingTransaction}>Annuller
+                                            </button>
+                                        {:else}
+                                            <input
+                                                    class="rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm text-slate-900 placeholder-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 w-full sm:w-32"
+                                                    placeholder="Note"
+                                                    bind:value={noteText[tx.id]}
+                                            />
+                                            <button class="secondary-button px-3 py-1 text-sm"
+                                                    on:click={() => saveNote(tx.id)}>Gem Note
+                                            </button>
+                                            <button
+                                                    class="primary-button px-3 py-1 text-sm"
+                                                    on:click={() => startEditingSplits(tx.id)}
+                                                    disabled={editingSplits === tx.id}
+                                            >
+                                                {splits.length > 0 ? 'Rediger Opdelinger' : 'Tildel Opdelinger'}
+                                            </button>
+                                            <button class="secondary-button px-3 py-1 text-sm"
+                                                    on:click={() => startEditingTransaction(tx)}>Rediger
+                                            </button>
+                                            <button
+                                                    class="px-3 py-1 text-sm rounded-lg border border-red-300 text-red-700 hover:bg-red-50 transition"
+                                                    on:click={() => deleteTransaction(tx.id)}
+                                            >
+                                                Slet
+                                            </button>
+                                        {/if}
                                     </div>
                                 </div>
                                 {#if editingSplits === tx.id}
