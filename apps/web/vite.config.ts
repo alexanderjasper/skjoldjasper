@@ -5,6 +5,7 @@ import {dirname, resolve} from 'path';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+const repoRoot = resolve(__dirname, '..', '..');
 
 export default defineConfig({
     plugins: [sveltekit()],
@@ -17,7 +18,7 @@ export default defineConfig({
             allow: [
                 '/workspace',
                 '/workspace/node_modules',
-                '/Users/alexander/Code/skjoldjasper'
+                repoRoot
             ]
         },
         hmr: {

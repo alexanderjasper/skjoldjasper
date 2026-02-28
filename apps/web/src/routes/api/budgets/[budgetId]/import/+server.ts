@@ -1,6 +1,6 @@
 import type {RequestHandler} from '@sveltejs/kit';
 import {json} from '@sveltejs/kit';
-import {getPool} from '@skjoldjasper/db';
+import {getPool} from '$lib/server/db';
 import {generateTransactionId, findDuplicateTransactions} from '$lib/server/finance/commands';
 import {logAudit} from '$lib/server/finance/audit';
 import {parseDanishBankCsv} from '$lib/server/finance/csvParser';

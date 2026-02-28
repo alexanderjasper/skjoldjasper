@@ -7,6 +7,6 @@ export const load: PageServerLoad = async ({locals}) => {
     if (!userId) return {budgets: []};
 
     const pool = getPool();
-    const budgets = await getBudgetsForUser(pool as any, userId);
+    const budgets = await getBudgetsForUser(pool, userId);
     return {budgets};
 };
