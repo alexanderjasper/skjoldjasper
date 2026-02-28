@@ -172,12 +172,12 @@ nano packages/db/.env
 Set `DATABASE_URL` to match your Postgres connection:
 
 ```
-DATABASE_URL=postgres://app:YOUR_PASSWORD@localhost:5432/appdb
+DATABASE_URL=postgres://app:YOUR_PASSWORD@localhost:5433/appdb
 ```
 
-## Step 6: Deploy the Application
+## Step 5: Deploy the Application
 
-### 6.1 Run the Deployment Script
+### 5.1 Run the Deployment Script
 
 ```bash
 chmod +x infra/deploy-ubuntu.sh
@@ -192,7 +192,7 @@ This script will:
 - Build and start the web application and game server
 - Optionally start Cloudflare Tunnel (if configured)
 
-### 6.2 Verify Services are Running
+### 5.2 Verify Services are Running
 
 ```bash
 docker compose -f infra/docker-compose.yml ps

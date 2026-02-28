@@ -6,7 +6,7 @@
    - Stops any existing Docker stack
    - Starts Postgres (and builds image if needed)
    - Runs database migrations using pnpm on the host
-   - Starts cloudflared (tunnel) container
+  - Starts cloudflared (tunnel) container if token is configured
 
    Assumes:
    - Docker Desktop is running
@@ -28,12 +28,17 @@ Start-Sleep -Seconds 15
 Write-Host "Running database migrations in web container..." -ForegroundColor Yellow
 docker compose -f infra\docker-compose.yml run --rm web sh -lc "pnpm --dir packages/db migrate:push"
 
-Write-Host "Starting web, game-server, and cloudflared (building images if needed)..." -ForegroundColor Yellow
-docker compose -f infra\docker-compose.yml up -d --build web game-server cloudflared
+if ($env:CLOUDFLARED_TUNNEL_TOKEN) {
+    Write-Host "Starting web, game-server, and cloudflared (building images if needed)..." -ForegroundColor Yellow
+    docker compose -f infra\docker-compose.yml up -d --build web game-server cloudflared
+} else {
+    Write-Host "Starting web and game-server (no CLOUDFLARED_TUNNEL_TOKEN configured)..." -ForegroundColor Yellow
+    docker compose -f infra\docker-compose.yml up -d --build web game-server
+}
 
 Write-Host ""
 Write-Host "Containers running:" -ForegroundColor Cyan
 docker compose -f infra\docker-compose.yml ps
 
 Write-Host ""
-Write-Host "Done. Postgres and cloudflared are up." -ForegroundColor Green
+Write-Host "Done." -ForegroundColor Green

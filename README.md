@@ -104,8 +104,6 @@ Endpoints:
 - Web: http://localhost:5173/rooms
 - Game server: http://localhost:2567/
 
-```
-
 ## Web (apps/web)
 
 Debugging in Cursor:
@@ -130,8 +128,8 @@ Commands:
 # Apply schema to local Postgres
 pnpm --dir packages/db migrate:push
 
-# Simple integration test
-pnpm --dir packages/db test:roundtrip
+# Reset database from scratch (dev only; destructive)
+pnpm --dir packages/db migrate:fresh
 ```
 
 ## Infra (Postgres + pgBackRest)
@@ -181,8 +179,8 @@ readiness, cleans up.
 
 ## Scripts
 
-- Root: `dev`, `check:env`, `dev:db`, `dev:stack`, `tunnel:up`, `compose:down`
-- `packages/db`: `migrate:push`, `test:roundtrip`
+- Root: `dev`, `check:env`, `dev:db`, `dev:stack`, `tunnel:up`, `docker:down`
+- `packages/db`: `migrate:push`, `migrate:fresh`
 - `infra/scripts/pgbackrest-backup.sh` — run full/diff backups
 - `infra/scripts/pgbackrest-restore-smoke.sh` — restore validation
 

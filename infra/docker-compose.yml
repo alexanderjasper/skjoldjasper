@@ -74,8 +74,6 @@ services:
     command: [ "tunnel", "run", "--token", "${CLOUDFLARED_TUNNEL_TOKEN}" ]
     env_file:
       - ./.env
-    volumes:
-      - ./cloudflared:/etc/cloudflared:ro
     depends_on:
       postgres:
         condition: service_healthy
