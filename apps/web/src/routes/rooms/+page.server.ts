@@ -1,4 +1,4 @@
-import type {Actions, PageServerLoad} from './$types';
+import type {PageServerLoad} from './$types';
 import {getPool} from '$lib/server/db';
 
 export const load: PageServerLoad = async () => {
@@ -8,9 +8,3 @@ export const load: PageServerLoad = async () => {
     );
     return {rooms: rows};
 };
-
-export const actions: Actions = {
-    // no-op placeholder for future create actions (using join flow for now)
-};
-
-

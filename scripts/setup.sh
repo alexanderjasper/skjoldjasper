@@ -15,6 +15,11 @@ fi
 echo "📦 Installing dependencies..."
 pnpm install
 
+if [ ! -f packages/db/.env ]; then
+  echo "📝 Creating packages/db/.env from example..."
+  cp packages/db/env.example packages/db/.env
+fi
+
 echo "🗄️  Starting PostgreSQL..."
 cd infra
 docker compose up postgres -d

@@ -1,7 +1,7 @@
 import type {RequestHandler} from '@sveltejs/kit';
 import {json} from '@sveltejs/kit';
 import {z} from 'zod';
-import {getPool} from '@skjoldjasper/db';
+import {getPool} from '$lib/server/db';
 import {logAudit} from '$lib/server/finance/audit';
 import {validateParentCategory, validateLeafCategory} from '$lib/server/finance/commands';
 import {hasBudgetAccess} from '$lib/server/finance/access';

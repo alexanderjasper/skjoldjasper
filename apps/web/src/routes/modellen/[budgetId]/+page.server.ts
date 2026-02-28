@@ -8,12 +8,12 @@ export const load: PageServerLoad = async ({params, locals}) => {
     if (!userId) return {budgetId: params.budgetId, notFound: true};
 
     const pool = getPool();
-    const canAccess = await hasBudgetAccess(pool as any, params.budgetId as string, userId);
+    const canAccess = await hasBudgetAccess(pool, params.budgetId as string, userId);
     if (!canAccess) return {budgetId: params.budgetId, notFound: true};
 
-    const details = await getBudgetDetails(pool as any, params.budgetId as string);
+    const details = await getBudgetDetails(pool, params.budgetId as string);
     if (!details) return {budgetId: params.budgetId, notFound: true};
-    const overview = await getBudgetVsActual(pool as any, params.budgetId as string);
+    const overview = await getBudgetVsActual(pool, params.budgetId as string);
     const categories = Object.fromEntries(details.categories.map((c) => [c.id, c]));
     const transactions = Object.fromEntries(
         details.transactions.map((t) => [

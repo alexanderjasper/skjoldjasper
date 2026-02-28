@@ -11,11 +11,11 @@ RUN corepack enable && corepack prepare pnpm@10.20.0 --activate
 # Copy entire repo (simple, not optimized for build cache)
 COPY . .
 
-# Install workspace deps needed for web + shared + db
-RUN pnpm -w install --no-frozen-lockfile --filter web... --filter @skjoldjasper/shared --filter @skjoldjasper/db
+# Install workspace deps needed for web + db
+RUN pnpm -w install --no-frozen-lockfile --filter web... --filter @skjoldjasper/db
 
-# Build shared/db packages
-RUN pnpm -w --filter @skjoldjasper/shared --filter @skjoldjasper/db build
+# Build db package
+RUN pnpm -w --filter @skjoldjasper/db build
 
 # Install web deps
 RUN pnpm --dir apps/web install --no-frozen-lockfile

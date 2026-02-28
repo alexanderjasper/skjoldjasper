@@ -6,6 +6,7 @@
     "setup": "bash scripts/setup.sh",
     "build": "pnpm build",
     "dev": "turbo run dev --parallel --filter=web --filter=game-server",
+    "check:env": "node scripts/check-env.mjs",
     "dev:db": "cd infra && docker compose up -d postgres",
     "dev:stack": "cd infra && docker compose up",
     "dev:stack:tunnel": "cd infra && docker compose --profile tunnel up",
@@ -13,10 +14,11 @@
     "db:fresh": "pnpm --dir packages/db migrate:fresh",
     "docker:up": "cd infra && docker compose up -d",
     "docker:down": "cd infra && docker compose down",
+    "compose:down": "cd infra && docker compose down",
     "docker:logs": "cd infra && docker compose logs -f",
     "tunnel:up": "cd infra && docker compose --profile tunnel up -d cloudflared",
     "clean": "rm -rf dist build .svelte-kit",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "turbo run test"
   },
   "repository": {
     "type": "git",
