@@ -26,7 +26,7 @@ Write-Host "Waiting 15 seconds for PostgreSQL to start..." -ForegroundColor Yell
 Start-Sleep -Seconds 15
 
 Write-Host "Running database migrations in web container..." -ForegroundColor Yellow
-docker compose -f infra\docker-compose.yml run --rm web sh -lc "pnpm --dir packages/db migrate:push"
+docker compose -f infra\docker-compose.yml run --rm web sh -lc "cd /workspace/packages/db && pnpm migrate:push"
 
 if ($env:CLOUDFLARED_TUNNEL_TOKEN) {
     Write-Host "Starting web, game-server, and cloudflared (building images if needed)..." -ForegroundColor Yellow

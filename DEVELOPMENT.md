@@ -121,6 +121,17 @@ Database tables haven't been created. Run:
 pnpm --dir packages/db migrate:push
 ```
 
+### Docker build loops or fails unexpectedly
+If Docker logs show repeated root `pnpm build` recursion or workspace package resolution issues,
+rebuild using the current Dockerfiles:
+```bash
+docker compose -f infra/docker-compose.yml build --no-cache web game-server
+```
+Then rerun migrations from inside the container workspace:
+```bash
+docker compose -f infra/docker-compose.yml run --rm web sh -lc "cd /workspace/packages/db && pnpm migrate:push"
+```
+
 ### PostgreSQL won't start
 Check Docker is running and port 5433 is free:
 ```bash

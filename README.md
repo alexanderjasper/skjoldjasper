@@ -99,6 +99,23 @@ pnpm dev:stack
 pnpm tunnel:up
 ```
 
+### Fresh Server Deploy (Destructive)
+
+```bash
+# Pull latest main first
+git fetch origin
+git checkout main
+git pull --ff-only origin main
+
+# Rebuild images + wipe database + migrate schema
+docker compose -f infra/docker-compose.yml down -v
+docker compose -f infra/docker-compose.yml build --no-cache web game-server
+docker compose -f infra/docker-compose.yml up -d postgres
+sleep 15
+docker compose -f infra/docker-compose.yml run --rm web sh -lc "cd /workspace/packages/db && pnpm migrate:fresh"
+docker compose -f infra/docker-compose.yml up -d --build web game-server cloudflared
+```
+
 Endpoints:
 
 - Web: http://localhost:5173/rooms

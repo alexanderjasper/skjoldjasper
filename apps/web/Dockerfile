@@ -15,10 +15,7 @@ COPY . .
 RUN pnpm -w install --no-frozen-lockfile --filter web... --filter @skjoldjasper/db
 
 # Build db package
-RUN pnpm -w --filter @skjoldjasper/db build
-
-# Install web deps
-RUN pnpm --dir apps/web install --no-frozen-lockfile
+RUN pnpm --dir packages/db build
 
 # Start web server
 CMD ["pnpm", "--dir", "apps/web", "dev", "--", "--host", "0.0.0.0", "--port", "5173"]

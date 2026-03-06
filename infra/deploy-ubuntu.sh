@@ -26,7 +26,7 @@ echo "Waiting 15 seconds for PostgreSQL to start..."
 sleep 15
 
 echo "Running database migrations..."
-docker compose -f infra/docker-compose.yml run --rm web sh -lc "pnpm --dir packages/db migrate:push"
+docker compose -f infra/docker-compose.yml run --rm web sh -lc "cd /workspace/packages/db && pnpm migrate:push"
 
 echo "Starting web, game-server (building images if needed)..."
 docker compose -f infra/docker-compose.yml up -d --build web game-server
