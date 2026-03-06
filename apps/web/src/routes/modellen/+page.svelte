@@ -1,7 +1,7 @@
 <script lang="ts">
     export let data: {
         budgets: Array<{
-            streamId: string;
+            id: string;
             name: string;
             currency: string;
             createdAt: Date | string
@@ -83,7 +83,7 @@
                             <div class="text-sm text-slate-600">{b.currency}</div>
                         </div>
                         <a class="secondary-button px-3 py-1 text-sm"
-                           href={`/modellen/${encodeURIComponent(b.streamId)}`}>Åbn</a>
+                           href={`/modellen/${encodeURIComponent(b.id)}`}>Åbn</a>
                     </li>
                 {/each}
             </ul>

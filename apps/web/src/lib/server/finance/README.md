@@ -14,8 +14,8 @@ High-level overview of the finance/budgeting bounded context.
 
 ## Architecture (how it works)
 
-- Event Sourcing + CQRS: commands append events; a projector updates snapshots for fast reads
-- Postgres stores events (event store) and read snapshots (aggregate snapshots)
+- Direct relational writes/reads against budgets, categories, transactions, and splits
+- Postgres stores current state plus append-only `finance_audit_log` rows for change history
 - SvelteKit for UI and APIs
 - Domain logic lives in `apps/web`; infra-only code lives in `packages/`
 
@@ -23,15 +23,14 @@ High-level overview of the finance/budgeting bounded context.
 
 - UI and APIs: `apps/web/src/routes/modellen` and `apps/web/src/routes/api/budgets`
 - Domain logic: `apps/web/src/lib/server/finance`
-- Projector handler: `apps/projector/src/handlers/finance/budget.ts`
 
 ## Contribution guidelines
 
-- Keep all finance-specific schemas, commands, queries, and projections inside this directory (and
-  the projector handler). Do **not** move them into `packages/*`.
+- Keep all finance-specific schemas, commands, and queries inside this directory. Do **not** move
+  them into `packages/*`.
 - Server routes should import domain services from here instead of re-implementing business rules.
-- When adding a new capability, extend the domain modules first (events, commands, state) and expose
-  APIs/routes that call into them.
+- When adding a new capability, extend domain modules first and expose APIs/routes that call into
+  them.
 
 ## Read more
 

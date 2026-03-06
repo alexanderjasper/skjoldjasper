@@ -1,36 +1,39 @@
 <!--
   SYNC IMPACT REPORT
   ==================
-  Version change: (template) → 1.0.0
-  Type of bump: MINOR — first population of constitution from project README and repo context.
+  Version change: 1.0.0 → 2.0.0
+  Type of bump: MAJOR — Principle III redefined; CQRS/Event-Sourcing mandate removed and
+  replaced with Direct CRUD + Audit Log.
 
   Principles:
-  - (new) I. Domain-First Organization
-  - (new) II. Generic Shared Packages
-  - (new) III. Separated Read/Write Paths
+  - (unchanged) I. Domain-First Organization
+  - (unchanged) II. Generic Shared Packages
+  - (REDEFINED) III. Separated Read/Write Paths → III. Direct CRUD with Audit Log
 
-  Added sections:
-  - Core Principles (3 principles derived from README architecture section)
-  - Technology Stack & Conventions
-  - Development Workflow
-  - Governance
+  Modified sections:
+  - Core Principles: Principle III rewritten (rationale updated)
+  - Technology Stack & Conventions: Event store and snapshot schema removed; finance
+    domain CRUD tables and audit log added; projector references removed
+  - Development Workflow: Event-sourcing new-context checklist replaced with direct
+    CRUD + audit log checklist
 
   Removed sections:
-  - None (no prior content)
+  - None (structure preserved)
 
   Templates requiring updates:
   - ✅ .specify/templates/plan-template.md — Constitution Check section is a runtime
-       placeholder filled by /speckit.plan; aligns with the 3 principles. No edit needed.
+       placeholder filled by /speckit.plan; no principle-name hard-coding found. No edit needed.
   - ✅ .specify/templates/spec-template.md — No principle-driven mandatory sections
        added/removed. No edit needed.
   - ✅ .specify/templates/tasks-template.md — Task categories (Setup, Foundational,
-       User Stories) are consistent with domain-first and CQRS patterns. No edit needed.
-  - ✅ .claude/commands/speckit.constitution.md — No CLAUDE-only agent references
-       requiring generalisation found.
-  - ✅ README.md — Architecture principles remain authoritative source; no changes needed.
+       User Stories) are generic and principle-agnostic. No edit needed.
+  - ⚠️  README.md — Contains stale CQRS/ES architecture description, projector layout
+       reference, event store schema docs, and "Add a new bounded context" guide using
+       appendEvent. PENDING: update after feature 001-simplify-project implementation
+       lands on main.
 
   Deferred TODOs:
-  - None. All placeholders resolved.
+  - README.md update deferred until implementation is complete (code must match docs).
 -->
 
 # Skjoldjasper Constitution
@@ -39,10 +42,10 @@
 
 ### I. Domain-First Organization
 
-All business logic, aggregates, commands, queries, and projections MUST belong to their
+All business logic, commands, queries, and domain entities MUST belong to their
 owning bounded context inside `apps/`. UI adapters (`routes/*`) MUST remain thin and
 delegate to domain modules (e.g., `apps/web/src/lib/server/<context>`). Domain code
-(aggregates, event types, projections, room rules) MUST NOT be placed in `packages/`.
+(entities, business rules, room logic) MUST NOT be placed in `packages/`.
 
 When adding new capabilities:
 1. Extend the domain module inside the owning app.
@@ -55,8 +58,8 @@ acyclic at the domain level.
 
 ### II. Generic Shared Packages
 
-`packages/*` MUST remain free of domain-specific concepts — no aggregates, domain event
-types, projection schemas, room logic, or business rules. Only infrastructure primitives
+`packages/*` MUST remain free of domain-specific concepts — no aggregates, domain types,
+projection schemas, room logic, or business rules. Only infrastructure primitives
 that are genuinely reusable across all contexts belong here (e.g., db clients, HTTP utils,
 rate limiting, ID helpers, generic Zod schemas).
 
@@ -68,22 +71,27 @@ in the owning app instead.
 infrastructural prevents domain concepts from bleeding across contexts and ensures
 `packages/*` can evolve without knowledge of any specific business domain.
 
-### III. Separated Read/Write Paths
+### III. Direct CRUD with Audit Log
 
-The system MUST maintain strict CQRS / Event-Sourcing separation:
+Domain state MUST be stored in normalized relational tables and accessed via direct
+read/write operations:
 
-- **Writes**: MUST append domain events to the event store via `appendEvent(pool, dto,
-  metadata)`. Aggregate + command logic lives in `apps/web/src/lib/server/<context>`.
-- **Reads**: MUST query projection tables built by the projector. Projection handlers
-  MUST live in `apps/projector/src/handlers/<context>/<category>.ts` and implement
-  `ensureSchema` + `apply`. Each handler MUST be registered in
-  `apps/projector/src/index.ts`.
-- Direct reads from the event store in application code are NOT permitted except for
-  aggregate rehydration.
+- **Writes**: Route handlers MUST call domain helpers in
+  `apps/web/src/lib/server/<context>/commands.ts` for business rule validation, then
+  execute SQL INSERT/UPDATE/DELETE against the domain tables directly.
+- **Reads**: MUST query domain tables directly. Query helpers MUST live in
+  `apps/<app>/src/lib/server/<context>/queries.ts` (or equivalent location in the
+  owning app).
+- **Auditability**: Every write to finance domain tables (budgets, categories,
+  transactions, transaction_splits) MUST append a row to `finance_audit_log` via the
+  `logAudit(pool, entry)` helper. Audit log rows MUST NEVER be deleted or updated.
+- **No event log**: An append-only domain event store is NOT used. The `events` and
+  `aggregate_snapshots` tables MUST NOT exist in the schema.
 
-**Rationale**: Clean separation of reads and writes enables independent scaling,
-full auditability via the append-only event log, and replay/time-travel capabilities
-without retrofitting existing read models.
+**Rationale**: The finance domain use case (personal/family budgeting) does not justify
+the infrastructure overhead of event sourcing (projector process, snapshot polling,
+cross-package event types). Direct CRUD is simpler to understand, debug, and extend.
+Auditability is preserved by the append-only `finance_audit_log` table.
 
 ## Technology Stack & Conventions
 
@@ -91,31 +99,33 @@ without retrofitting existing read models.
 - **Frontend**: SvelteKit + Tailwind CSS (`apps/web`).
 - **Database**: PostgreSQL (exposed on `localhost:5433` for local tooling).
 - **ORM / Migrations**: Drizzle ORM; apply via `pnpm --dir packages/db migrate:push`.
-- **Event Store schema**: `events(position, event_id, context, stream_category, stream_id,
-  version, type, payload jsonb, metadata jsonb, created_at)` with uniqueness on
-  `(stream_id, version)` and `event_id`.
-- **Snapshot store**: `aggregate_snapshots(context, stream_category, stream_id, version,
-  payload jsonb, created_at)`.
+- **Finance domain schema**: normalized tables — `budgets`, `budget_members`, `categories`,
+  `transactions`, `transaction_splits`, `finance_audit_log` (append-only).
+- **Game server schema**: `game_room_states(room_id, counter, updated_at)`.
+- **Auth schema**: `user`, `session` (Lucia).
 - **Game server**: Colyseus (`apps/game-server`); game rules and room logic stay here,
-  never in shared packages.
-- **Infra**: Docker Compose for Postgres + pgBackRest; Cloudflare Tunnel optional for
-  public WebSocket exposure.
+  never in shared packages. Room state is persisted as a single row per room.
+- **Infra**: Docker Compose runs 3 services by default: `postgres`, `web`, `game-server`.
+  Cloudflare Tunnel available via `--profile tunnel`. pgBackRest available via
+  `--profile backup`.
 - **Package manager**: pnpm workspaces.
-- **Backups**: pgBackRest to Cloudflare R2; validated via restore smoke test.
+- **Backups**: pgBackRest to Cloudflare R2; available as an opt-in Docker Compose profile.
 
 ## Development Workflow
 
 New bounded context checklist:
 
-1. Define events using `packages/shared/eventAppendSchema`; append via
-   `appendEvent(pool, dto, metadata)`.
-2. Create a projector handler in `apps/projector/src/handlers/<context>/<category>.ts`
-   implementing `ensureSchema` and `apply`.
-3. Register the handler in `apps/projector/src/index.ts`.
-4. Consume read models in `apps/web` by querying projection tables via
-   `getPool()` from `@skjoldjasper/db`.
-5. Apply rate limiting with `createTokenBucket` from `@skjoldjasper/shared`.
-6. Apply CORS with `buildCorsHeaders` / `buildPreflightHeaders` from
+1. Add normalized tables to `packages/db/src/schema.ts` and run
+   `pnpm --dir packages/db migrate:push`.
+2. Create `apps/web/src/lib/server/<context>/commands.ts` with business rule validation
+   functions (pure or reading directly from DB).
+3. Create `apps/web/src/lib/server/<context>/queries.ts` with read helpers querying the
+   new tables via `getPool()` from `@skjoldjasper/db`.
+4. Create `apps/web/src/lib/server/<context>/audit.ts` (if auditability required) and
+   call `logAudit(pool, entry)` in every write handler.
+5. Wire up route handlers in `apps/web/src/routes/` delegating to commands and queries.
+6. Apply rate limiting with `createTokenBucket` from `@skjoldjasper/shared`.
+7. Apply CORS with `buildCorsHeaders` / `buildPreflightHeaders` from
    `@skjoldjasper/shared`.
 
 All PRs MUST verify compliance with the three Core Principles before merging.
@@ -142,4 +152,4 @@ All PRs and agent-assisted plan/spec/task workflows MUST verify compliance with 
 Core Principles defined here. The authoritative constitution is always at
 `.specify/memory/constitution.md`.
 
-**Version**: 1.0.0 | **Ratified**: 2026-02-27 | **Last Amended**: 2026-02-27
+**Version**: 2.0.0 | **Ratified**: 2026-02-27 | **Last Amended**: 2026-02-27

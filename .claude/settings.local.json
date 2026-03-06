@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git fetch --all --prune)",
+      "Bash(.specify/scripts/bash/setup-plan.sh --json)",
+      "Bash(.specify/scripts/bash/update-agent-context.sh claude)",
+      "Bash(.specify/scripts/bash/check-prerequisites.sh --json)",
+      "Bash(./specify/scripts/bash/check-prerequisites.sh --json --require-tasks --include-tasks)",
+      "Bash(./.specify/scripts/bash/check-prerequisites.sh --json --require-tasks --include-tasks)",
+      "Bash(pnpm --dir packages/db migrate:push)",
+      "Bash(npm run -w packages/db migrate:push)"
+    ]
+  }
+}

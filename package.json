@@ -3,13 +3,22 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "dev:db": "docker compose -f infra/docker-compose.yml up -d postgres",
-    "dev:stack": "docker compose -f infra/docker-compose.yml up -d web game-server projector",
-    "dev": "turbo run dev --parallel --filter=web --filter=my-app --filter=projector",
+    "setup": "bash scripts/setup.sh",
+    "build": "pnpm build",
+    "dev": "turbo run dev --parallel --filter=web --filter=game-server",
     "check:env": "node scripts/check-env.mjs",
-    "tunnel:up": "docker compose -f infra/docker-compose.yml up -d cloudflared",
-    "compose:down": "docker compose -f infra/docker-compose.yml down -v"
+    "dev:db": "cd infra && docker compose up -d postgres",
+    "dev:stack": "cd infra && docker compose up",
+    "dev:stack:tunnel": "cd infra && docker compose --profile tunnel up",
+    "db:migrate": "pnpm --dir packages/db migrate:push",
+    "db:fresh": "pnpm --dir packages/db migrate:fresh",
+    "docker:up": "cd infra && docker compose up -d",
+    "docker:down": "cd infra && docker compose down",
+    "compose:down": "cd infra && docker compose down",
+    "docker:logs": "cd infra && docker compose logs -f",
+    "tunnel:up": "cd infra && docker compose --profile tunnel up -d cloudflared",
+    "clean": "rm -rf dist build .svelte-kit",
+    "test": "turbo run test"
   },
   "repository": {
     "type": "git",

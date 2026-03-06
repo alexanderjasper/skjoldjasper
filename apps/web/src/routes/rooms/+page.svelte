@@ -1,5 +1,5 @@
 <script lang="ts">
-    export let data: { rooms: Array<{ stream_id: string; counter: number }> };
+    export let data: { rooms: Array<{ room_id: string; counter: number }> };
 
     let roomId = '';
 
@@ -33,12 +33,12 @@
             {#each data.rooms as r}
                 <li class="p-3 flex items-center justify-between">
                     <div class="truncate">
-                        <span class="font-mono">{r.stream_id}</span>
+                        <span class="font-mono">{r.room_id}</span>
                     </div>
                     <div class="flex items-center gap-4">
                         <span class="text-gray-600">{r.counter}</span>
                         <a class="px-3 py-1 bg-gray-100 rounded hover:bg-gray-200"
-                           href={`/rooms/${encodeURIComponent(r.stream_id)}`}>
+                           href={`/rooms/${encodeURIComponent(r.room_id)}`}>
                             Åbn
                         </a>
                     </div>

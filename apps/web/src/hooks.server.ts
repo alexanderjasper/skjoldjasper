@@ -1,16 +1,7 @@
-import * as Sentry from '@sentry/sveltekit';
-import {env as privateEnv} from '$env/dynamic/private';
 import type {Handle} from '@sveltejs/kit';
 import {lucia} from '$lib/server/auth';
 
 export const handle: Handle = async ({event, resolve}) => {
-    if (!Sentry.isInitialized()) {
-        const dsn = privateEnv.SENTRY_DSN;
-        if (dsn) {
-            Sentry.init({dsn, tracesSampleRate: 0.05});
-        }
-    }
-
     const sessionId = event.cookies.get(lucia.sessionCookieName);
     if (!sessionId) {
         event.locals.user = null;

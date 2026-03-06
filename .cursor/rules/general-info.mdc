@@ -4,13 +4,13 @@ alwaysApply: true
 
 Project structure overview
 
-- apps/: application code and domain logic (e.g., web UI, projector handlers, game-server rooms)
+- apps/: application code and domain logic (e.g., web UI, game-server rooms)
 - packages/: infrastructure-only shared libraries (e.g., db schema, http utils, rate limit, ids)
 - infra/: deployment/runtime infra (docker, cloudflared, postgres, scripts). No app code.
 
 Domain boundary guidance
 
-- Keep every bounded context self-contained inside its app (`apps/web/src/lib/server/<context>`, `apps/projector/src/handlers/<context>`, etc.).
+- Keep every bounded context self-contained inside its app (`apps/web/src/lib/server/<context>`, `apps/game-server/src/rooms/<context>`, etc.).
 - Do **not** place domain code (aggregates, event types, projections, room logic) in packages/.
 - `packages/*` must stay generic/infra. Only primitives that make sense across all contexts should live there.
 - When adding new capabilities:
