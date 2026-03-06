@@ -1,40 +1,34 @@
 # skjoldjasper
 
-Monorepo for a SvelteKit app Postgres + pgBackRest backups, and a CQRS/ES
-foundation using Drizzle ORM.
+Monorepo for a SvelteKit app and a Colyseus game server backed by Postgres.
 
 ## Layout
 
-- `apps/` — every bounded context (web, projector, game-server). Domain logic stays here.
+- `apps/` — every bounded context (web, game-server). Domain logic stays here.
     - `apps/web` — SvelteKit + Tailwind, hosts finance domain logic
       under `src/lib/server`
-    - `apps/projector` — applies events into read models per context (finance handler, etc.)
     - `apps/game-server` — Colyseus server; game rules/rooms live here, not in shared packages
 - `packages/` — infrastructure-only shared libraries (database primitives, generic config, rate
   limiting). **Never add domain-specific schemas or logic here.**
     - `packages/shared` — Shared TypeScript utilities and zod schemas that are domain-agnostic
-    - `packages/db` — Drizzle config, schema, migrations, DB scripts (event store + snapshots)
-- `infra/` — Docker Compose for Postgres and pgBackRest, backup scripts and tunnels
+    - `packages/db` — Drizzle config, schema, migrations, DB scripts
+- `infra/` — Docker Compose for Postgres, app services, and optional tunnel
 - `PLAN.md` — living checklist for implementation
 
 ### Architecture principles
 
-1. **Domain-first organization.** All business logic, aggregates, commands, queries, and projections
+1. **Domain-first organization.** All business logic, commands, and queries
    belong to their owning app under `apps/`. Keep UI adapters (`routes/*`) thin and delegate to
    domain modules in `apps/web/src/lib/server/<context>`.
 2. **Shared code stays generic.** `packages/*` must remain free of finance/game-specific
-   concepts—only primitives (db clients, config, ids, events helpers).
-3. **Separated read/write paths.** Event-sourced writes live beside their context (e.g.,
-   `apps/web/src/lib/server/finance`). Projector handlers per context sit in
-   `apps/projector/src/handlers/<context>`.
+   concepts—only primitives (db clients, config, ids, generic helpers).
 
 ### Modellen (Family Finance)
 
 - Purpose: budgets, hierarchical categories with yearly targets, CSV imports, transaction splits,
   notes, budget vs actual, family sharing
-- Architecture: event-sourced writes, snapshot-based reads via a projector
-- Domain location: `apps/web/src/lib/server/finance` (domain logic) and
-  `apps/projector/src/handlers/finance/budget.ts` (projection)
+- Architecture: direct relational writes and reads
+- Domain location: `apps/web/src/lib/server/finance`
 - UI: `apps/web/src/routes/modellen` with APIs under `apps/web/src/routes/api/budgets`
 - See also: `apps/web/src/lib/server/finance/README.md` (overview) and `@general-info.mdc` (project
   structure and domain boundary guidance)
@@ -58,11 +52,11 @@ pnpm --dir packages/db migrate:push
 # Web dev (with debugger)
 pnpm --dir apps/web dev   # or use the "SvelteKit Dev (inspect)" launch config
 
-# Run full stack locally (web + game-server + projector)
+# Run full stack locally (web + game-server)
 pnpm dev
 
 # Validate required env
-pnpm** check:env
+pnpm check:env
 ```
 
 ### Windows Server Deployment
@@ -97,7 +91,7 @@ cp apps/game-server/env.example apps/game-server/.env
 # Set in apps/web/.env: PUBLIC_GAME_SERVER_WS=wss://ws.<your-domain>
 # Set in apps/web/.env: ALLOWED_ORIGINS=http://localhost:5173,https://app.<your-domain>
 
-# 3) Start web + game-server + projector
+# 3) Start web + game-server
 pnpm dev:stack
 
 # 4) Optional: start Cloudflare Tunnel (token mode)
@@ -110,8 +104,6 @@ Endpoints:
 - Web: http://localhost:5173/rooms
 - Game server: http://localhost:2567/
 
-```
-
 ## Web (apps/web)
 
 Debugging in Cursor:
@@ -120,13 +112,15 @@ Debugging in Cursor:
 
 ## Database (packages/db)
 
-Schema: multi-context event store with snapshots
+Schema: direct relational tables for finance and game state
 
-- `events(position, event_id, context, stream_category, stream_id, version, type, payload jsonb, metadata jsonb, created_at)`
-  - Unique: `(stream_id, version)`, `event_id`
-  - Indexes: `(context, stream_category, created_at)`, `(stream_id)`, `(type)`
-- `aggregate_snapshots(context, stream_category, stream_id, version, payload jsonb, created_at)`
-  - Unique: `(context, stream_category, stream_id, version)`
+- `budgets(id, name, currency, creator_user_id, created_at, updated_at)`
+- `budget_members(budget_id, user_id, joined_at)`
+- `categories(id, budget_id, name, parent_id, yearly_target)`
+- `transactions(id, budget_id, date, description, amount, note, imported_at)`
+- `transaction_splits(transaction_id, category_id, amount)`
+- `finance_audit_log(id, table_name, record_id, operation, changed_by_user_id, before_data, after_data, created_at)`
+- `game_room_states(room_id, counter, updated_at)`
 
 Commands:
 
@@ -134,8 +128,8 @@ Commands:
 # Apply schema to local Postgres
 pnpm --dir packages/db migrate:push
 
-# Simple integration test (inserts one event and reads it back)
-pnpm --dir packages/db test:roundtrip
+# Reset database from scratch (dev only; destructive)
+pnpm --dir packages/db migrate:fresh
 ```
 
 ## Infra (Postgres + pgBackRest)
@@ -178,25 +172,15 @@ readiness, cleans up.
 
 ## Add a new bounded context/app
 
-- Define events:
-    - Use `packages/shared/eventAppendSchema` for shape; append via
-      `appendEvent(pool, dto, metadata)`.
-- Project state:
-    - Create a handler in `apps/projector/src/handlers/<context>/<category>.ts` implementing
-      `ensureSchema` and `apply`.
-    - Add it to `handlers` in `apps/projector/src/index.ts`.
-- Consume in web:
-    - Query projection tables via `getPool()` from `@skjoldjasper/db`.
-- Rate limit:
-    - Use `createTokenBucket` from `@skjoldjasper/shared`; read caps from `getServerConfig()`.
-- CORS:
-    - Use `buildCorsHeaders` and `buildPreflightHeaders` from `@skjoldjasper/shared` with
-      `allowedOrigins` from config.
+- Model relational tables in `packages/db` where needed.
+- Keep business logic inside owning app modules under `apps/<app>/src`.
+- Consume data in web/game routes via app-local domain helpers.
+- Use generic shared helpers from `@skjoldjasper/shared` for cross-cutting concerns.
 
 ## Scripts
 
-- Root: `dev`, `check:env`, `dev:db`, `dev:stack`, `tunnel:up`, `compose:down`
-- `packages/db`: `migrate:push`, `test:roundtrip`
+- Root: `dev`, `check:env`, `dev:db`, `dev:stack`, `tunnel:up`, `docker:down`
+- `packages/db`: `migrate:push`, `migrate:fresh`
 - `infra/scripts/pgbackrest-backup.sh` — run full/diff backups
 - `infra/scripts/pgbackrest-restore-smoke.sh` — restore validation
 

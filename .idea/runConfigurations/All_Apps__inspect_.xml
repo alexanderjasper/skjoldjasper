@@ -2,7 +2,6 @@
   <configuration default="false" name="All Apps (inspect)" type="CompoundRunConfigurationType">
     <toRun name="SvelteKit Dev (inspect) Server" type="NodeJSConfigurationType" />
     <toRun name="Game Server (attach)" type="NodeRemoteRunConfigurationType" />
-    <toRun name="Projector (attach)" type="NodeRemoteRunConfigurationType" />
     <method v="2" />
   </configuration>
 </component>

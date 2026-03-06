@@ -11,7 +11,6 @@ export type ServerConfig = {
     sentryDsn?: string;
     publicGameServerWs: string;
     rateLimit: {
-        eventsApi: RateLimitConfig;
         colyseusMessages: RateLimitConfig;
     };
 };
@@ -32,8 +31,6 @@ const envSchema = z.object({
     ALLOWED_ORIGINS: z.string().optional(),
     SENTRY_DSN: z.string().optional(),
     PUBLIC_GAME_SERVER_WS: z.string().optional(),
-    RATE_LIMIT_EVENTS_CAPACITY: z.string().optional(),
-    RATE_LIMIT_EVENTS_REFILL_MS: z.string().optional(),
     RATE_LIMIT_COLYSEUS_CAPACITY: z.string().optional(),
     RATE_LIMIT_COLYSEUS_REFILL_MS: z.string().optional()
 });
@@ -52,11 +49,6 @@ export function getServerConfig(rawEnv?: Record<string, string | undefined>): Se
 
     const allowedOrigins = commaSeparated(env.ALLOWED_ORIGINS, ['http://localhost:5173']);
 
-    const eventsApi: RateLimitConfig = {
-        capacity: toInt(env.RATE_LIMIT_EVENTS_CAPACITY, 60),
-        refillMs: toInt(env.RATE_LIMIT_EVENTS_REFILL_MS, 60_000)
-    };
-
     const colyseusMessages: RateLimitConfig = {
         capacity: toInt(env.RATE_LIMIT_COLYSEUS_CAPACITY, 10),
         refillMs: toInt(env.RATE_LIMIT_COLYSEUS_REFILL_MS, 1_000)
@@ -67,6 +59,6 @@ export function getServerConfig(rawEnv?: Record<string, string | undefined>): Se
         allowedOrigins,
         sentryDsn: env.SENTRY_DSN,
         publicGameServerWs: env.PUBLIC_GAME_SERVER_WS ?? 'ws://localhost:2567',
-        rateLimit: {eventsApi, colyseusMessages}
+        rateLimit: {colyseusMessages}
     };
 }

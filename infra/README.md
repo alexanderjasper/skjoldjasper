@@ -1,12 +1,11 @@
-See the root `README.md` for setup and usage of Postgres + pgBackRest, backups, and restore. This
+See the root `README.md` for setup and usage. This
 directory holds infrastructure definitions only—keep application/domain code inside `apps/*`.
 
 ## Compose services
 
-- Postgres + pgBackRest sidecar
+- Postgres
 - Web (SvelteKit dev)
 - Game server (Colyseus dev)
-- Projector (one-shot)
 - Cloudflare Tunnel (optional, maps web+WS to public hostnames)
 
 ### Running
@@ -16,9 +15,9 @@ cd infra
 # DB only
 docker compose up -d postgres
 
-# Dev stack (web, game-server, projector)
-docker compose up -d web game-server projector
+# Dev stack (web, game-server)
+docker compose up -d web game-server
 
-# Optional: Cloudflare Tunnel (requires config.yml + credentials JSON)
-docker compose up -d cloudflared
+# Optional: Cloudflare Tunnel (requires CLOUDFLARED_TUNNEL_TOKEN in infra/.env)
+docker compose --profile tunnel up -d cloudflared
 ```
