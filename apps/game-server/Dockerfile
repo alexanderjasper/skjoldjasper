@@ -11,10 +11,7 @@ COPY . .
 
 # Install shared/db deps and build them
 RUN pnpm -w install --no-frozen-lockfile --filter @skjoldjasper/shared --filter @skjoldjasper/db
-RUN pnpm -w --filter @skjoldjasper/shared --filter @skjoldjasper/db build
-
-# Install game-server deps
-RUN pnpm --dir apps/game-server install --no-frozen-lockfile
+RUN pnpm --dir packages/shared build && pnpm --dir packages/db build
 
 CMD ["pnpm", "--dir", "apps/game-server", "start"]
 
