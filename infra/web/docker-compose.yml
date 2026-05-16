@@ -51,13 +51,13 @@ services:
     container_name: skjoldjasper-rclone
     restart: unless-stopped
     environment:
-      RCLONE_CONFIG_PCLOUD_TYPE: webdav
-      RCLONE_CONFIG_PCLOUD_URL: https://webdav.pcloud.com
-      RCLONE_CONFIG_PCLOUD_VENDOR: other
-      RCLONE_CONFIG_PCLOUD_USER: ${RCLONE_PCLOUD_USER:?required}
-      RCLONE_CONFIG_PCLOUD_PASS: ${RCLONE_PCLOUD_PASS_OBSCURED:?required}
+      # pCloud's native OAuth-based backend — WebDAV won't work alongside 2FA,
+      # so we use the OAuth token generated locally via `rclone authorize pcloud`.
+      RCLONE_CONFIG_PCLOUD_TYPE: pcloud
+      RCLONE_CONFIG_PCLOUD_HOSTNAME: ${RCLONE_PCLOUD_HOSTNAME:-api.pcloud.com}
+      RCLONE_CONFIG_PCLOUD_TOKEN: ${RCLONE_PCLOUD_TOKEN:?required}
     # `rclone serve s3` exposes a single-bucket S3 endpoint backed by the pcloud remote.
-    # The access key is matched against LITESTREAM_S3_ACCESS_KEY_ID above.
+    # The access key is matched against access-key-id in litestream.yml.
     command: ["serve", "s3", "--addr", "0.0.0.0:8080", "--auth-key", "litestream,${LITESTREAM_SECRET:?required}", "pcloud:"]
     expose:
       - "8080"
