@@ -23,6 +23,10 @@ services:
       - web-data:/data
     expose:
       - "8000"
+    # Join Dokploy's shared overlay network so Traefik can route to us.
+    networks:
+      - default
+      - dokploy-network
     # Run migrations on every boot; SQLite migrations are cheap and idempotent.
     command: ["sh", "-c", "python manage.py migrate --noinput && exec gunicorn --bind 0.0.0.0:8000 --workers 2 --access-logfile - skjoldjasper.wsgi:application"]
     labels:
@@ -67,3 +71,8 @@ services:
 volumes:
   web-data:
     name: skjoldjasper-web-data
+
+networks:
+  # Dokploy's overlay network that hosts Traefik. Created by Dokploy's installer.
+  dokploy-network:
+    external: true
