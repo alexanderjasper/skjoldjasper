@@ -27,10 +27,14 @@ gunicorn ──writes──> /data/db.sqlite3
 ## One-time setup
 
 1. On pCloud, create a top-level folder `skjoldjasper-backups`. (Litestream will not create the bucket itself.)
-2. Generate an rclone-obscured WebDAV password:
+2. Generate the rclone OAuth token from your laptop:
    ```sh
-   docker run --rm -it rclone/rclone obscure 'your-pcloud-app-password'
+   docker run --rm -it -p 53682:53682 rclone/rclone authorize "pcloud"
    ```
+   This opens a browser, you authorize pCloud once, and rclone prints a JSON
+   blob to stdout. That JSON is `RCLONE_PCLOUD_TOKEN`. The OAuth backend is
+   used instead of WebDAV because pCloud's WebDAV endpoint refuses logins
+   when account 2FA is enabled.
 3. In Dokploy, set the env vars from `.env.example` on this service.
 
 ## Verifying the replica
