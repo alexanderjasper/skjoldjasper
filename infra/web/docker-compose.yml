@@ -1,0 +1,72 @@
+# skjoldjasper.dk — web service stack.
+#
+# Three containers:
+#   web        — Django app served by gunicorn
+#   litestream — streams /data/db.sqlite3 to the rclone S3 bridge
+#   rclone     — exposes a pCloud WebDAV remote as an S3-compatible endpoint
+#
+# Dokploy reads this compose file directly. Secrets and host-specific
+# env vars (SECRET_KEY, RCLONE_PCLOUD_*) are set in the Dokploy UI.
+
+services:
+  web:
+    build:
+      context: ../../apps/web
+    container_name: skjoldjasper-web
+    restart: unless-stopped
+    environment:
+      SECRET_KEY: ${SECRET_KEY:?required}
+      DEBUG: "False"
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-skjoldjasper.dk}
+      CSRF_TRUSTED_ORIGINS: ${CSRF_TRUSTED_ORIGINS:-https://skjoldjasper.dk}
+      DATABASE_URL: sqlite:////data/db.sqlite3
+    volumes:
+      - web-data:/data
+    expose:
+      - "8000"
+    # Run migrations on every boot; SQLite migrations are cheap and idempotent.
+    command: ["sh", "-c", "python manage.py migrate --noinput && exec gunicorn --bind 0.0.0.0:8000 --workers 2 --access-logfile - skjoldjasper.wsgi:application"]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.skjoldjasper.rule=Host(`skjoldjasper.dk`)"
+      - "traefik.http.routers.skjoldjasper.entrypoints=web"
+      - "traefik.http.services.skjoldjasper.loadbalancer.server.port=8000"
+
+  litestream:
+    image: litestream/litestream:0.3
+    container_name: skjoldjasper-litestream
+    restart: unless-stopped
+    depends_on:
+      rclone:
+        condition: service_healthy
+    environment:
+      LITESTREAM_SECRET: ${LITESTREAM_SECRET:?required}
+    volumes:
+      - web-data:/data
+      - ./litestream.yml:/etc/litestream.yml:ro
+    command: replicate
+
+  rclone:
+    image: rclone/rclone:1.69
+    container_name: skjoldjasper-rclone
+    restart: unless-stopped
+    environment:
+      RCLONE_CONFIG_PCLOUD_TYPE: webdav
+      RCLONE_CONFIG_PCLOUD_URL: https://webdav.pcloud.com
+      RCLONE_CONFIG_PCLOUD_VENDOR: other
+      RCLONE_CONFIG_PCLOUD_USER: ${RCLONE_PCLOUD_USER:?required}
+      RCLONE_CONFIG_PCLOUD_PASS: ${RCLONE_PCLOUD_PASS_OBSCURED:?required}
+    # `rclone serve s3` exposes a single-bucket S3 endpoint backed by the pcloud remote.
+    # The access key is matched against LITESTREAM_S3_ACCESS_KEY_ID above.
+    command: ["serve", "s3", "--addr", "0.0.0.0:8080", "--auth-key", "litestream,${LITESTREAM_SECRET:?required}", "pcloud:"]
+    expose:
+      - "8080"
+    healthcheck:
+      test: ["CMD", "rclone", "lsd", "pcloud:", "--retries=1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  web-data:
+    name: skjoldjasper-web-data
