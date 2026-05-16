@@ -19,14 +19,14 @@ gunicorn ──writes──> /data/db.sqlite3
                                     ▼
                               rclone serve s3
                                     │
-                              WebDAV PUT
+                            pCloud API
                                     ▼
-                           pCloud /skjoldjasper-backups/
+                        pcloud:/.backups/web-litestream/
 ```
 
 ## One-time setup
 
-1. On pCloud, create a top-level folder `skjoldjasper-backups`. (Litestream will not create the bucket itself.)
+1. On pCloud, create a top-level folder `.backups` and inside it a `web-litestream` folder. (Litestream does not create the bucket itself.)
 2. Generate the rclone OAuth token from your laptop:
    ```sh
    docker run --rm -it -p 53682:53682 rclone/rclone authorize "pcloud"
