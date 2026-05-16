@@ -1,8 +1,0 @@
-- Cursor: implement the next missing step. The plan lives at /PLAN.md.
-- Cursor: after a small step (manageable commit), ask the user for feedback before committing.
-- Cursor: when a step is completed, include an edit to /PLAN.md marking it completed in the same commit. Check git status first; update .gitignore if necessary; commit all changed files.
-- Verification: Cursor runs the required commands/processes and tells the user what to look for; the user verifies and may stop long‑running processes.
-- Cursor: run lints on edited files and fix errors before asking for feedback.
-- Cursor: before committing, show a short status update and the proposed conventional commit message; commit only after the user approves.
-- Cursor: prefer non-interactive CLI flags and use absolute paths in tool calls when possible.
-- Cursor: for multi-step work, maintain a lightweight TODO list with a single in-progress item and update it as you go.
