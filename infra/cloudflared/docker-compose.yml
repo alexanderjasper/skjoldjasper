@@ -1,0 +1,24 @@
+# Cloudflare Tunnel — public ingress for every service in this repo.
+#
+# All four public hostnames (skjoldjasper.dk, immich, nextcloud, collabora)
+# are routed by Cloudflare's dashboard-managed config to http://<host>:80,
+# which arrives at Dokploy's Traefik on dokploy-network. So this container
+# only needs the tunnel token; the ingress map lives in the CF dashboard.
+
+name: cloudflared
+
+services:
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run --token ${TUNNEL_TOKEN:?required}
+    # Joined to Dokploy's overlay so it can reach Traefik by its in-cluster name.
+    # In practice we also dial the host's :80 (LAN IP), but staying on this
+    # network keeps the dependency explicit and lets future ingress rules
+    # target container names if we ever move off host-port routing.
+    networks:
+      - dokploy-network
+
+networks:
+  dokploy-network:
+    external: true
