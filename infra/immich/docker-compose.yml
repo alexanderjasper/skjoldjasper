@@ -2,7 +2,10 @@
 # https://github.com/immich-app/immich/releases/latest/download/docker-compose.yml
 #
 # Differences from upstream:
-#   - container_name removed (Dokploy manages container identity; collides with old stack)
+#   - container_name kept on immich-server and database; the host-side backup
+#     script (/usr/local/sbin/immich-backup.sh) does `docker exec immich_postgres
+#     pg_dump …`, so renaming would silently break nightly backups. Dropped on
+#     redis / immich-machine-learning where nothing external depends on the name.
 #   - host port 2283 unpublished (traffic enters via Traefik on dokploy-network)
 #   - immich-server joined to dokploy-network with Host(`immich.skjoldjasper.dk`) labels
 #   - DB / Redis stay on the compose-default network (not exposed to other Dokploy stacks)
@@ -12,6 +15,7 @@ name: immich
 
 services:
   immich-server:
+    container_name: immich_server
     image: ghcr.io/immich-app/immich-server:${IMMICH_VERSION:-release}
     volumes:
       - ${UPLOAD_LOCATION:?required}:/data
@@ -54,6 +58,8 @@ services:
     restart: unless-stopped
 
   database:
+    # Name pinned: /usr/local/sbin/immich-backup.sh execs into this container by name.
+    container_name: immich_postgres
     image: ghcr.io/immich-app/postgres:14-vectorchord0.4.3-pgvectors0.2.0@sha256:bcf63357191b76a916ae5eb93464d65c07511da41e3bf7a8416db519b40b1c23
     environment:
       POSTGRES_PASSWORD: ${DB_PASSWORD:?required}
