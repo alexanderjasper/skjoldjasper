@@ -10,14 +10,7 @@ exist so it stays findable.
 |---|---|---|
 | 1 (live) | photo library + Postgres | `/home/alexander/Immich/library`, `immich_postgres` container |
 | 2 (local) | restic repo on a dedicated 1.8 TB disk | `/mnt/immich-backup/restic` |
-| 3 (off-site) | encrypted mirror in pCloud | `pcloudcrypt:restic` (rclone crypt remote) |
-
-> **Backup-root convention:** every other service in this repo stores backups
-> under `pcloudcrypt:.backups/<service>/` (Nextcloud, future additions). This
-> repo predates that convention and sits at `pcloudcrypt:restic` — moving it
-> would mean re-uploading 476 GiB through the crypt remote (filename changes
-> don't survive server-side on encrypted remotes). Leave it. If we ever rotate
-> the restic key or rebuild the repo, do that at the new path.
+| 3 (off-site) | encrypted mirror in pCloud | `pcloudcrypt:.backups/immich-restic` (rclone crypt remote) |
 
 The local restic repo is reached via mount `/mnt/immich-backup`. The
 systemd units guard on `RequiresMountsFor=/mnt/immich-backup`, so if
@@ -93,7 +86,7 @@ docker start immich_server
 
 ### Full DR from pCloud (local disk lost)
 
-1. Restore the restic repo first: `rclone sync pcloudcrypt:restic <new-disk>/restic`.
+1. Restore the restic repo first: `rclone sync pcloudcrypt:.backups/immich-restic <new-disk>/restic`.
 2. Pull library + the latest dump out of restic: `restic restore latest --target /tmp/r --include /home/alexander/Immich/library --include /mnt/immich-backup/tmp` (yes, `tmp` is part of the snapshot tags).
 3. Bring up the stack (`infra/immich/docker-compose.yml`) pointing at the restored library path.
 4. Run the database-restore steps above with the recovered dump.
