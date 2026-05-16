@@ -40,7 +40,7 @@ gunicorn ──writes──> /data/db.sqlite3
 ## Verifying the replica
 
 ```sh
-docker exec skjoldjasper-litestream litestream snapshots /data/db.sqlite3
+docker compose exec litestream litestream snapshots /data/db.sqlite3
 ```
 
 Lists every snapshot stored on pCloud. Empty output means replication isn't happening.
@@ -51,21 +51,19 @@ Run this once after the first deploy and any time you change the replica config:
 
 ```sh
 # 1. Note the current DB hash.
-docker exec skjoldjasper-web sha256sum /data/db.sqlite3
+docker compose exec web sha256sum /data/db.sqlite3
 
 # 2. Stop the app so it can't write during restore.
 docker compose stop web
 
-# 3. Move the live DB aside.
-docker exec skjoldjasper-litestream sh -c 'mv /data/db.sqlite3 /data/db.sqlite3.predr'
+# 3. Move the live DB aside, then restore from the replica.
+docker compose exec litestream sh -c 'mv /data/db.sqlite3 /data/db.sqlite3.predr'
+docker compose exec litestream litestream restore /data/db.sqlite3
 
-# 4. Restore from the replica.
-docker exec skjoldjasper-litestream litestream restore /data/db.sqlite3
+# 4. Confirm the hash matches.
+docker compose exec litestream sha256sum /data/db.sqlite3
 
-# 5. Confirm the hash matches.
-docker exec skjoldjasper-litestream sha256sum /data/db.sqlite3
-
-# 6. Bring the app back.
+# 5. Bring the app back.
 docker compose start web
 ```
 
