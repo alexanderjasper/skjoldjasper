@@ -34,6 +34,10 @@ services:
       - "traefik.http.routers.skjoldjasper.rule=Host(`skjoldjasper.dk`)"
       - "traefik.http.routers.skjoldjasper.entrypoints=web"
       - "traefik.http.services.skjoldjasper.loadbalancer.server.port=8000"
+      # We only ever receive traffic through Cloudflare Tunnel, which terminates
+      # TLS at the edge. Force X-Forwarded-Proto=https so Django stops redirecting.
+      - "traefik.http.middlewares.skjoldjasper-https.headers.customrequestheaders.X-Forwarded-Proto=https"
+      - "traefik.http.routers.skjoldjasper.middlewares=skjoldjasper-https"
 
   litestream:
     image: litestream/litestream:0.3
