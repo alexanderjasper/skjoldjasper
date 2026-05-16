@@ -1,31 +1,32 @@
 # OS
 .DS_Store
 
-# Dependencies
-node_modules/
-.pnpm-store/
-
-# Build output
-dist/
-build/
-.turbo/
-.svelte-kit/
-
 # Environment files
 .env
 .env.*
 !**/.env.example
 !.env.example
-infra/.env
-infra/cloudflared/*.json
-infra/cloudflared/config.yml
 
-# Logs and coverage
-pnpm-debug.log*
-npm-debug.log*
-yarn-debug.log*
-coverage/
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
 
-# IDE directories
+# Django
+db.sqlite3
+db.sqlite3-journal
+*.sqlite3
+*.sqlite3-shm
+*.sqlite3-wal
+/staticfiles/
+/media/
+
+# IDE
 .idea/*
 !.idea/runConfigurations/
+.vscode/

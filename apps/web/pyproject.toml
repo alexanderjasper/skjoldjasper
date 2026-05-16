@@ -1,0 +1,23 @@
+[project]
+name = "skjoldjasper"
+version = "0.1.0"
+description = "skjoldjasper.dk — personal website"
+requires-python = ">=3.13"
+dependencies = [
+    "django>=6.0,<6.1",
+    "django-environ>=0.11",
+    "gunicorn>=23.0",
+    "whitenoise>=6.7",
+]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.7",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "DJ"]
