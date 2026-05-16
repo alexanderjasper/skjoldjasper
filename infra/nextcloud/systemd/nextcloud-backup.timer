@@ -1,0 +1,11 @@
+[Unit]
+Description=Run Nextcloud backup nightly
+
+[Timer]
+# 03:00 UTC slots in between immich-backup (02:30) and immich-offsite (04:00).
+OnCalendar=*-*-* 03:00:00
+RandomizedDelaySec=1800
+Persistent=true
+
+[Install]
+WantedBy=timers.target
