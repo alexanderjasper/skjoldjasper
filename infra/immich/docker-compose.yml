@@ -1,0 +1,74 @@
+# Immich, adopted into Dokploy. Adapted from the upstream compose file at
+# https://github.com/immich-app/immich/releases/latest/download/docker-compose.yml
+#
+# Differences from upstream:
+#   - container_name removed (Dokploy manages container identity; collides with old stack)
+#   - host port 2283 unpublished (traffic enters via Traefik on dokploy-network)
+#   - immich-server joined to dokploy-network with Host(`immich.skjoldjasper.dk`) labels
+#   - DB / Redis stay on the compose-default network (not exposed to other Dokploy stacks)
+#   - secrets pulled from env vars (Dokploy UI); image digests preserved from upstream
+
+name: immich
+
+services:
+  immich-server:
+    image: ghcr.io/immich-app/immich-server:${IMMICH_VERSION:-release}
+    volumes:
+      - ${UPLOAD_LOCATION:?required}:/data
+      - /etc/localtime:/etc/localtime:ro
+    environment:
+      DB_PASSWORD: ${DB_PASSWORD:?required}
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_DATABASE_NAME: ${DB_DATABASE_NAME:-immich}
+    depends_on:
+      - redis
+      - database
+    restart: unless-stopped
+    networks:
+      - default
+      - dokploy-network
+    healthcheck:
+      disable: false
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.immich.rule=Host(`immich.skjoldjasper.dk`)"
+      - "traefik.http.routers.immich.entrypoints=web"
+      - "traefik.http.services.immich.loadbalancer.server.port=2283"
+      # Cloudflare Tunnel → Traefik is plain HTTP; pin X-Forwarded-Proto so the app
+      # generates correct https:// URLs in shared links and OAuth callbacks.
+      - "traefik.http.middlewares.immich-https.headers.customrequestheaders.X-Forwarded-Proto=https"
+      - "traefik.http.routers.immich.middlewares=immich-https"
+
+  immich-machine-learning:
+    image: ghcr.io/immich-app/immich-machine-learning:${IMMICH_VERSION:-release}
+    volumes:
+      - model-cache:/cache
+    restart: unless-stopped
+    healthcheck:
+      disable: false
+
+  redis:
+    image: docker.io/valkey/valkey:8@sha256:81db6d39e1bba3b3ff32bd3a1b19a6d69690f94a3954ec131277b9a26b95b3aa
+    healthcheck:
+      test: redis-cli ping || exit 1
+    restart: unless-stopped
+
+  database:
+    image: ghcr.io/immich-app/postgres:14-vectorchord0.4.3-pgvectors0.2.0@sha256:bcf63357191b76a916ae5eb93464d65c07511da41e3bf7a8416db519b40b1c23
+    environment:
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?required}
+      POSTGRES_USER: ${DB_USERNAME:-postgres}
+      POSTGRES_DB: ${DB_DATABASE_NAME:-immich}
+      POSTGRES_INITDB_ARGS: '--data-checksums'
+    volumes:
+      - ${DB_DATA_LOCATION:?required}:/var/lib/postgresql/data
+    shm_size: 128mb
+    restart: unless-stopped
+
+volumes:
+  model-cache:
+
+networks:
+  # Dokploy's overlay network that hosts Traefik. Created by Dokploy's installer.
+  dokploy-network:
+    external: true
