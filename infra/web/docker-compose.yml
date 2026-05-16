@@ -61,9 +61,12 @@ services:
       RCLONE_CONFIG_PCLOUD_TYPE: pcloud
       RCLONE_CONFIG_PCLOUD_HOSTNAME: ${RCLONE_PCLOUD_HOSTNAME:-api.pcloud.com}
       RCLONE_CONFIG_PCLOUD_TOKEN: ${RCLONE_PCLOUD_TOKEN:?required}
-    # `rclone serve s3` exposes a single-bucket S3 endpoint backed by the pcloud remote.
-    # The access key is matched against access-key-id in litestream.yml.
-    command: ["serve", "s3", "--addr", "0.0.0.0:8080", "--auth-key", "litestream,${LITESTREAM_SECRET:?required}", "pcloud:"]
+    # `rclone serve s3` exposes the contents of pcloud:.backups/ as S3 buckets.
+    # Litestream sees the `web-litestream` bucket and writes db/* into it,
+    # producing pcloud:.backups/web-litestream/db/* on the remote. The leading
+    # dot keeps the backup root hidden in pCloud's UI alongside the other
+    # services' destinations under pcloudcrypt:.backups/.
+    command: ["serve", "s3", "--addr", "0.0.0.0:8080", "--auth-key", "litestream,${LITESTREAM_SECRET:?required}", "pcloud:.backups"]
     expose:
       - "8080"
     healthcheck:

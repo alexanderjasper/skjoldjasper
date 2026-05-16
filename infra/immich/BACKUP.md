@@ -12,6 +12,13 @@ exist so it stays findable.
 | 2 (local) | restic repo on a dedicated 1.8 TB disk | `/mnt/immich-backup/restic` |
 | 3 (off-site) | encrypted mirror in pCloud | `pcloudcrypt:restic` (rclone crypt remote) |
 
+> **Backup-root convention:** every other service in this repo stores backups
+> under `pcloudcrypt:.backups/<service>/` (Nextcloud, future additions). This
+> repo predates that convention and sits at `pcloudcrypt:restic` — moving it
+> would mean re-uploading 476 GiB through the crypt remote (filename changes
+> don't survive server-side on encrypted remotes). Leave it. If we ever rotate
+> the restic key or rebuild the repo, do that at the new path.
+
 The local restic repo is reached via mount `/mnt/immich-backup`. The
 systemd units guard on `RequiresMountsFor=/mnt/immich-backup`, so if
 the disk is missing they fail loud instead of writing to `/`.
