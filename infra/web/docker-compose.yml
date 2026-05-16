@@ -12,7 +12,6 @@ services:
   web:
     build:
       context: ../../apps/web
-    container_name: skjoldjasper-web
     restart: unless-stopped
     environment:
       SECRET_KEY: ${SECRET_KEY:?required}
@@ -34,7 +33,6 @@ services:
 
   litestream:
     image: litestream/litestream:0.3
-    container_name: skjoldjasper-litestream
     restart: unless-stopped
     depends_on:
       rclone:
@@ -48,7 +46,6 @@ services:
 
   rclone:
     image: rclone/rclone:1.69
-    container_name: skjoldjasper-rclone
     restart: unless-stopped
     environment:
       # pCloud's native OAuth-based backend — WebDAV won't work alongside 2FA,
