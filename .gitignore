@@ -30,3 +30,6 @@ db.sqlite3-journal
 .idea/*
 !.idea/runConfigurations/
 .vscode/
+
+# Playwright MCP verification artifacts (snapshots, screenshots, console logs)
+.playwright-mcp/
