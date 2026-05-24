@@ -1,40 +1,50 @@
 # skjoldjasper Development Guidelines
 
-Auto-generated from all feature plans. Last updated: 2026-02-27
+## Stack
 
-## Active Technologies
-
-- TypeScript throughout; Node.js ≥20.9.0 + SvelteKit 2.x (`apps/web`), Drizzle ORM 0.44, pg 8.x, Colyseus 0.16 (001-simplify-project)
+- Django 6 on Python 3.13, dependencies managed with `uv`
+- Whitenoise for static files, Gunicorn in production
+- `django-allauth` for authentication (email + password, signup closed)
+- SQLite for local dev (defaults to `db.sqlite3` next to `manage.py`); Postgres
+  available via `DATABASE_URL` in production
+- Deployed behind Cloudflare Tunnel + Traefik via Dokploy
 
 ## Project Structure
 
 ```text
 apps/
-├── web/          # SvelteKit finance app (primary)
-└── game-server/  # Colyseus real-time server
+└── web/                 # The Django project lives here
+    ├── manage.py
+    ├── pyproject.toml   # uv-managed deps
+    └── skjoldjasper/    # Django config package
+        ├── settings.py
+        ├── urls.py
+        ├── adapters.py  # custom allauth adapter (signup closed)
+        └── views.py
 
-packages/
-├── db/           # Drizzle schema + pg pool client
-└── shared/       # Generic utilities (rate limiting, HTTP helpers)
-
-infra/            # Docker Compose, pgBackRest config
-specs/            # Feature specs, plans, tasks (speckit workflow)
+infra/                   # Docker Compose, Dokploy, backups
 ```
 
-## Commands
+Future Django apps (finance, games, …) live as packages inside `apps/web/`.
 
-pnpm --dir packages/db migrate:push   # apply schema changes
-cd infra && docker compose up          # start postgres + web + game-server
+## Running locally
 
-## Code Style
+```bash
+cd apps/web
+uv sync
+SECRET_KEY=dev DEBUG=True .venv/bin/python manage.py migrate
+SECRET_KEY=dev DEBUG=True .venv/bin/python manage.py createsuperuser
+SECRET_KEY=dev DEBUG=True .venv/bin/python manage.py runserver
+```
 
-TypeScript (ESM) throughout. pnpm workspaces. Finance domain logic lives in
-`apps/web/src/lib/server/finance/`. Game logic stays in `apps/game-server/`.
-`packages/` must contain only infrastructure primitives (no domain concepts).
+## Creating user accounts
 
-## Recent Changes
+Public signup is disabled by `NoSignupAccountAdapter`. Create users from
+the Django admin at `/admin/` (Users → Add) or with `manage.py
+createsuperuser`.
 
-- 001-simplify-project: Added TypeScript throughout; Node.js ≥20.9.0 + SvelteKit 2.x (`apps/web`), Drizzle ORM 0.44, pg 8.x, Colyseus 0.16
+## Style
 
-<!-- MANUAL ADDITIONS START -->
-<!-- MANUAL ADDITIONS END -->
+- Python with `ruff` (line length 100, py313 target)
+- Prefer server-rendered Django templates + HTMX over SPA frameworks
+- Keep `skjoldjasper/` lean — domain logic belongs in feature apps
