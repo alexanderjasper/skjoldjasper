@@ -95,6 +95,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # Auth / django-allauth
 LOGIN_REDIRECT_URL = "/"
 ACCOUNT_LOGOUT_REDIRECT_URL = "/"
+ACCOUNT_ADAPTER = "skjoldjasper.adapters.NoSignupAccountAdapter"
 ACCOUNT_LOGIN_METHODS = {"email"}
 ACCOUNT_SIGNUP_FIELDS = ["email*", "password1*", "password2*"]
 ACCOUNT_EMAIL_VERIFICATION = "none"
