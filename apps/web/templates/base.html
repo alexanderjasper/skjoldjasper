@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block head_title %}skjoldjasper.dk{% endblock %}</title>
+    {% block extra_head %}{% endblock %}
+    <style>
+        body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+               max-width: 42rem; margin: 2rem auto; padding: 0 1rem; color: #222; }
+        a { color: #0a58ca; }
+        header { border-bottom: 1px solid #eee; padding-bottom: .5rem;
+                 margin-bottom: 2rem; display: flex; justify-content: space-between;
+                 align-items: baseline; gap: 1rem; }
+        header h1 { font-size: 1.1rem; margin: 0; }
+        header nav a { margin-left: 1rem; }
+        form input { display: block; width: 100%; padding: .4rem;
+                     margin: .25rem 0 .75rem; box-sizing: border-box; }
+        form button { padding: .5rem 1rem; }
+        .messages { background: #fff3cd; padding: .5rem .75rem;
+                    border-radius: .25rem; margin-bottom: 1rem; }
+        .messages ul { margin: 0; padding-left: 1rem; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1><a href="/" style="color:inherit;text-decoration:none">skjoldjasper.dk</a></h1>
+        <nav>
+            {% if user.is_authenticated %}
+                <span>{{ user.email|default:user.username }}</span>
+                <a href="{% url 'account_logout' %}">Sign out</a>
+            {% else %}
+                <a href="{% url 'account_login' %}">Sign in</a>
+            {% endif %}
+        </nav>
+    </header>
+    {% if messages %}
+        <div class="messages">
+            <ul>{% for message in messages %}<li>{{ message }}</li>{% endfor %}</ul>
+        </div>
+    {% endif %}
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+    {% block extra_body %}{% endblock %}
+</body>
+</html>
