@@ -5,6 +5,7 @@ description = "skjoldjasper.dk — personal website"
 requires-python = ">=3.13"
 dependencies = [
     "django>=6.0,<6.1",
+    "django-allauth>=65.0,<66",
     "django-environ>=0.11",
     "gunicorn>=23.0",
     "whitenoise>=6.7",

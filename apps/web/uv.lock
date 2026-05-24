@@ -26,6 +26,19 @@ wheels = [
 ]
 
 [[package]]
+name = "django-allauth"
+version = "65.17.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "asgiref" },
+    { name = "django" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/ae/55/5580ab770bae3a885d1ef5a49646c3958c49cf67edfe956703a9bf815371/django_allauth-65.17.0.tar.gz", hash = "sha256:72bea057eaaf2952e4e22cd0195e031ef8e7de2cbac065cf35bd0067ef50a1e7", size = 2237395, upload-time = "2026-05-20T17:43:29.727Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/bd/5f/dbe29bb38ffc32c6c17590caa346fba8055876a54109a6f914b5916f5819/django_allauth-65.17.0-py3-none-any.whl", hash = "sha256:ff041190bc6f9b2854aa5d7215a1f64f1fc8eb0907990690daad19144b7d2757", size = 2054996, upload-time = "2026-05-20T17:43:41.601Z" },
+]
+
+[[package]]
 name = "django-environ"
 version = "0.13.0"
 source = { registry = "https://pypi.org/simple" }
@@ -86,6 +99,7 @@ version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "django" },
+    { name = "django-allauth" },
     { name = "django-environ" },
     { name = "gunicorn" },
     { name = "whitenoise" },
@@ -99,6 +113,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "django", specifier = ">=6.0,<6.1" },
+    { name = "django-allauth", specifier = ">=65.0,<66" },
     { name = "django-environ", specifier = ">=0.11" },
     { name = "gunicorn", specifier = ">=23.0" },
     { name = "whitenoise", specifier = ">=6.7" },

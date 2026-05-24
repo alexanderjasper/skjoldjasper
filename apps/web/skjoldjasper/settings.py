@@ -23,6 +23,9 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django.contrib.sites",
+    "allauth",
+    "allauth.account",
 ]
 
 MIDDLEWARE = [
@@ -34,7 +37,15 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "allauth.account.middleware.AccountMiddleware",
 ]
+
+AUTHENTICATION_BACKENDS = [
+    "django.contrib.auth.backends.ModelBackend",
+    "allauth.account.auth_backends.AuthenticationBackend",
+]
+
+SITE_ID = 1
 
 ROOT_URLCONF = "skjoldjasper.urls"
 
@@ -80,6 +91,30 @@ STORAGES = {
 }
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# Auth / django-allauth
+LOGIN_REDIRECT_URL = "/"
+ACCOUNT_LOGOUT_REDIRECT_URL = "/"
+ACCOUNT_LOGIN_METHODS = {"email"}
+ACCOUNT_SIGNUP_FIELDS = ["email*", "password1*", "password2*"]
+ACCOUNT_EMAIL_VERIFICATION = "none"
+
+# Password-reset and other allauth emails. Console in dev; wire SMTP in Dokploy
+# for production by setting EMAIL_HOST, EMAIL_HOST_USER, EMAIL_HOST_PASSWORD.
+EMAIL_BACKEND = env(
+    "EMAIL_BACKEND",
+    default=(
+        "django.core.mail.backends.console.EmailBackend"
+        if DEBUG
+        else "django.core.mail.backends.smtp.EmailBackend"
+    ),
+)
+EMAIL_HOST = env("EMAIL_HOST", default="")
+EMAIL_PORT = env.int("EMAIL_PORT", default=587)
+EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="")
+EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
+EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=True)
+DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="no-reply@skjoldjasper.dk")
 
 # Behind Cloudflare Tunnel → Traefik. Trust the X-Forwarded-Proto header.
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
