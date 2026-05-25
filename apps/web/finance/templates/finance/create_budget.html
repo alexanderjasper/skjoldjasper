@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block head_title %}Create budget {{ year }}{% endblock %}
+{% block content %}
+    <h1>Create budget for {{ year }}</h1>
+    <p>You don't have a budget for {{ year }} yet. Create one to start
+        tracking actuals against yearly targets.</p>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Create budget</button>
+    </form>
+    <p><small>Seeded categories ship without yearly targets — set them
+        in <a href="/admin/finance/category/">admin</a> once the budget
+        exists.</small></p>
+{% endblock %}

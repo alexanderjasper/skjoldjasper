@@ -11,3 +11,12 @@ class HouseholdCreateForm(forms.Form):
         label="Household name",
         widget=forms.TextInput(attrs={"placeholder": "e.g. Skjold Jasper"}),
     )
+
+
+class BudgetCreateForm(forms.Form):
+    seed_defaults = forms.BooleanField(
+        required=False,
+        initial=True,
+        label="Seed default category tree "
+        "(Indtægter / Udgifter with Bolig, Forsikring, Husholdning, …)",
+    )

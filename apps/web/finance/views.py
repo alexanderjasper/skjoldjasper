@@ -10,7 +10,8 @@ from django.http import HttpRequest, HttpResponse, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
-from finance.forms import HouseholdCreateForm, ImportCsvForm
+from finance.defaults import seed_default_categories
+from finance.forms import BudgetCreateForm, HouseholdCreateForm, ImportCsvForm
 from finance.importers.sydjysk import parse as parse_sydjysk
 from finance.models import (
     Budget,
@@ -64,6 +65,28 @@ def create_household(request: HttpRequest) -> HttpResponse:
 
 
 @login_required
+def create_budget(request: HttpRequest, year: int) -> HttpResponse:
+    household = _resolve_household(request)
+    if household is None:
+        return redirect("finance:create_household")
+
+    if Budget.objects.filter(household=household, year=year).exists():
+        return redirect("finance:dashboard", year=year)
+
+    if request.method == "POST":
+        form = BudgetCreateForm(request.POST)
+        if form.is_valid():
+            with db_transaction.atomic():
+                budget = Budget.objects.create(household=household, year=year)
+                if form.cleaned_data["seed_defaults"]:
+                    seed_default_categories(budget)
+            return redirect("finance:dashboard", year=year)
+    else:
+        form = BudgetCreateForm()
+    return render(request, "finance/create_budget.html", {"form": form, "year": year})
+
+
+@login_required
 def dashboard(request: HttpRequest, year: int) -> HttpResponse:
     household = _resolve_household(request)
     if household is None:
@@ -71,7 +94,7 @@ def dashboard(request: HttpRequest, year: int) -> HttpResponse:
 
     budget = Budget.objects.filter(household=household, year=year).first()
     if budget is None:
-        return render(request, "finance/dashboard_empty.html", {"year": year})
+        return redirect("finance:create_budget", year=year)
 
     categories = list(
         Category.objects.filter(budget=budget)

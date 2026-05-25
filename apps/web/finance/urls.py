@@ -8,6 +8,7 @@ urlpatterns = [
     path("", views.index, name="index"),
     path("create-household/", views.create_household, name="create_household"),
     path("<int:year>/", views.dashboard, name="dashboard"),
+    path("<int:year>/create-budget/", views.create_budget, name="create_budget"),
     path("import/", views.import_form, name="import"),
     path("<int:year>/transactions/", views.transaction_list, name="transactions"),
     path(
