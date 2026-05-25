@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block head_title %}Budget {{ year }}{% endblock %}
+{% block content %}
+    <h1>Budget {{ year }}</h1>
+    <p>No budget exists for {{ year }} yet. Create one in
+        <a href="/admin/finance/budget/add/">admin</a> (then add categories
+        with yearly targets), and this page will start showing actuals.</p>
+    <p><a href="{% url 'finance:import' %}">Import transactions</a> ·
+       <a href="{% url 'finance:transactions' year %}">Transactions for {{ year }}</a></p>
+{% endblock %}

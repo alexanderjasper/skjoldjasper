@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% load finance_extras %}
+{% block head_title %}Budget {{ year }}{% endblock %}
+{% block content %}
+    <h1>Budget {{ year }}</h1>
+
+    <p>
+        <a href="{% url 'finance:transactions' year %}">Transactions</a> ·
+        <a href="{% url 'finance:import' %}">Import CSV</a>
+    </p>
+
+    <h2>Overview</h2>
+    <table style="border-collapse:collapse">
+        <thead>
+            <tr><th></th><th style="text-align:right;padding-left:1rem">Yearly target</th><th style="text-align:right;padding-left:1rem">Actual to date</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>Income</td>
+                <td style="text-align:right;padding-left:1rem">{{ income_target|money }}</td>
+                <td style="text-align:right;padding-left:1rem">{{ income_actual|money }}</td></tr>
+            <tr><td>Expenses</td>
+                <td style="text-align:right;padding-left:1rem">{{ expense_target|money }}</td>
+                <td style="text-align:right;padding-left:1rem">{{ expense_actual|money }}</td></tr>
+            <tr style="font-weight:700;border-top:1px solid #ccc">
+                <td>Net</td>
+                <td style="text-align:right;padding-left:1rem">{{ net_target|money }}</td>
+                <td style="text-align:right;padding-left:1rem">{{ net_actual|money }}</td></tr>
+        </tbody>
+    </table>
+
+    <h2>Detail</h2>
+    {% if roots %}
+        <table style="width:100%;border-collapse:collapse">
+            <thead>
+                <tr style="border-bottom:1px solid #ccc;text-align:left">
+                    <th>Category</th>
+                    <th style="text-align:right">Yearly target</th>
+                    <th style="text-align:right">Actual</th>
+                    <th style="text-align:right">Δ</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for root in roots %}
+                    {% include "finance/_category_row.html" with cat=root depth=0 %}
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No categories defined yet. Add some in
+            <a href="/admin/finance/category/add/">admin</a>.</p>
+    {% endif %}
+{% endblock %}
