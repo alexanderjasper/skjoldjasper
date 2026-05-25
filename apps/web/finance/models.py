@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -83,3 +85,46 @@ class Category(models.Model):
         # Tree must stay within one budget.
         if self.parent_id is not None and self.parent.budget_id != self.budget_id:
             raise ValidationError({"parent": "Parent category must belong to the same budget."})
+
+
+class Transaction(models.Model):
+    household = models.ForeignKey(
+        Household, on_delete=models.CASCADE, related_name="transactions"
+    )
+    date = models.DateField()
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    description = models.CharField(max_length=500)
+    note = models.TextField(blank=True)
+    from_account = models.CharField(max_length=64, blank=True)
+    to_account = models.CharField(max_length=64, blank=True)
+    counterparty = models.CharField(max_length=200, blank=True)
+    external_id = models.CharField(max_length=100)
+    raw = models.JSONField(default=list, blank=True)
+    imported_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = [("household", "external_id")]
+        ordering = ["-date", "-id"]
+
+    def __str__(self) -> str:
+        return f"{self.date} {self.amount} {self.description[:40]}"
+
+
+class TransactionSplit(models.Model):
+    transaction = models.ForeignKey(
+        Transaction, on_delete=models.CASCADE, related_name="splits"
+    )
+    category = models.ForeignKey(Category, on_delete=models.PROTECT, related_name="splits")
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self) -> str:
+        return f"{self.transaction} → {self.category} ({self.amount})"
+
+    @classmethod
+    def validate_total(cls, transaction: Transaction, total: Decimal) -> None:
+        if abs(total - transaction.amount) > Decimal("0.01"):
+            raise ValidationError(
+                f"splits total {total} does not match transaction amount "
+                f"{transaction.amount}"
+            )
