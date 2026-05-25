@@ -1,38 +1,51 @@
-{% load static %}{% with tx.splits.first as split %}
+{% with tx.splits.all as splits %}
 <tr id="tx-{{ tx.id }}">
     <td>{{ tx.date|date:"Y-m-d" }}</td>
     <td style="text-align:right;font-variant-numeric:tabular-nums">{{ tx.amount }}</td>
     <td>{{ tx.description }}</td>
     <td>
-        <form hx-post="{% url 'finance:categorize' tx.id %}"
-              hx-target="closest tr"
-              hx-swap="outerHTML"
-              style="margin:0">
-            {% csrf_token %}
-            <select name="category" onchange="this.form.requestSubmit()" style="width:100%">
-                <option value="">— Uncategorized —</option>
-                {% regroup leaves by parent.name as groups %}
-                {% for group in groups %}
-                    {% if group.grouper %}
-                        <optgroup label="{{ group.grouper }}">
-                            {% for leaf in group.list %}
-                                <option value="{{ leaf.id }}"
-                                        {% if split.category_id == leaf.id %}selected{% endif %}>
-                                    {{ leaf.name }}
-                                </option>
+        {% if splits|length > 1 %}
+            <div style="display:flex;justify-content:space-between;gap:.5rem;align-items:center">
+                <span style="font-size:.9em">
+                    {% for s in splits %}{{ s.category.name }} <small style="color:#666">({{ s.amount }})</small>{% if not forloop.last %}, {% endif %}{% endfor %}
+                </span>
+                <a href="#" hx-get="{% url 'finance:split' tx.id %}"
+                   hx-target="closest tr" hx-swap="outerHTML"
+                   style="white-space:nowrap">edit splits</a>
+            </div>
+        {% else %}
+            <div style="display:flex;gap:.5rem;align-items:center">
+                <form hx-post="{% url 'finance:categorize' tx.id %}"
+                      hx-target="closest tr" hx-swap="outerHTML"
+                      style="margin:0;flex:1">
+                    {% csrf_token %}
+                    {% with splits.0 as split %}
+                        <select name="category" onchange="this.form.requestSubmit()" style="width:100%">
+                            <option value="">— Uncategorized —</option>
+                            {% regroup leaves by parent.name as groups %}
+                            {% for group in groups %}
+                                {% if group.grouper %}
+                                    <optgroup label="{{ group.grouper }}">
+                                        {% for leaf in group.list %}
+                                            <option value="{{ leaf.id }}"
+                                                    {% if split.category_id == leaf.id %}selected{% endif %}>{{ leaf.name }}</option>
+                                        {% endfor %}
+                                    </optgroup>
+                                {% else %}
+                                    {% for leaf in group.list %}
+                                        <option value="{{ leaf.id }}"
+                                                {% if split.category_id == leaf.id %}selected{% endif %}>{{ leaf.name }}</option>
+                                    {% endfor %}
+                                {% endif %}
                             {% endfor %}
-                        </optgroup>
-                    {% else %}
-                        {% for leaf in group.list %}
-                            <option value="{{ leaf.id }}"
-                                    {% if split.category_id == leaf.id %}selected{% endif %}>
-                                {{ leaf.name }}
-                            </option>
-                        {% endfor %}
-                    {% endif %}
-                {% endfor %}
-            </select>
-        </form>
+                        </select>
+                    {% endwith %}
+                </form>
+                <a href="#" hx-get="{% url 'finance:split' tx.id %}"
+                   hx-target="closest tr" hx-swap="outerHTML"
+                   style="white-space:nowrap;font-size:.9em">split</a>
+            </div>
+        {% endif %}
     </td>
 </tr>
 {% endwith %}
