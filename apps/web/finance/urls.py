@@ -9,6 +9,22 @@ urlpatterns = [
     path("create-household/", views.create_household, name="create_household"),
     path("<int:year>/", views.dashboard, name="dashboard"),
     path("<int:year>/create-budget/", views.create_budget, name="create_budget"),
+    path("<int:year>/categories/", views.category_tree, name="category_tree"),
+    path(
+        "<int:year>/categories/new/",
+        views.category_create,
+        name="category_create",
+    ),
+    path(
+        "<int:year>/categories/<int:pk>/",
+        views.category_update,
+        name="category_update",
+    ),
+    path(
+        "<int:year>/categories/<int:pk>/delete/",
+        views.category_delete,
+        name="category_delete",
+    ),
     path("import/", views.import_form, name="import"),
     path("<int:year>/transactions/", views.transaction_list, name="transactions"),
     path(

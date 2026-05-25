@@ -1,0 +1,17 @@
+<tr style="background:#f6f8fa">
+    <td colspan="4" style="padding:.5rem .5rem .5rem {% widthratio depth 1 1 %}rem">
+        <form method="post"
+              action="{% url 'finance:category_create' year %}"
+              style="display:flex;gap:.75rem;align-items:end;flex-wrap:wrap">
+            {% csrf_token %}
+            <label style="flex:1 1 12rem">Name<br>{{ new_form.name }}</label>
+            <label style="flex:1 1 12rem">Parent<br>{{ new_form.parent }}</label>
+            <label style="flex:0 1 5rem">Sort<br>{{ new_form.sort_order }}</label>
+            <label style="flex:1 1 8rem">Yearly target<br>{{ new_form.yearly_target }}</label>
+            <span>
+                <button type="submit">Add</button>
+                <a href="{% url 'finance:category_tree' year %}">Cancel</a>
+            </span>
+        </form>
+    </td>
+</tr>

@@ -1,0 +1,52 @@
+{% load finance_extras %}
+{% if edit_pk == cat.id %}
+    <tr style="background:#f6f8fa">
+        <td colspan="4" style="padding:.5rem">
+            <form method="post"
+                  action="{% url 'finance:category_update' year cat.id %}"
+                  style="display:flex;gap:.75rem;align-items:end;flex-wrap:wrap">
+                {% csrf_token %}
+                <label style="flex:1 1 12rem">Name<br>{{ edit_form.name }}</label>
+                <label style="flex:1 1 12rem">Parent<br>{{ edit_form.parent }}</label>
+                <label style="flex:0 1 5rem">Sort<br>{{ edit_form.sort_order }}</label>
+                <label style="flex:1 1 8rem">Yearly target<br>{{ edit_form.yearly_target }}</label>
+                <span>
+                    <button type="submit">Save</button>
+                    <a href="{% url 'finance:category_tree' year %}">Cancel</a>
+                </span>
+            </form>
+        </td>
+    </tr>
+{% else %}
+    <tr>
+        <td style="padding-left:{% widthratio depth 1 1 %}rem">
+            {% if cat.children_list %}<strong>{{ cat.name }}</strong>
+            {% else %}{{ cat.name }}{% if cat.yearly_target is None %} <small style="color:#a60">(no target)</small>{% endif %}
+            {% endif %}
+        </td>
+        <td style="text-align:right;color:#888">{{ cat.sort_order }}</td>
+        <td style="text-align:right;font-variant-numeric:tabular-nums">
+            {% if cat.yearly_target is not None %}{{ cat.yearly_target|money }}{% endif %}
+        </td>
+        <td style="text-align:right;white-space:nowrap">
+            <a href="?edit={{ cat.id }}">edit</a> ·
+            <a href="?new={{ cat.id }}">+ child</a> ·
+            <form method="post"
+                  action="{% url 'finance:category_delete' year cat.id %}"
+                  style="display:inline"
+                  onsubmit="return confirm('Delete {{ cat.name|escapejs }}?')">
+                {% csrf_token %}
+                <button type="submit"
+                        style="background:none;border:none;color:#a00;cursor:pointer;padding:0;font:inherit">
+                    delete
+                </button>
+            </form>
+        </td>
+    </tr>
+{% endif %}
+{% for child in cat.children_list %}
+    {% include "finance/_category_editor_row.html" with cat=child depth=depth|add:1 %}
+{% endfor %}
+{% if new_parent_id == cat.id %}
+    {% include "finance/_category_new_form.html" with depth=depth|add:1 %}
+{% endif %}
