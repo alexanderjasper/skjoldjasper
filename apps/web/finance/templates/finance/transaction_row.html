@@ -1,0 +1,38 @@
+{% load static %}{% with tx.splits.first as split %}
+<tr id="tx-{{ tx.id }}">
+    <td>{{ tx.date|date:"Y-m-d" }}</td>
+    <td style="text-align:right;font-variant-numeric:tabular-nums">{{ tx.amount }}</td>
+    <td>{{ tx.description }}</td>
+    <td>
+        <form hx-post="{% url 'finance:categorize' tx.id %}"
+              hx-target="closest tr"
+              hx-swap="outerHTML"
+              style="margin:0">
+            {% csrf_token %}
+            <select name="category" onchange="this.form.requestSubmit()" style="width:100%">
+                <option value="">— Uncategorized —</option>
+                {% regroup leaves by parent.name as groups %}
+                {% for group in groups %}
+                    {% if group.grouper %}
+                        <optgroup label="{{ group.grouper }}">
+                            {% for leaf in group.list %}
+                                <option value="{{ leaf.id }}"
+                                        {% if split.category_id == leaf.id %}selected{% endif %}>
+                                    {{ leaf.name }}
+                                </option>
+                            {% endfor %}
+                        </optgroup>
+                    {% else %}
+                        {% for leaf in group.list %}
+                            <option value="{{ leaf.id }}"
+                                    {% if split.category_id == leaf.id %}selected{% endif %}>
+                                {{ leaf.name }}
+                            </option>
+                        {% endfor %}
+                    {% endif %}
+                {% endfor %}
+            </select>
+        </form>
+    </td>
+</tr>
+{% endwith %}

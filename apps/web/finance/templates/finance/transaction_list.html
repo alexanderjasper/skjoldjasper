@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block head_title %}Transactions {{ year }}{% endblock %}
+{% block content %}
+    <h1>Transactions {{ year }}</h1>
+
+    <p>
+        <a href="?status=all">All</a> ·
+        <a href="?status=uncategorized">Uncategorized</a> ·
+        <a href="?status=categorized">Categorized</a>
+        &nbsp;|&nbsp;
+        <a href="{% url 'finance:import' %}">Import CSV</a>
+    </p>
+
+    {% if not budget %}
+        <p><em>No budget exists for {{ year }} yet — categorization is
+            unavailable until a budget with categories is created in
+            <a href="/admin/finance/budget/add/">admin</a>.</em></p>
+    {% endif %}
+
+    {% if transactions %}
+        <table style="width:100%;border-collapse:collapse">
+            <thead>
+                <tr style="border-bottom:1px solid #ccc;text-align:left">
+                    <th>Date</th>
+                    <th style="text-align:right">Amount</th>
+                    <th>Description</th>
+                    <th>Category</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for tx in transactions %}
+                    {% include "finance/transaction_row.html" with tx=tx leaves=leaves %}
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No transactions for {{ year }} yet.
+            <a href="{% url 'finance:import' %}">Import a CSV</a> to get started.</p>
+    {% endif %}
+{% endblock %}
