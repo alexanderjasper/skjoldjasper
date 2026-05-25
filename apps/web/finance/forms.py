@@ -1,5 +1,7 @@
 from django import forms
 
+from finance.models import Category
+
 
 class ImportCsvForm(forms.Form):
     file = forms.FileField(label="Posteringsdetaljer.csv")
@@ -20,3 +22,32 @@ class BudgetCreateForm(forms.Form):
         label="Seed default category tree "
         "(Indtægter / Udgifter with Bolig, Forsikring, Husholdning, …)",
     )
+
+
+class CategoryForm(forms.ModelForm):
+    """Add/edit a category inside one budget.
+
+    The `budget` kwarg scopes parent choices and lets us exclude self +
+    descendants from the parent dropdown when editing (preventing cycles).
+    """
+
+    class Meta:
+        model = Category
+        fields = ["name", "parent", "sort_order", "yearly_target"]
+
+    def __init__(self, *args, budget=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["parent"].required = False
+        self.fields["parent"].empty_label = "— top-level —"
+        if budget is not None:
+            qs = Category.objects.filter(budget=budget)
+            if self.instance.pk:
+                qs = qs.exclude(pk__in=_descendant_ids(self.instance))
+            self.fields["parent"].queryset = qs.order_by("sort_order", "name")
+
+
+def _descendant_ids(cat: Category) -> set[int]:
+    ids = {cat.pk}
+    for child in cat.children.all():
+        ids |= _descendant_ids(child)
+    return ids

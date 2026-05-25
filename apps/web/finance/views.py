@@ -4,14 +4,15 @@ from decimal import Decimal
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import ValidationError
 from django.db import transaction as db_transaction
-from django.db.models import Q, Sum
+from django.db.models import ProtectedError, Q, Sum
 from django.http import HttpRequest, HttpResponse, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
 from finance.defaults import seed_default_categories
-from finance.forms import BudgetCreateForm, HouseholdCreateForm, ImportCsvForm
+from finance.forms import BudgetCreateForm, CategoryForm, HouseholdCreateForm, ImportCsvForm
 from finance.importers.sydjysk import parse as parse_sydjysk
 from finance.models import (
     Budget,
@@ -154,6 +155,147 @@ def _aggregate_category(cat: Category) -> None:
         cat.deviation_pct = (cat.actual - cat.target_total) / abs(cat.target_total) * 100
     else:
         cat.deviation_pct = None
+
+
+@login_required
+def category_tree(request: HttpRequest, year: int) -> HttpResponse:
+    household = _resolve_household(request)
+    if household is None:
+        return redirect("finance:create_household")
+    budget = Budget.objects.filter(household=household, year=year).first()
+    if budget is None:
+        return redirect("finance:create_budget", year=year)
+
+    categories = list(
+        Category.objects.filter(budget=budget).order_by("sort_order", "name")
+    )
+    by_id = {c.id: c for c in categories}
+    for c in categories:
+        c.children_list = []
+    for c in categories:
+        if c.parent_id:
+            by_id[c.parent_id].children_list.append(c)
+    roots = [c for c in categories if c.parent_id is None]
+
+    edit_pk = _int_or_none(request.GET.get("edit"))
+    new_under = request.GET.get("new")  # "root" or a pk string
+    new_parent_id = _int_or_none(new_under) if new_under != "root" else None
+    show_new_root = new_under == "root"
+
+    edit_form = None
+    if edit_pk and edit_pk in by_id:
+        edit_form = CategoryForm(instance=by_id[edit_pk], budget=budget)
+
+    new_form = None
+    if new_under is not None:
+        initial = {}
+        if new_parent_id and new_parent_id in by_id:
+            initial["parent"] = by_id[new_parent_id]
+        new_form = CategoryForm(initial=initial, budget=budget)
+
+    return render(
+        request,
+        "finance/category_tree.html",
+        {
+            "year": year,
+            "budget": budget,
+            "roots": roots,
+            "edit_pk": edit_pk,
+            "edit_form": edit_form,
+            "new_form": new_form,
+            "new_parent_id": new_parent_id,
+            "show_new_root": show_new_root,
+        },
+    )
+
+
+def _int_or_none(value: str | None) -> int | None:
+    if value is None or not value.isdigit():
+        return None
+    return int(value)
+
+
+@login_required
+@require_POST
+def category_create(request: HttpRequest, year: int) -> HttpResponse:
+    household = _resolve_household(request)
+    if household is None:
+        return HttpResponseForbidden()
+    budget = get_object_or_404(Budget, household=household, year=year)
+
+    form = CategoryForm(request.POST, budget=budget)
+    if form.is_valid():
+        cat = form.save(commit=False)
+        cat.budget = budget
+        try:
+            cat.full_clean()
+            cat.save()
+            messages.success(request, f"Added {cat.name}.")
+        except ValidationError as e:
+            messages.error(request, "; ".join(_flatten_errors(e)))
+    else:
+        messages.error(request, "; ".join(_flatten_errors(form.errors)))
+    return redirect("finance:category_tree", year=year)
+
+
+@login_required
+@require_POST
+def category_update(request: HttpRequest, year: int, pk: int) -> HttpResponse:
+    household = _resolve_household(request)
+    if household is None:
+        return HttpResponseForbidden()
+    budget = get_object_or_404(Budget, household=household, year=year)
+    cat = get_object_or_404(Category, pk=pk, budget=budget)
+
+    form = CategoryForm(request.POST, instance=cat, budget=budget)
+    if form.is_valid():
+        cat = form.save(commit=False)
+        try:
+            cat.full_clean()
+            cat.save()
+            messages.success(request, f"Updated {cat.name}.")
+        except ValidationError as e:
+            messages.error(request, "; ".join(_flatten_errors(e)))
+    else:
+        messages.error(request, "; ".join(_flatten_errors(form.errors)))
+    return redirect("finance:category_tree", year=year)
+
+
+@login_required
+@require_POST
+def category_delete(request: HttpRequest, year: int, pk: int) -> HttpResponse:
+    household = _resolve_household(request)
+    if household is None:
+        return HttpResponseForbidden()
+    budget = get_object_or_404(Budget, household=household, year=year)
+    cat = get_object_or_404(Category, pk=pk, budget=budget)
+
+    if cat.children.exists():
+        messages.error(
+            request, f"{cat.name} has subcategories — delete or move them first."
+        )
+    else:
+        try:
+            name = cat.name
+            cat.delete()
+            messages.success(request, f"Deleted {name}.")
+        except ProtectedError:
+            messages.error(
+                request,
+                f"{cat.name} has transactions assigned — reassign them first.",
+            )
+    return redirect("finance:category_tree", year=year)
+
+
+def _flatten_errors(errors) -> list[str]:
+    """Pull message strings out of a ValidationError or form.errors dict."""
+    if isinstance(errors, ValidationError):
+        return list(errors.messages)
+    out: list[str] = []
+    for field, errs in errors.items():
+        prefix = "" if field == "__all__" else f"{field}: "
+        out.extend(f"{prefix}{e}" for e in errs)
+    return out
 
 
 @login_required

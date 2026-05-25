@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% load finance_extras %}
+{% block head_title %}Categories {{ year }}{% endblock %}
+{% block content %}
+    <h1>Categories — {{ year }}</h1>
+    <p>
+        <a href="{% url 'finance:dashboard' year %}">← Dashboard</a> ·
+        <a href="{% url 'finance:transactions' year %}">Transactions</a>
+    </p>
+
+    <p><small>Income leaves use positive targets (e.g. <code>404400</code>);
+        expense leaves use negative (e.g. <code>-83400</code>). Groups
+        sum their children automatically, so leave their target blank.</small></p>
+
+    <table style="width:100%;border-collapse:collapse">
+        <thead>
+            <tr style="border-bottom:1px solid #ccc;text-align:left">
+                <th>Name</th>
+                <th style="text-align:right">Sort</th>
+                <th style="text-align:right">Yearly target</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for root in roots %}
+                {% include "finance/_category_editor_row.html" with cat=root depth=0 %}
+            {% endfor %}
+            {% if show_new_root %}
+                {% include "finance/_category_new_form.html" with depth=0 %}
+            {% endif %}
+        </tbody>
+    </table>
+
+    {% if not edit_pk and new_form is None %}
+        <p><a href="?new=root">+ Add top-level category</a></p>
+    {% elif new_form and not new_parent_id and not show_new_root %}
+        {# editing somewhere else #}
+    {% endif %}
+{% endblock %}
