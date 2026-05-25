@@ -6,4 +6,10 @@ app_name = "finance"
 
 urlpatterns = [
     path("import/", views.import_form, name="import"),
+    path("<int:year>/transactions/", views.transaction_list, name="transactions"),
+    path(
+        "transactions/<int:pk>/categorize/",
+        views.transaction_categorize,
+        name="categorize",
+    ),
 ]
