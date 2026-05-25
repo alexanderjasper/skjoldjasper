@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block head_title %}Set up your household{% endblock %}
+{% block content %}
+    <h1>Set up your household</h1>
+    <p>Pick a name for the household that will own your budgets and
+        transactions. You can share it with family members later by adding
+        them in admin.</p>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Create</button>
+    </form>
+{% endblock %}
