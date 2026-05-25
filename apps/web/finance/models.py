@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
 
 
@@ -22,3 +23,63 @@ class Membership(models.Model):
 
     def __str__(self) -> str:
         return f"{self.user} in {self.household}"
+
+
+class Budget(models.Model):
+    household = models.ForeignKey(Household, on_delete=models.CASCADE, related_name="budgets")
+    year = models.IntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = [("household", "year")]
+        ordering = ["-year"]
+
+    def __str__(self) -> str:
+        return f"Budget {self.year}"
+
+
+class Category(models.Model):
+    """Self-referential tree. Leaves have yearly_target; groups don't."""
+
+    budget = models.ForeignKey(Budget, on_delete=models.CASCADE, related_name="categories")
+    parent = models.ForeignKey(
+        "self", null=True, blank=True, on_delete=models.CASCADE, related_name="children"
+    )
+    name = models.CharField(max_length=100)
+    sort_order = models.IntegerField(default=0)
+    yearly_target = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text="Signed: positive = income, negative = expense. Leaf categories only.",
+    )
+
+    class Meta:
+        ordering = ["sort_order", "name"]
+        verbose_name_plural = "categories"
+
+    def __str__(self) -> str:
+        if self.parent_id:
+            return f"{self.parent} › {self.name}"
+        return self.name
+
+    def clean(self) -> None:
+        super().clean()
+        # A category may only carry yearly_target when it has no children.
+        if (
+            self.yearly_target is not None
+            and self.pk is not None
+            and self.children.exists()
+        ):
+            raise ValidationError(
+                {"yearly_target": "yearly_target may only be set on leaf categories."}
+            )
+        # And you can't add children to a category that already has a target.
+        if self.parent_id is not None and self.parent.yearly_target is not None:
+            raise ValidationError(
+                {"parent": "Parent category has a yearly_target; clear it before adding children."}
+            )
+        # Tree must stay within one budget.
+        if self.parent_id is not None and self.parent.budget_id != self.budget_id:
+            raise ValidationError({"parent": "Parent category must belong to the same budget."})
