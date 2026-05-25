@@ -1,5 +1,9 @@
 from django.urls import path
 
+from finance import views
+
 app_name = "finance"
 
-urlpatterns: list = []
+urlpatterns = [
+    path("import/", views.import_form, name="import"),
+]

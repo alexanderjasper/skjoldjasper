@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block head_title %}Import transactions{% endblock %}
+{% block content %}
+    <h1>Import transactions</h1>
+    <p>Upload a Posteringsdetaljer.csv export from Sydjysk Sparekasse.
+        Already-imported transactions are skipped automatically.</p>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Import</button>
+    </form>
+{% endblock %}
