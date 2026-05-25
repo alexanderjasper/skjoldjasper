@@ -32,4 +32,11 @@ urlpatterns = [
         views.transaction_categorize,
         name="categorize",
     ),
+    path("transactions/<int:pk>/split/", views.transaction_split, name="split"),
+    path(
+        "transactions/<int:pk>/split/line/",
+        views.transaction_split_line,
+        name="split_line",
+    ),
+    path("transactions/<int:pk>/row/", views.transaction_row, name="row"),
 ]

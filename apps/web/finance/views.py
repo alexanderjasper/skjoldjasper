@@ -381,6 +381,79 @@ def transaction_categorize(request: HttpRequest, pk: int) -> HttpResponse:
             )
             TransactionSplit.validate_total(tx, split.amount)
 
+    return _render_tx_row(request, household, tx)
+
+
+@login_required
+def transaction_split(request: HttpRequest, pk: int) -> HttpResponse:
+    """GET → render the multi-split editor row. POST → save split list."""
+    household = _resolve_household(request)
+    if household is None:
+        return HttpResponseForbidden()
+    tx = get_object_or_404(Transaction, pk=pk, household=household)
+    budget = Budget.objects.filter(household=household, year=tx.date.year).first()
+    leaves = _leaves_for_budget(budget)
+
+    if request.method == "POST":
+        category_ids = request.POST.getlist("category")
+        amounts = request.POST.getlist("amount")
+        lines: list[tuple[Category, Decimal]] = []
+        total = Decimal("0")
+        try:
+            for cid, amt in zip(category_ids, amounts):
+                if not cid or amt == "":
+                    continue
+                category = leaves.get(pk=cid)
+                value = Decimal(amt)
+                lines.append((category, value))
+                total += value
+            if not lines:
+                raise ValueError("at least one split is required")
+            TransactionSplit.validate_total(tx, total)
+        except (ValueError, ArithmeticError, Category.DoesNotExist, ValidationError) as e:
+            messages.error(request, f"Could not save splits: {e}")
+            return _render_split_editor(request, tx, leaves, _post_lines(category_ids, amounts))
+
+        with db_transaction.atomic():
+            tx.splits.all().delete()
+            for category, value in lines:
+                TransactionSplit.objects.create(
+                    transaction=tx, category=category, amount=value
+                )
+        return _render_tx_row(request, household, tx)
+
+    existing = [(str(s.category_id), str(s.amount)) for s in tx.splits.all()]
+    if not existing:
+        existing = [("", "")]
+    return _render_split_editor(request, tx, leaves, existing)
+
+
+@login_required
+def transaction_split_line(request: HttpRequest, pk: int) -> HttpResponse:
+    """Return a single empty split line fragment for HTMX append."""
+    household = _resolve_household(request)
+    if household is None:
+        return HttpResponseForbidden()
+    tx = get_object_or_404(Transaction, pk=pk, household=household)
+    budget = Budget.objects.filter(household=household, year=tx.date.year).first()
+    return render(
+        request,
+        "finance/_split_line.html",
+        {"leaves": _leaves_for_budget(budget), "category_id": "", "amount": ""},
+    )
+
+
+@login_required
+def transaction_row(request: HttpRequest, pk: int) -> HttpResponse:
+    """Render the display row for a transaction (used by split-editor Cancel)."""
+    household = _resolve_household(request)
+    if household is None:
+        return HttpResponseForbidden()
+    tx = get_object_or_404(Transaction, pk=pk, household=household)
+    return _render_tx_row(request, household, tx)
+
+
+def _render_tx_row(request, household, tx):
     budget = Budget.objects.filter(household=household, year=tx.date.year).first()
     tx.refresh_from_db()
     return render(
@@ -388,3 +461,17 @@ def transaction_categorize(request: HttpRequest, pk: int) -> HttpResponse:
         "finance/transaction_row.html",
         {"tx": tx, "leaves": _leaves_for_budget(budget)},
     )
+
+
+def _render_split_editor(request, tx, leaves, lines):
+    return render(
+        request,
+        "finance/transaction_split_row.html",
+        {"tx": tx, "leaves": leaves, "lines": lines},
+    )
+
+
+def _post_lines(category_ids, amounts):
+    """Zip POSTed category/amount lists for re-render on validation error."""
+    pairs = list(zip(category_ids, amounts))
+    return pairs or [("", "")]
