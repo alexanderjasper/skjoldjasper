@@ -10,9 +10,16 @@ from django.http import HttpRequest, HttpResponse, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
-from finance.forms import ImportCsvForm
+from finance.forms import HouseholdCreateForm, ImportCsvForm
 from finance.importers.sydjysk import parse as parse_sydjysk
-from finance.models import Budget, Category, Household, Transaction, TransactionSplit
+from finance.models import (
+    Budget,
+    Category,
+    Household,
+    Membership,
+    Transaction,
+    TransactionSplit,
+)
 
 
 def _resolve_household(request: HttpRequest) -> Household | None:
@@ -40,10 +47,27 @@ def index(request: HttpRequest) -> HttpResponse:
 
 
 @login_required
+def create_household(request: HttpRequest) -> HttpResponse:
+    if _resolve_household(request) is not None:
+        return redirect("finance:index")
+
+    if request.method == "POST":
+        form = HouseholdCreateForm(request.POST)
+        if form.is_valid():
+            with db_transaction.atomic():
+                household = Household.objects.create(name=form.cleaned_data["name"])
+                Membership.objects.create(household=household, user=request.user)
+            return redirect("finance:index")
+    else:
+        form = HouseholdCreateForm()
+    return render(request, "finance/create_household.html", {"form": form})
+
+
+@login_required
 def dashboard(request: HttpRequest, year: int) -> HttpResponse:
     household = _resolve_household(request)
     if household is None:
-        return render(request, "finance/no_household.html")
+        return redirect("finance:create_household")
 
     budget = Budget.objects.filter(household=household, year=year).first()
     if budget is None:
@@ -113,7 +137,7 @@ def _aggregate_category(cat: Category) -> None:
 def import_form(request: HttpRequest) -> HttpResponse:
     household = _resolve_household(request)
     if household is None:
-        return render(request, "finance/no_household.html")
+        return redirect("finance:create_household")
 
     if request.method == "POST":
         form = ImportCsvForm(request.POST, request.FILES)
@@ -144,7 +168,7 @@ def import_form(request: HttpRequest) -> HttpResponse:
 def transaction_list(request: HttpRequest, year: int) -> HttpResponse:
     household = _resolve_household(request)
     if household is None:
-        return render(request, "finance/no_household.html")
+        return redirect("finance:create_household")
 
     transactions = Transaction.objects.filter(
         household=household, date__year=year
