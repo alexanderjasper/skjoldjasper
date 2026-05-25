@@ -6,6 +6,7 @@
 
     <p>
         <a href="{% url 'finance:transactions' year %}">Transactions</a> ·
+        <a href="{% url 'finance:category_tree' year %}">Categories</a> ·
         <a href="{% url 'finance:import' %}">Import CSV</a>
     </p>
 
@@ -46,7 +47,7 @@
             </tbody>
         </table>
     {% else %}
-        <p>No categories defined yet. Add some in
-            <a href="/admin/finance/category/add/">admin</a>.</p>
+        <p>No categories defined yet.
+            <a href="{% url 'finance:category_tree' year %}">Add some →</a></p>
     {% endif %}
 {% endblock %}
