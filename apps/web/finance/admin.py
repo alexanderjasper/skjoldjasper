@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from finance.models import Budget, Category, Household, Membership
+from finance.models import Budget, Category, Household, Membership, Transaction, TransactionSplit
 
 
 class MembershipInline(admin.TabularInline):
@@ -35,3 +35,26 @@ class CategoryAdmin(admin.ModelAdmin):
     list_filter = ["budget"]
     search_fields = ["name"]
     autocomplete_fields = ["parent", "budget"]
+
+
+class TransactionSplitInline(admin.TabularInline):
+    model = TransactionSplit
+    extra = 0
+    autocomplete_fields = ["category"]
+
+
+@admin.register(Transaction)
+class TransactionAdmin(admin.ModelAdmin):
+    list_display = ["date", "amount", "description", "counterparty", "household"]
+    list_filter = ["household", "date"]
+    search_fields = ["description", "counterparty", "external_id"]
+    date_hierarchy = "date"
+    inlines = [TransactionSplitInline]
+    readonly_fields = ["imported_at"]
+
+
+@admin.register(TransactionSplit)
+class TransactionSplitAdmin(admin.ModelAdmin):
+    list_display = ["transaction", "category", "amount", "created_at"]
+    list_filter = ["category__budget"]
+    autocomplete_fields = ["transaction", "category"]
