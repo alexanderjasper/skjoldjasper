@@ -26,9 +26,9 @@ db.sqlite3-journal
 /staticfiles/
 /media/
 
-# IDE
-.idea/*
-!.idea/runConfigurations/
+# IDE — ignore IntelliJ/PyCharm state at any depth, keep only shared run configs
+**/.idea/*
+!**/.idea/runConfigurations/
 .vscode/
 
 # Playwright MCP verification artifacts (snapshots, screenshots, console logs)
