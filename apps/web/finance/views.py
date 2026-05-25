@@ -1,8 +1,11 @@
 import io
+from datetime import date
+from decimal import Decimal
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import transaction as db_transaction
+from django.db.models import Q, Sum
 from django.http import HttpRequest, HttpResponse, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
@@ -29,6 +32,81 @@ def _leaves_for_budget(budget: Budget | None):
         .select_related("parent")
         .order_by("parent__sort_order", "parent__name", "sort_order", "name")
     )
+
+
+@login_required
+def index(request: HttpRequest) -> HttpResponse:
+    return redirect("finance:dashboard", year=date.today().year)
+
+
+@login_required
+def dashboard(request: HttpRequest, year: int) -> HttpResponse:
+    household = _resolve_household(request)
+    if household is None:
+        return render(request, "finance/no_household.html")
+
+    budget = Budget.objects.filter(household=household, year=year).first()
+    if budget is None:
+        return render(request, "finance/dashboard_empty.html", {"year": year})
+
+    categories = list(
+        Category.objects.filter(budget=budget)
+        .annotate(
+            actual=Sum(
+                "splits__amount",
+                filter=Q(splits__transaction__date__year=year),
+            )
+        )
+        .order_by("sort_order", "name")
+    )
+
+    by_id = {c.id: c for c in categories}
+    for c in categories:
+        c.children_list = []
+    for c in categories:
+        if c.parent_id:
+            by_id[c.parent_id].children_list.append(c)
+    roots = [c for c in categories if c.parent_id is None]
+
+    for r in roots:
+        _aggregate_category(r)
+
+    income_target = sum((r.target_total for r in roots if r.target_total > 0), Decimal("0"))
+    income_actual = sum((r.actual for r in roots if r.target_total > 0), Decimal("0"))
+    expense_target = sum((r.target_total for r in roots if r.target_total < 0), Decimal("0"))
+    expense_actual = sum((r.actual for r in roots if r.target_total < 0), Decimal("0"))
+
+    return render(
+        request,
+        "finance/budget_dashboard.html",
+        {
+            "year": year,
+            "budget": budget,
+            "roots": roots,
+            "income_target": income_target,
+            "income_actual": income_actual,
+            "expense_target": expense_target,
+            "expense_actual": expense_actual,
+            "net_target": income_target + expense_target,
+            "net_actual": income_actual + expense_actual,
+        },
+    )
+
+
+def _aggregate_category(cat: Category) -> None:
+    """Roll up actual/target/deviation from leaves to groups, in place."""
+    if not cat.children_list:
+        cat.actual = cat.actual or Decimal("0")
+        cat.target_total = cat.yearly_target or Decimal("0")
+    else:
+        for child in cat.children_list:
+            _aggregate_category(child)
+        cat.actual = sum((c.actual for c in cat.children_list), Decimal("0"))
+        cat.target_total = sum((c.target_total for c in cat.children_list), Decimal("0"))
+    if cat.target_total:
+        cat.deviation_pct = (cat.actual - cat.target_total) / abs(cat.target_total) * 100
+    else:
+        cat.deviation_pct = None
 
 
 @login_required
