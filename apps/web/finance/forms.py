@@ -40,6 +40,10 @@ class CategoryForm(forms.ModelForm):
         self.fields["parent"].required = False
         self.fields["parent"].empty_label = "— top-level —"
         if budget is not None:
+            # `budget` isn't a form field, so bind it to the instance now —
+            # otherwise Category.clean() runs during form validation with
+            # budget_id=None and wrongly rejects a parent as "different budget".
+            self.instance.budget = budget
             qs = Category.objects.filter(budget=budget)
             if self.instance.pk:
                 qs = qs.exclude(pk__in=_descendant_ids(self.instance))
