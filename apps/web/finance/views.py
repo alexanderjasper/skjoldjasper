@@ -19,6 +19,7 @@ from finance.forms import (
     HouseholdCreateForm,
     ImportCsvForm,
 )
+from finance.balances import account_balance_series
 from finance.importers.sydjysk import parse as parse_sydjysk
 from finance.models import (
     Account,
@@ -303,6 +304,41 @@ def _flatten_errors(errors) -> list[str]:
         prefix = "" if field == "__all__" else f"{field}: "
         out.extend(f"{prefix}{e}" for e in errs)
     return out
+
+
+@login_required
+def overview(request: HttpRequest) -> HttpResponse:
+    household = _resolve_household(request)
+    if household is None:
+        return redirect("finance:create_household")
+
+    tracked = list(household.accounts.filter(tracked=True))
+    transactions = list(household.transactions.all())
+
+    series = []  # for the chart: one dataset per account
+    cards = []   # current balance per account
+    net_worth = Decimal("0")
+    for account in tracked:
+        points, current = account_balance_series(account, transactions)
+        net_worth += current
+        cards.append({"account": account, "current": current})
+        series.append(
+            {
+                "label": str(account),
+                "points": [[d.isoformat(), float(b)] for d, b in points],
+            }
+        )
+
+    return render(
+        request,
+        "finance/overview.html",
+        {
+            "cards": cards,
+            "net_worth": net_worth,
+            "chart_series": series,
+            "has_accounts": bool(tracked),
+        },
+    )
 
 
 def _discover_account_numbers(household: Household) -> set[str]:

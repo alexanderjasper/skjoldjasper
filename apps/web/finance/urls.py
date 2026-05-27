@@ -25,6 +25,7 @@ urlpatterns = [
         views.category_delete,
         name="category_delete",
     ),
+    path("overview/", views.overview, name="overview"),
     path("accounts/", views.accounts, name="accounts"),
     path("accounts/create/", views.account_create, name="account_create"),
     path("accounts/<int:pk>/", views.account_update, name="account_update"),
