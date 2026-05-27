@@ -41,6 +41,22 @@ class CategoryFormTests(TestCase):
         cat = form.save()
         self.assertIsNone(cat.parent_id)
 
+    def test_target_on_category_with_children_is_rejected(self):
+        """Only leaves may carry a yearly_target; parents sum their children."""
+        Category.objects.create(budget=self.budget, parent=self.parent, name="Mad")
+        form = CategoryForm(
+            {
+                "name": self.parent.name,
+                "parent": "",
+                "sort_order": "0",
+                "yearly_target": "-50000",
+            },
+            instance=self.parent,
+            budget=self.budget,
+        )
+        self.assertFalse(form.is_valid())
+        self.assertIn("yearly_target", form.errors)
+
     def test_leaf_target_then_child_is_rejected(self):
         """A category with a yearly_target may not gain children."""
         leaf = Category.objects.create(

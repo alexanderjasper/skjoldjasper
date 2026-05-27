@@ -9,7 +9,12 @@
                 <label style="flex:1 1 12rem">Name<br>{{ edit_form.name }}</label>
                 <label style="flex:1 1 12rem">Parent<br>{{ edit_form.parent }}</label>
                 <label style="flex:0 1 5rem">Sort<br>{{ edit_form.sort_order }}</label>
-                <label style="flex:1 1 8rem">Yearly target<br>{{ edit_form.yearly_target }}</label>
+                {% if cat.children_list %}
+                    <label style="flex:1 1 8rem">Yearly target<br>
+                        <span class="muted" style="display:inline-block;padding:.5rem 0;font-size:.85em">— sums of children —</span></label>
+                {% else %}
+                    <label style="flex:1 1 8rem">Yearly target<br>{{ edit_form.yearly_target }}</label>
+                {% endif %}
                 <span>
                     <button type="submit">Save</button>
                     <a href="{% url 'finance:category_tree' year %}">Cancel</a>
@@ -26,7 +31,8 @@
         </td>
         <td style="text-align:right;color:#888">{{ cat.sort_order }}</td>
         <td style="text-align:right;font-variant-numeric:tabular-nums">
-            {% if cat.yearly_target is not None %}{{ cat.yearly_target|money }}{% endif %}
+            {% if cat.children_list %}<span class="muted" style="font-size:.82em">sums children</span>
+            {% elif cat.yearly_target is not None %}{{ cat.yearly_target|money }}{% endif %}
         </td>
         <td style="text-align:right;white-space:nowrap">
             <a href="?edit={{ cat.id }}">edit</a> ·
