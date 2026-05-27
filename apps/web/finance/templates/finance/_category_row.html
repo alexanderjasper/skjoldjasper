@@ -1,8 +1,10 @@
-{% load finance_extras %}<tr{% if not cat.children_list %} style="color:#444"{% else %} style="font-weight:600"{% endif %}>
-    <td style="padding-left:{{ depth }}rem">{{ cat.name }}</td>
-    <td style="text-align:right;font-variant-numeric:tabular-nums">{{ cat.target_total|money }}</td>
-    <td style="text-align:right;font-variant-numeric:tabular-nums">{{ cat.actual|money }}</td>
-    <td style="text-align:right">{{ cat.deviation_pct|deviation }}</td>
+{% load finance_extras %}<tr{% if cat.children_list %} style="font-family:var(--font-display)"{% endif %}>
+    <td style="padding-left:{% widthratio depth 1 1 %}rem">
+        {% if cat.children_list %}<strong style="font-weight:500">{{ cat.name }}</strong>{% else %}<span style="color:var(--ink-soft)">{{ cat.name }}</span>{% endif %}
+    </td>
+    <td class="num" style="text-align:right">{{ cat.target_total|money }}</td>
+    <td class="num" style="text-align:right">{{ cat.actual|money }}</td>
+    <td class="num" style="text-align:right">{{ cat.deviation_pct|deviation }}</td>
 </tr>
 {% for child in cat.children_list %}
     {% include "finance/_category_row.html" with cat=child depth=depth|add:1 %}
