@@ -152,9 +152,11 @@
             box-shadow: 0 0 0 3px rgba(31,77,58,.13);
         }
         /* Block, full-width inputs for stacked forms (allauth, create flows) */
-        form.stack input, form.stack select, form.stack textarea {
+        form.stack input:not([type=checkbox]):not([type=radio]),
+        form.stack select, form.stack textarea {
             display: block; width: 100%; margin: .3rem 0 1rem;
         }
+        form.stack input[type=checkbox] { margin-right: .4rem; }
 
         /* ---- tables ---- */
         table { width: 100%; border-collapse: collapse; }
