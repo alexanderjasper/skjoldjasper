@@ -1,6 +1,6 @@
 from django import forms
 
-from finance.models import Category
+from finance.models import Account, Category
 
 
 class ImportCsvForm(forms.Form):
@@ -55,3 +55,12 @@ def _descendant_ids(cat: Category) -> set[int]:
     for child in cat.children.all():
         ids |= _descendant_ids(child)
     return ids
+
+
+class AccountForm(forms.ModelForm):
+    class Meta:
+        model = Account
+        fields = ["label", "tracked", "opening_balance", "opening_date"]
+        widgets = {
+            "opening_date": forms.DateInput(attrs={"type": "date"}),
+        }

@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block head_title %}Accounts{% endblock %}
+{% block content %}
+    <p class="eyebrow">Setup</p>
+    <h1>Accounts</h1>
+    <p class="muted" style="max-width:42rem">Label your own accounts and give each an
+        opening balance so balances over time can be reconstructed (the bank
+        export has no running balance). Untick <em>tracked</em> for counterparty
+        accounts that aren't yours — they stay out of balances and net worth.</p>
+
+    {% if accounts %}
+        <div style="display:grid;gap:.6rem;margin-top:1.5rem">
+            {% for account in accounts %}
+                <form method="post" action="{% url 'finance:account_update' account.id %}"
+                      class="card"
+                      style="display:flex;gap:1rem;align-items:end;flex-wrap:wrap;padding:1rem 1.25rem">
+                    {% csrf_token %}
+                    <div style="flex:1 1 9rem">
+                        <div class="eyebrow">Account</div>
+                        <div class="num" style="white-space:nowrap">{{ account.number }}</div>
+                    </div>
+                    <label style="flex:2 1 10rem">Label<br>{{ account.form.label }}</label>
+                    <label style="flex:0 0 auto;text-align:center">Tracked<br>{{ account.form.tracked }}</label>
+                    <label style="flex:1 1 8rem">Opening balance<br>{{ account.form.opening_balance }}</label>
+                    <label style="flex:1 1 8rem">As of<br>{{ account.form.opening_date }}</label>
+                    <button type="submit" style="padding:.45rem 1rem">Save</button>
+                </form>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    {% if discovered %}
+        <h2>Discovered in transactions</h2>
+        <p class="muted" style="font-size:.9rem">Account numbers seen in your imports
+            that aren't set up yet. Add the ones that are yours.</p>
+        <div style="display:grid;gap:.4rem">
+            {% for number in discovered %}
+                <form method="post" action="{% url 'finance:account_create' %}"
+                      style="display:flex;gap:1rem;align-items:center;justify-content:space-between;
+                             border:1px solid var(--line);border-radius:var(--radius);padding:.6rem 1rem">
+                    {% csrf_token %}
+                    <input type="hidden" name="number" value="{{ number }}">
+                    <input type="hidden" name="tracked" value="on">
+                    <input type="hidden" name="opening_balance" value="0">
+                    <span class="num">{{ number }}</span>
+                    <button type="submit" class="btn-ghost" style="padding:.35rem .8rem">Add as account</button>
+                </form>
+            {% endfor %}
+        </div>
+    {% elif not accounts %}
+        <div class="card" style="text-align:center;margin-top:1.5rem">
+            <p style="margin:0">No accounts found yet — import some transactions first.</p>
+        </div>
+    {% endif %}
+{% endblock %}

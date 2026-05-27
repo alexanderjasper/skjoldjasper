@@ -25,6 +25,9 @@ urlpatterns = [
         views.category_delete,
         name="category_delete",
     ),
+    path("accounts/", views.accounts, name="accounts"),
+    path("accounts/create/", views.account_create, name="account_create"),
+    path("accounts/<int:pk>/", views.account_update, name="account_update"),
     path("import/", views.import_form, name="import"),
     path("<int:year>/transactions/", views.transaction_list, name="transactions"),
     path(
