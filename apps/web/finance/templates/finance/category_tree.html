@@ -2,15 +2,17 @@
 {% load finance_extras %}
 {% block head_title %}Categories {{ year }}{% endblock %}
 {% block content %}
-    <h1>Categories — {{ year }}</h1>
-    <p>
-        <a href="{% url 'finance:dashboard' year %}">← Dashboard</a> ·
+    <p class="eyebrow">Budget {{ year }}</p>
+    <h1>Categories</h1>
+    <nav style="display:flex;gap:1.25rem;margin:.75rem 0 1.5rem;font-size:.92rem">
+        <a href="{% url 'finance:dashboard' year %}">← Dashboard</a>
         <a href="{% url 'finance:transactions' year %}">Transactions</a>
-    </p>
+    </nav>
 
-    <p><small>Income leaves use positive targets (e.g. <code>404400</code>);
-        expense leaves use negative (e.g. <code>-83400</code>). Groups
-        sum their children automatically, so leave their target blank.</small></p>
+    <p class="muted" style="max-width:42rem;font-size:.9rem">Income leaves use positive
+        targets (e.g. <code>404400</code>); expense leaves use negative
+        (e.g. <code>-83400</code>). Groups sum their children automatically,
+        so leave their target blank.</p>
 
     <table style="width:100%;border-collapse:collapse">
         <thead>
@@ -32,8 +34,6 @@
     </table>
 
     {% if not edit_pk and new_form is None %}
-        <p><a href="?new=root">+ Add top-level category</a></p>
-    {% elif new_form and not new_parent_id and not show_new_root %}
-        {# editing somewhere else #}
+        <p style="margin-top:1.25rem"><a class="btn btn-ghost" href="?new=root">+ Add top-level category</a></p>
     {% endif %}
 {% endblock %}

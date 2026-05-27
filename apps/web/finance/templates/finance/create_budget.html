@@ -1,14 +1,18 @@
 {% extends "base.html" %}
 {% block head_title %}Create budget {{ year }}{% endblock %}
 {% block content %}
+    <p class="eyebrow">Getting started</p>
     <h1>Create budget for {{ year }}</h1>
-    <p>You don't have a budget for {{ year }} yet. Create one to start
-        tracking actuals against yearly targets.</p>
-    <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit">Create budget</button>
-    </form>
-    <p><small>Seeded categories ship without yearly targets — set them
-        on the Categories page once the budget exists.</small></p>
+    <p class="muted" style="max-width:34rem">You don't have a budget for {{ year }} yet.
+        Create one to start tracking actuals against yearly targets.</p>
+    <div class="card" style="max-width:34rem;margin-top:1.5rem">
+        <form method="post" class="stack">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit">Create budget</button>
+        </form>
+        <p style="margin:1rem 0 0"><small>Seeded categories ship without yearly
+            targets — set them on the Categories page once the budget
+            exists.</small></p>
+    </div>
 {% endblock %}
