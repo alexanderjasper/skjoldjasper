@@ -1,8 +1,20 @@
 """Parse Sydjysk Sparekasse Posteringsdetaljer.csv exports.
 
-Adapted from ~/Code/modellen/parse_transactions.py — same column layout,
-but yields Decimals (never floats) and falls back through the three
-date columns the bank exports.
+Semicolon-delimited, no header, ~15 columns. The ones we use:
+
+    0  posteringstekst (sometimes blank)
+    1  transaktionstekst (description; falls back to col 0)
+    2  from account
+    3  to account
+    4  amount (Danish "1.234,56", signed)
+    5  counterparty
+    7  oprettet date     DD-MM-YYYY
+    8  bogført date      DD-MM-YYYY
+    9  dispositionsdato  DD-MM-YYYY (preferred; then bogført, then oprettet)
+    10 Transaktions-ID (stable, unique — used as external_id)
+    11 free-text reference (usually blank)
+
+Yields Decimals (never floats).
 """
 
 from __future__ import annotations
@@ -27,8 +39,10 @@ def parse(stream: IO[str]) -> Iterator[dict]:
             continue
 
         amount = _danish_amount(row[4])
+        # Three date columns: oprettet (7), bogført (8), dispositionsdato (9).
+        # Prefer the value date, then booked, then created.
         d = (
-            _danish_date(row[10])
+            _danish_date(row[9])
             or _danish_date(row[8])
             or _danish_date(row[7])
         )
@@ -36,7 +50,14 @@ def parse(stream: IO[str]) -> Iterator[dict]:
             continue
 
         description = row[1].strip() or row[0].strip()
-        external_id = row[11].strip() or _fallback_external_id(d, description, amount)
+        # col 10 is the stable bank Transaktions-ID (always present, unique);
+        # col 11 is a free-text reference that's usually blank. Key on the ID,
+        # falling back to the reference, then a content hash.
+        external_id = (
+            row[10].strip()
+            or row[11].strip()
+            or _fallback_external_id(d, description, amount)
+        )
 
         yield {
             "date": d,
