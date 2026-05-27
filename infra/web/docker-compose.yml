@@ -19,6 +19,12 @@ services:
       ALLOWED_HOSTS: ${ALLOWED_HOSTS:-skjoldjasper.dk}
       CSRF_TRUSTED_ORIGINS: ${CSRF_TRUSTED_ORIGINS:-https://skjoldjasper.dk}
       DATABASE_URL: sqlite:////data/db.sqlite3
+      # Consumed by `manage.py ensure_superuser` on boot; set in the Dokploy
+      # UI for the first deploy, then safe to leave (the command no-ops once
+      # a superuser exists).
+      DJANGO_SUPERUSER_USERNAME: ${DJANGO_SUPERUSER_USERNAME:-}
+      DJANGO_SUPERUSER_EMAIL: ${DJANGO_SUPERUSER_EMAIL:-}
+      DJANGO_SUPERUSER_PASSWORD: ${DJANGO_SUPERUSER_PASSWORD:-}
     volumes:
       - web-data:/data
     expose:
@@ -27,8 +33,10 @@ services:
     networks:
       - default
       - dokploy-network
-    # Run migrations on every boot; SQLite migrations are cheap and idempotent.
-    command: ["sh", "-c", "python manage.py migrate --noinput && exec gunicorn --bind 0.0.0.0:8000 --workers 2 --access-logfile - skjoldjasper.wsgi:application"]
+    # Migrate + bootstrap an admin on every boot; both are idempotent
+    # (migrations are no-ops when applied, ensure_superuser no-ops once a
+    # superuser exists), so this is safe to run on every container start.
+    command: ["sh", "-c", "python manage.py migrate --noinput && python manage.py ensure_superuser && exec gunicorn --bind 0.0.0.0:8000 --workers 2 --access-logfile - skjoldjasper.wsgi:application"]
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.skjoldjasper.rule=Host(`skjoldjasper.dk`)"
