@@ -19,7 +19,7 @@ from finance.forms import (
     HouseholdCreateForm,
     ImportCsvForm,
 )
-from finance.balances import account_balance_series
+from finance.balances import account_balance_series, monthly_external_flows
 from finance.importers.sydjysk import parse as parse_sydjysk
 from finance.models import (
     Account,
@@ -329,6 +329,13 @@ def overview(request: HttpRequest) -> HttpResponse:
             }
         )
 
+    flows = monthly_external_flows({a.number for a in tracked}, transactions)
+    monthly = {
+        "months": [f["month"] for f in flows],
+        "income": [float(f["income"]) for f in flows],
+        "expense": [float(f["expense"]) for f in flows],
+    }
+
     return render(
         request,
         "finance/overview.html",
@@ -336,6 +343,8 @@ def overview(request: HttpRequest) -> HttpResponse:
             "cards": cards,
             "net_worth": net_worth,
             "chart_series": series,
+            "monthly": monthly,
+            "has_flows": bool(flows),
             "has_accounts": bool(tracked),
         },
     )
