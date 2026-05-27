@@ -355,6 +355,11 @@ def transaction_list(request: HttpRequest, year: int) -> HttpResponse:
             "transactions": transactions,
             "leaves": _leaves_for_budget(budget),
             "status": status,
+            "filters": [
+                ("all", "All"),
+                ("uncategorized", "Uncategorized"),
+                ("categorized", "Categorized"),
+            ],
             "budget": budget,
         },
     )

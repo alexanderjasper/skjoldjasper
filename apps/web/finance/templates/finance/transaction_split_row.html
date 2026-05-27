@@ -15,17 +15,19 @@
                 {% endfor %}
             </div>
             <div style="display:flex;justify-content:space-between;align-items:center;gap:.5rem;margin-top:.5rem">
-                <button type="button"
+                <button type="button" class="btn-ghost"
                         hx-get="{% url 'finance:split_line' tx.id %}"
                         hx-target="#split-lines-{{ tx.id }}" hx-swap="beforeend"
-                        style="font-size:.9em">+ Add line</button>
+                        style="font-size:.85em;padding:.35rem .7rem">+ Add line</button>
                 <span style="font-size:.9em">
                     Total <span class="split-total" style="font-variant-numeric:tabular-nums">0.00</span>
                     / <span style="font-variant-numeric:tabular-nums">{{ tx.amount }}</span>
                 </span>
                 <span>
-                    <button type="submit" class="split-save" disabled>Save</button>
-                    <a href="#" hx-get="{% url 'finance:row' tx.id %}"
+                    <button type="submit" class="split-save"
+                            style="padding:.4rem .9rem" disabled>Save</button>
+                    <a href="#" class="btn btn-ghost" style="padding:.4rem .9rem"
+                       hx-get="{% url 'finance:row' tx.id %}"
                        hx-target="closest tr" hx-swap="outerHTML">Cancel</a>
                 </span>
             </div>
