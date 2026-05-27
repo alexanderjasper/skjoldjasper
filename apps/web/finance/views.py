@@ -12,9 +12,16 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
 from finance.defaults import seed_default_categories
-from finance.forms import BudgetCreateForm, CategoryForm, HouseholdCreateForm, ImportCsvForm
+from finance.forms import (
+    AccountForm,
+    BudgetCreateForm,
+    CategoryForm,
+    HouseholdCreateForm,
+    ImportCsvForm,
+)
 from finance.importers.sydjysk import parse as parse_sydjysk
 from finance.models import (
+    Account,
     Budget,
     Category,
     Household,
@@ -296,6 +303,73 @@ def _flatten_errors(errors) -> list[str]:
         prefix = "" if field == "__all__" else f"{field}: "
         out.extend(f"{prefix}{e}" for e in errs)
     return out
+
+
+def _discover_account_numbers(household: Household) -> set[str]:
+    """Distinct non-empty account numbers seen in this household's transactions."""
+    numbers: set[str] = set()
+    for field in ("from_account", "to_account"):
+        numbers |= set(
+            Transaction.objects.filter(household=household)
+            .exclude(**{field: ""})
+            .values_list(field, flat=True)
+        )
+    return numbers
+
+
+@login_required
+def accounts(request: HttpRequest) -> HttpResponse:
+    household = _resolve_household(request)
+    if household is None:
+        return redirect("finance:create_household")
+
+    saved = list(household.accounts.all())
+    for account in saved:
+        account.form = AccountForm(instance=account)
+    known = {a.number for a in saved}
+    discovered = sorted(n for n in _discover_account_numbers(household) if n not in known)
+
+    return render(
+        request,
+        "finance/accounts.html",
+        {"accounts": saved, "discovered": discovered},
+    )
+
+
+@login_required
+@require_POST
+def account_create(request: HttpRequest) -> HttpResponse:
+    household = _resolve_household(request)
+    if household is None:
+        return HttpResponseForbidden()
+    number = (request.POST.get("number") or "").strip()
+    if not number:
+        messages.error(request, "Account number is required.")
+        return redirect("finance:accounts")
+    account, created = Account.objects.get_or_create(household=household, number=number)
+    form = AccountForm(request.POST, instance=account)
+    if form.is_valid():
+        form.save()
+        messages.success(request, f"Saved {account}.")
+    else:
+        messages.error(request, "; ".join(_flatten_errors(form.errors)))
+    return redirect("finance:accounts")
+
+
+@login_required
+@require_POST
+def account_update(request: HttpRequest, pk: int) -> HttpResponse:
+    household = _resolve_household(request)
+    if household is None:
+        return HttpResponseForbidden()
+    account = get_object_or_404(Account, pk=pk, household=household)
+    form = AccountForm(request.POST, instance=account)
+    if form.is_valid():
+        form.save()
+        messages.success(request, f"Saved {account}.")
+    else:
+        messages.error(request, "; ".join(_flatten_errors(form.errors)))
+    return redirect("finance:accounts")
 
 
 @login_required
