@@ -5,45 +5,244 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block head_title %}skjoldjasper.dk{% endblock %}</title>
     <script src="https://unpkg.com/htmx.org@2.0.4" defer></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Schibsted+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     {% block extra_head %}{% endblock %}
     <style>
-        body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-               max-width: 42rem; margin: 2rem auto; padding: 0 1rem; color: #222; }
-        a { color: #0a58ca; }
-        header { border-bottom: 1px solid #eee; padding-bottom: .5rem;
-                 margin-bottom: 2rem; display: flex; justify-content: space-between;
-                 align-items: baseline; gap: 1rem; }
-        header h1 { font-size: 1.1rem; margin: 0; }
-        header nav a { margin-left: 1rem; }
-        form input { display: block; width: 100%; padding: .4rem;
-                     margin: .25rem 0 .75rem; box-sizing: border-box; }
-        form button { padding: .5rem 1rem; }
-        .messages { background: #fff3cd; padding: .5rem .75rem;
-                    border-radius: .25rem; margin-bottom: 1rem; }
-        .messages ul { margin: 0; padding-left: 1rem; }
+        :root {
+            /* Beige-forward Nordic editorial palette */
+            --paper:        #ece3d2;   /* dominant beige canvas */
+            --paper-raised: #f6efe0;   /* cards, raised surfaces */
+            --paper-sunk:   #e3d8c3;   /* table headers, wells */
+            --ink:          #14110a;   /* near-black warm ink, high contrast */
+            --ink-soft:     #564e3d;   /* muted labels */
+            --ink-faint:    #8a7e68;   /* hints, placeholders */
+            --line:         #d6c9b0;   /* warm hairlines */
+            --line-strong:  #c4b596;
+            --accent:       #1f4d3a;   /* deep forest, used sparingly */
+            --accent-ink:   #f6efe0;   /* text on accent */
+            --rust:         #9c4221;   /* negatives / alerts */
+            --gold:         #9a7b1f;   /* highlights */
+
+            --radius:   10px;
+            --radius-lg: 16px;
+            --shadow:   0 1px 2px rgba(33,29,23,.05), 0 8px 24px -16px rgba(33,29,23,.35);
+
+            --font-display: "Fraunces", Georgia, "Times New Roman", serif;
+            --font-body:    "Schibsted Grotesk", system-ui, -apple-system, sans-serif;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: var(--font-body);
+            background-color: var(--paper);
+            /* faint paper grain + a soft warm vignette for atmosphere */
+            background-image:
+                radial-gradient(120% 80% at 100% 0%, rgba(31,77,58,.05), transparent 60%),
+                url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='.025'/%3E%3C/svg%3E");
+            color: var(--ink);
+            margin: 0;
+            min-height: 100vh;
+            line-height: 1.55;
+            font-size: 16px;
+            -webkit-font-smoothing: antialiased;
+            letter-spacing: -0.003em;
+        }
+
+        a { color: var(--accent); text-decoration: none; }
+        a:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+        h1, h2, h3 {
+            font-family: var(--font-display);
+            font-weight: 500;
+            letter-spacing: -0.02em;
+            line-height: 1.1;
+            color: var(--ink);
+        }
+        h1 { font-size: clamp(2rem, 4vw, 2.9rem); margin: 0 0 .25rem; }
+        h2 { font-size: 1.35rem; margin: 2.5rem 0 1rem; font-weight: 500; }
+        h3 { font-size: 1.05rem; margin: 0; }
+
+        .num { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; }
+
+        .eyebrow {
+            font-size: .72rem;
+            text-transform: uppercase;
+            letter-spacing: .18em;
+            font-weight: 600;
+            color: var(--ink-soft);
+        }
+
+        /* ---- layout shell ---- */
+        .site {
+            max-width: 56rem;
+            margin: 0 auto;
+            padding: 0 1.5rem 5rem;
+        }
+        .site-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 1rem;
+            max-width: 56rem;
+            margin: 0 auto;
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--line);
+            margin-bottom: 2.5rem;
+        }
+        .site-header .brand {
+            font-family: var(--font-display);
+            font-weight: 600;
+            font-size: 1.15rem;
+            color: var(--ink);
+        }
+        .site-header .brand:hover { text-decoration: none; }
+        .site-header nav { display: flex; align-items: baseline; gap: 1.25rem; font-size: .9rem; }
+        .site-header nav .who { color: var(--ink-soft); }
+
+        /* ---- cards ---- */
+        .card {
+            background: var(--paper-raised);
+            border: 1px solid var(--line);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow);
+            padding: 1.5rem;
+        }
+
+        /* ---- buttons ---- */
+        button, .btn {
+            font-family: var(--font-body);
+            font-size: .92rem;
+            font-weight: 600;
+            padding: .55rem 1.1rem;
+            border-radius: var(--radius);
+            border: 1px solid var(--accent);
+            background: var(--accent);
+            color: var(--accent-ink);
+            cursor: pointer;
+            transition: transform .08s ease, filter .15s ease;
+        }
+        button:hover, .btn:hover { filter: brightness(1.08); text-decoration: none; }
+        button:active, .btn:active { transform: translateY(1px); }
+        button:disabled { opacity: .4; cursor: not-allowed; filter: none; }
+        .btn-ghost {
+            background: transparent;
+            color: var(--ink);
+            border-color: var(--line-strong);
+        }
+        .btn-ghost:hover { background: var(--paper-sunk); filter: none; }
+
+        /* ---- forms ---- */
+        label { font-size: .85rem; color: var(--ink-soft); font-weight: 500; }
+        input, select, textarea {
+            font-family: var(--font-body);
+            font-size: .95rem;
+            color: var(--ink);
+            background: var(--paper-raised);
+            border: 1px solid var(--line-strong);
+            border-radius: var(--radius);
+            padding: .5rem .65rem;
+            transition: border-color .15s ease, box-shadow .15s ease;
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(31,77,58,.13);
+        }
+        /* Block, full-width inputs for stacked forms (allauth, create flows) */
+        form.stack input, form.stack select, form.stack textarea {
+            display: block; width: 100%; margin: .3rem 0 1rem;
+        }
+
+        /* ---- tables ---- */
+        table { width: 100%; border-collapse: collapse; }
+        thead th {
+            font-size: .72rem;
+            text-transform: uppercase;
+            letter-spacing: .1em;
+            font-weight: 600;
+            color: var(--ink-soft);
+            text-align: left;
+            padding: .5rem .6rem;
+            border-bottom: 1px solid var(--line-strong);
+        }
+        tbody td { padding: .55rem .6rem; border-bottom: 1px solid var(--line); }
+
+        /* ---- progress bar ---- */
+        .bar {
+            position: relative;
+            height: 7px;
+            background: var(--paper-sunk);
+            border-radius: 99px;
+            overflow: hidden;
+        }
+        .bar > span {
+            position: absolute;
+            inset: 0 auto 0 0;
+            background: var(--accent);
+            border-radius: 99px;
+        }
+        .bar.over > span { background: var(--rust); }
+
+        /* ---- pills / deltas ---- */
+        .pill {
+            display: inline-block;
+            font-size: .72rem;
+            font-weight: 600;
+            padding: .12rem .5rem;
+            border-radius: 99px;
+            background: var(--paper-sunk);
+            color: var(--ink-soft);
+        }
+        .delta-pos { color: var(--accent); }
+        .delta-neg { color: var(--rust); }
+
+        /* ---- messages ---- */
+        .messages {
+            list-style: none;
+            margin: 0 0 1.5rem;
+            padding: 0;
+            display: grid;
+            gap: .5rem;
+        }
+        .messages li {
+            background: var(--paper-raised);
+            border: 1px solid var(--line-strong);
+            border-left: 3px solid var(--accent);
+            padding: .6rem .9rem;
+            border-radius: var(--radius);
+            font-size: .9rem;
+        }
+        .messages li.error { border-left-color: var(--rust); }
+
+        small, .muted { color: var(--ink-soft); }
     </style>
 </head>
 <body>
-    <header>
-        <h1><a href="/" style="color:inherit;text-decoration:none">skjoldjasper.dk</a></h1>
+    <header class="site-header">
+        <a href="/" class="brand">skjoldjasper<span style="color:var(--accent)">.dk</span></a>
         <nav>
             {% if user.is_authenticated %}
                 <a href="{% url 'finance:index' %}">Finance</a>
-                <span>{{ user.email|default:user.username }}</span>
+                <span class="who">{{ user.email|default:user.username }}</span>
                 <a href="{% url 'account_logout' %}">Sign out</a>
             {% else %}
                 <a href="{% url 'account_login' %}">Sign in</a>
             {% endif %}
         </nav>
     </header>
-    {% if messages %}
-        <div class="messages">
-            <ul>{% for message in messages %}<li>{{ message }}</li>{% endfor %}</ul>
-        </div>
-    {% endif %}
-    <main>
-        {% block content %}{% endblock %}
-    </main>
+    <div class="site">
+        {% if messages %}
+            <ul class="messages">
+                {% for message in messages %}<li class="{{ message.tags }}">{{ message }}</li>{% endfor %}
+            </ul>
+        {% endif %}
+        <main>
+            {% block content %}{% endblock %}
+        </main>
+    </div>
     {% block extra_body %}{% endblock %}
 </body>
 </html>
