@@ -9,6 +9,7 @@ from django.db import transaction as db_transaction
 from django.db.models import ProtectedError, Q, Sum
 from django.http import HttpRequest, HttpResponse, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.views.decorators.http import require_POST
 
 from finance.defaults import seed_default_categories
@@ -223,6 +224,15 @@ def _int_or_none(value: str | None) -> int | None:
     return int(value)
 
 
+def _tree_redirect(year: int, anchor_id: int | None = None):
+    """Back to the category tree, scrolled to a row so the page doesn't jump
+    to the top after an edit/add."""
+    url = reverse("finance:category_tree", args=[year])
+    if anchor_id is not None:
+        url = f"{url}#cat-{anchor_id}"
+    return redirect(url)
+
+
 @login_required
 @require_POST
 def category_create(request: HttpRequest, year: int) -> HttpResponse:
@@ -239,11 +249,12 @@ def category_create(request: HttpRequest, year: int) -> HttpResponse:
             cat.full_clean()
             cat.save()
             messages.success(request, f"Added {cat.name}.")
+            return _tree_redirect(year, cat.id)
         except ValidationError as e:
             messages.error(request, "; ".join(_flatten_errors(e)))
     else:
         messages.error(request, "; ".join(_flatten_errors(form.errors)))
-    return redirect("finance:category_tree", year=year)
+    return _tree_redirect(year)
 
 
 @login_required
@@ -262,11 +273,12 @@ def category_update(request: HttpRequest, year: int, pk: int) -> HttpResponse:
             cat.full_clean()
             cat.save()
             messages.success(request, f"Updated {cat.name}.")
+            return _tree_redirect(year, cat.id)
         except ValidationError as e:
             messages.error(request, "; ".join(_flatten_errors(e)))
     else:
         messages.error(request, "; ".join(_flatten_errors(form.errors)))
-    return redirect("finance:category_tree", year=year)
+    return _tree_redirect(year)
 
 
 @login_required
