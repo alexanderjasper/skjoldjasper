@@ -2,6 +2,28 @@
 {% load i18n %}
 {% load allauth account %}
 {% block head_title %}{% trans "Sign In" %}{% endblock %}
+{% block extra_head %}
+<style>
+    main { max-width: 25rem; margin: 2rem auto 0; }
+    main h1 { font-family: var(--font-display); margin-bottom: 1.25rem; }
+    main form {
+        background: var(--paper-raised);
+        border: 1px solid var(--line);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow);
+        padding: 1.75rem;
+    }
+    main form p { margin: 0 0 1.1rem; }
+    main form label { display: block; margin-bottom: .3rem; font-weight: 500; color: var(--ink-soft); }
+    main form input[type=email],
+    main form input[type=password] { display: block; width: 100%; }
+    main form label[for=id_remember] { display: inline; }
+    main form input[type=checkbox] { display: inline-block; width: auto; margin-right: .4rem; }
+    main form button { width: 100%; margin-top: .5rem; }
+    .helptext { font-size: .85rem; }
+    .helptext a { color: var(--ink-soft); }
+</style>
+{% endblock %}
 {% block content %}
     {% element h1 %}{% trans "Sign In" %}{% endelement %}
     {% url 'account_login' as login_url %}
