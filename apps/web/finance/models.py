@@ -40,6 +40,45 @@ class Budget(models.Model):
         return f"Budget {self.year}"
 
 
+class Account(models.Model):
+    """A bank account number seen in imported transactions, with a
+    human label and an opening balance so balances over time can be
+    reconstructed from flows (the bank export carries no running balance).
+
+    `tracked` accounts are our own accounts: they get a balance series and
+    count toward net worth. Untracked numbers are counterparties/externals.
+    """
+
+    household = models.ForeignKey(
+        Household, on_delete=models.CASCADE, related_name="accounts"
+    )
+    number = models.CharField(max_length=64, help_text="As it appears in the bank CSV.")
+    label = models.CharField(max_length=100, blank=True)
+    tracked = models.BooleanField(
+        default=True,
+        help_text="One of our own accounts — include in balances and net worth.",
+    )
+    opening_balance = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=Decimal("0"),
+        help_text="Balance as of the opening date (or all-time if no date).",
+    )
+    opening_date = models.DateField(
+        null=True,
+        blank=True,
+        help_text="Date the opening balance applies to; flows on/after it accrue.",
+    )
+    sort_order = models.IntegerField(default=0)
+
+    class Meta:
+        unique_together = [("household", "number")]
+        ordering = ["sort_order", "label", "number"]
+
+    def __str__(self) -> str:
+        return self.label or self.number
+
+
 class Category(models.Model):
     """Self-referential tree. Leaves have yearly_target; groups don't."""
 

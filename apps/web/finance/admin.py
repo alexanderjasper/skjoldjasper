@@ -1,6 +1,14 @@
 from django.contrib import admin
 
-from finance.models import Budget, Category, Household, Membership, Transaction, TransactionSplit
+from finance.models import (
+    Account,
+    Budget,
+    Category,
+    Household,
+    Membership,
+    Transaction,
+    TransactionSplit,
+)
 
 
 class MembershipInline(admin.TabularInline):
@@ -20,6 +28,13 @@ class MembershipAdmin(admin.ModelAdmin):
     list_display = ["household", "user", "joined_at"]
     list_filter = ["household"]
     autocomplete_fields = ["user"]
+
+
+@admin.register(Account)
+class AccountAdmin(admin.ModelAdmin):
+    list_display = ["__str__", "number", "household", "tracked", "opening_balance"]
+    list_filter = ["household", "tracked"]
+    search_fields = ["label", "number"]
 
 
 @admin.register(Budget)
