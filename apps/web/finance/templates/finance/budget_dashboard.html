@@ -6,8 +6,10 @@
     <h1>Budget {{ year }}</h1>
 
     <nav style="display:flex;gap:1.25rem;margin:.75rem 0 2rem;font-size:.92rem">
+        <a href="{% url 'finance:overview' %}">Overview</a>
         <a href="{% url 'finance:transactions' year %}">Transactions</a>
         <a href="{% url 'finance:category_tree' year %}">Categories</a>
+        <a href="{% url 'finance:accounts' %}">Accounts</a>
         <a href="{% url 'finance:import' %}">Import CSV</a>
     </nav>
 

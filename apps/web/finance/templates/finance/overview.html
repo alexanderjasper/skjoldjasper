@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% load finance_extras %}
+{% block head_title %}Overview{% endblock %}
+{% block content %}
+    <p class="eyebrow">Economy</p>
+    <h1>Overview</h1>
+    <nav style="display:flex;gap:1.25rem;margin:.75rem 0 2rem;font-size:.92rem">
+        <a href="{% url 'finance:index' %}">Budget</a>
+        <a href="{% url 'finance:accounts' %}">Accounts</a>
+    </nav>
+
+    {% if has_accounts %}
+        <div class="card" style="display:flex;justify-content:space-between;align-items:baseline">
+            <span class="eyebrow">Net worth · tracked accounts</span>
+            <span class="num {% if net_worth >= 0 %}delta-pos{% else %}delta-neg{% endif %}"
+                  style="font-family:var(--font-display);font-size:1.8rem">{{ net_worth|money|default:"0" }}</span>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(11rem,1fr));gap:1rem;margin-top:1rem">
+            {% for card in cards %}
+                <div class="card">
+                    <p class="eyebrow" style="margin:0 0 .25rem">{{ card.account }}</p>
+                    <p class="num" style="font-family:var(--font-display);font-size:1.5rem;margin:0">{{ card.current|money|default:"0" }}</p>
+                </div>
+            {% endfor %}
+        </div>
+
+        <h2>Balance over time</h2>
+        <div class="card">
+            <div style="position:relative;height:340px">
+                <canvas id="balanceChart"></canvas>
+            </div>
+        </div>
+
+        {{ chart_series|json_script:"chart-data" }}
+    {% else %}
+        <div class="card" style="text-align:center;margin-top:1.5rem">
+            <p style="margin:.25rem 0 1rem">No tracked accounts yet. Set up your accounts
+                and opening balances to see balances over time.</p>
+            <a class="btn" href="{% url 'finance:accounts' %}">Set up accounts →</a>
+        </div>
+    {% endif %}
+{% endblock %}
+
+{% block extra_body %}
+{% if has_accounts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+<script>
+(function () {
+    const series = JSON.parse(document.getElementById("chart-data").textContent);
+    const palette = ["#1f4d3a", "#9c4221", "#9a7b1f", "#3a5a78", "#6b4a7a", "#4a7a5a"];
+    const ink = "#14110a", line = "#d6c9b0", inkSoft = "#564e3d";
+    const nf = new Intl.NumberFormat("da-DK", { maximumFractionDigits: 0 });
+
+    const datasets = series.map((s, i) => ({
+        label: s.label,
+        data: s.points.map(p => ({ x: p[0], y: p[1] })),
+        borderColor: palette[i % palette.length],
+        backgroundColor: palette[i % palette.length],
+        tension: 0.15,
+        pointRadius: 2,
+        pointHoverRadius: 5,
+        borderWidth: 2,
+        stepped: false,
+    }));
+
+    new Chart(document.getElementById("balanceChart"), {
+        type: "line",
+        data: { datasets },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: "index", intersect: false },
+            plugins: {
+                legend: { labels: { color: ink, font: { family: "Schibsted Grotesk" } } },
+                tooltip: {
+                    callbacks: {
+                        label: c => `${c.dataset.label}: ${nf.format(c.parsed.y)} kr.`,
+                    },
+                },
+            },
+            scales: {
+                x: {
+                    type: "time",
+                    time: { unit: "day", tooltipFormat: "dd MMM yyyy" },
+                    grid: { color: line },
+                    ticks: { color: inkSoft, font: { family: "Schibsted Grotesk" } },
+                },
+                y: {
+                    grid: { color: line },
+                    ticks: {
+                        color: inkSoft,
+                        font: { family: "Schibsted Grotesk" },
+                        callback: v => nf.format(v),
+                    },
+                },
+            },
+        },
+    });
+})();
+</script>
+{% endif %}
+{% endblock %}
