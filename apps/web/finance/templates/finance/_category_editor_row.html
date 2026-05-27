@@ -35,8 +35,8 @@
         </td>
         <td class="muted" style="text-align:right">{{ cat.sort_order }}</td>
         <td style="text-align:right;white-space:nowrap">
-            <a href="?edit={{ cat.id }}">edit</a> ·
-            <a href="?new={{ cat.id }}">+ child</a> ·
+            <a href="?edit={{ cat.id }}#cat-{{ cat.id }}">edit</a> ·
+            <a href="?new={{ cat.id }}#cat-{{ cat.id }}">+ child</a> ·
             <form method="post"
                   action="{% url 'finance:category_delete' year cat.id %}"
                   style="display:inline"
