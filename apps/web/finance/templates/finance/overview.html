@@ -120,7 +120,9 @@
                 labels: m.months,
                 datasets: [
                     { label: "In", data: m.income, backgroundColor: "#1f4d3a" },
-                    { label: "Out", data: m.expense, backgroundColor: "#9c4221" },
+                    // Negative so it grows downward from the zero baseline; the
+                    // two stacks meet in the middle.
+                    { label: "Out", data: m.expense.map(v => -v), backgroundColor: "#9c4221" },
                 ],
             },
             options: {
@@ -128,11 +130,11 @@
                 maintainAspectRatio: false,
                 plugins: {
                     legend: { labels: { color: ink, font: { family: "Schibsted Grotesk" } } },
-                    tooltip: { callbacks: { label: c => `${c.dataset.label}: ${nf.format(c.parsed.y)} kr.` } },
+                    tooltip: { callbacks: { label: c => `${c.dataset.label}: ${nf.format(Math.abs(c.parsed.y))} kr.` } },
                 },
                 scales: {
-                    x: { grid: { display: false }, ticks: { color: inkSoft, font: { family: "Schibsted Grotesk" } } },
-                    y: { grid: { color: line }, ticks: { color: inkSoft, font: { family: "Schibsted Grotesk" }, callback: v => nf.format(v) } },
+                    x: { stacked: true, grid: { display: false }, ticks: { color: inkSoft, font: { family: "Schibsted Grotesk" } } },
+                    y: { stacked: true, grid: { color: line }, ticks: { color: inkSoft, font: { family: "Schibsted Grotesk" }, callback: v => nf.format(Math.abs(v)) } },
                 },
             },
         });
