@@ -58,3 +58,32 @@ def account_balance_series(
         balances[day] = running
 
     return sorted(balances.items()), running
+
+
+def monthly_external_flows(
+    tracked_numbers: set[str], transactions: list[Transaction]
+) -> list[dict]:
+    """Money in/out of the household per month, excluding internal transfers.
+
+    A transaction counts only when exactly one side is a tracked account —
+    transfers between two of our own accounts net to zero for the household
+    and are skipped. Returns [{"month": "YYYY-MM", "income": D, "expense": D}]
+    sorted by month; `expense` is a positive magnitude.
+    """
+    buckets: dict[str, dict[str, Decimal]] = {}
+    for tx in transactions:
+        from_tracked = tx.from_account in tracked_numbers
+        to_tracked = tx.to_account in tracked_numbers
+        if from_tracked == to_tracked:
+            continue  # neither side, or both (internal transfer)
+        month = tx.date.strftime("%Y-%m")
+        bucket = buckets.setdefault(month, {"income": Decimal("0"), "expense": Decimal("0")})
+        if to_tracked:
+            bucket["income"] += abs(tx.amount)
+        else:
+            bucket["expense"] += abs(tx.amount)
+
+    return [
+        {"month": m, "income": buckets[m]["income"], "expense": buckets[m]["expense"]}
+        for m in sorted(buckets)
+    ]

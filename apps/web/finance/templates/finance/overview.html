@@ -32,7 +32,19 @@
             </div>
         </div>
 
+        {% if has_flows %}
+            <h2>Money in & out</h2>
+            <p class="muted" style="font-size:.9rem;margin-top:-.5rem">Per month, excluding
+                transfers between your own accounts.</p>
+            <div class="card">
+                <div style="position:relative;height:300px">
+                    <canvas id="flowChart"></canvas>
+                </div>
+            </div>
+        {% endif %}
+
         {{ chart_series|json_script:"chart-data" }}
+        {{ monthly|json_script:"monthly-data" }}
     {% else %}
         <div class="card" style="text-align:center;margin-top:1.5rem">
             <p style="margin:.25rem 0 1rem">No tracked accounts yet. Set up your accounts
@@ -98,6 +110,33 @@
             },
         },
     });
+
+    const flowEl = document.getElementById("flowChart");
+    if (flowEl) {
+        const m = JSON.parse(document.getElementById("monthly-data").textContent);
+        new Chart(flowEl, {
+            type: "bar",
+            data: {
+                labels: m.months,
+                datasets: [
+                    { label: "In", data: m.income, backgroundColor: "#1f4d3a" },
+                    { label: "Out", data: m.expense, backgroundColor: "#9c4221" },
+                ],
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { labels: { color: ink, font: { family: "Schibsted Grotesk" } } },
+                    tooltip: { callbacks: { label: c => `${c.dataset.label}: ${nf.format(c.parsed.y)} kr.` } },
+                },
+                scales: {
+                    x: { grid: { display: false }, ticks: { color: inkSoft, font: { family: "Schibsted Grotesk" } } },
+                    y: { grid: { color: line }, ticks: { color: inkSoft, font: { family: "Schibsted Grotesk" }, callback: v => nf.format(v) } },
+                },
+            },
+        });
+    }
 })();
 </script>
 {% endif %}
