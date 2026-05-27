@@ -1,30 +1,36 @@
 {% extends "base.html" %}
 {% block head_title %}Transactions {{ year }}{% endblock %}
 {% block content %}
+    <p class="eyebrow">Ledger</p>
     <h1>Transactions {{ year }}</h1>
 
-    <p>
-        <a href="?status=all">All</a> ·
-        <a href="?status=uncategorized">Uncategorized</a> ·
-        <a href="?status=categorized">Categorized</a>
-        &nbsp;|&nbsp;
-        <a href="{% url 'finance:import' %}">Import CSV</a>
-    </p>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;margin:1rem 0 2rem">
+        <div class="tabs" style="display:flex;gap:.4rem">
+            {% for key, label in filters %}
+                <a href="?status={{ key }}"
+                   class="pill"
+                   style="text-decoration:none;{% if status == key %}background:var(--accent);color:var(--accent-ink){% endif %}">{{ label }}</a>
+            {% endfor %}
+        </div>
+        <a class="btn btn-ghost" href="{% url 'finance:import' %}">Import CSV</a>
+    </div>
 
     {% if not budget %}
-        <p><em>No budget exists for {{ year }} yet — categorization is
-            unavailable until a budget with categories is created in
-            <a href="/admin/finance/budget/add/">admin</a>.</em></p>
+        <div class="card" style="border-left:3px solid var(--rust);margin-bottom:1.5rem">
+            <p style="margin:0">No budget exists for {{ year }} yet — categorization is
+                unavailable until you
+                <a href="{% url 'finance:create_budget' year %}">create one</a>.</p>
+        </div>
     {% endif %}
 
     {% if transactions %}
-        <table style="width:100%;border-collapse:collapse">
+        <table>
             <thead>
-                <tr style="border-bottom:1px solid #ccc;text-align:left">
+                <tr>
                     <th>Date</th>
                     <th style="text-align:right">Amount</th>
                     <th>Description</th>
-                    <th>Category</th>
+                    <th style="width:40%">Category</th>
                 </tr>
             </thead>
             <tbody>
@@ -34,7 +40,9 @@
             </tbody>
         </table>
     {% else %}
-        <p>No transactions for {{ year }} yet.
-            <a href="{% url 'finance:import' %}">Import a CSV</a> to get started.</p>
+        <div class="card" style="text-align:center">
+            <p style="margin:.25rem 0 1rem">No transactions for {{ year }} yet.</p>
+            <a class="btn" href="{% url 'finance:import' %}">Import a CSV →</a>
+        </div>
     {% endif %}
 {% endblock %}
