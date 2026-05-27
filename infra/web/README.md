@@ -67,6 +67,35 @@ docker compose exec litestream sha256sum /data/db.sqlite3
 docker compose start web
 ```
 
+## Auto-deploy on push to `main`
+
+Dokploy redeploys on every push via a **Git webhook** — no GitHub Actions
+workflow needed. GitHub POSTs to a Dokploy webhook URL, Dokploy pulls the new
+commit, rebuilds the image, and the boot command runs `migrate` and
+`ensure_superuser` as usual.
+
+This requires the Dokploy panel to be reachable by GitHub's servers. The
+panel sits on a public Cloudflare Tunnel hostname guarded by Dokploy's own
+login; we deliberately do **not** put Cloudflare Access in front of it, since
+Access would block GitHub's unauthenticated webhook POST.
+
+### One-time setup
+
+1. **Expose the Dokploy panel through the existing Cloudflare Tunnel.** Add a
+   public hostname (e.g. `dokploy.skjoldjasper.dk`) routing to the Dokploy
+   panel's local port (default `:3000`).
+
+2. **Enable auto-deploy** on the `web` application in the Dokploy UI, then
+   copy the generated **webhook URL** from its deployment settings/logs.
+
+3. **Register the webhook in GitHub**: repo → Settings → Webhooks → Add
+   webhook. Paste the URL, content type `application/json`, event "Just the
+   push event". Make sure the branch Dokploy watches matches `main`.
+
+A push to `main` now triggers a rebuild automatically. You can confirm the
+first one fired under the webhook's "Recent Deliveries" in GitHub and in
+Dokploy's deployment logs.
+
 ## Why not just back up SQLite nightly with rclone copy?
 
 Litestream's continuous WAL streaming gives ~1s RPO; a nightly snapshot
