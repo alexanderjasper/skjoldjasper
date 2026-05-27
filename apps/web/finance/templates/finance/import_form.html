@@ -1,12 +1,16 @@
 {% extends "base.html" %}
 {% block head_title %}Import transactions{% endblock %}
 {% block content %}
+    <p class="eyebrow">Ledger</p>
     <h1>Import transactions</h1>
-    <p>Upload a Posteringsdetaljer.csv export from Sydjysk Sparekasse.
-        Already-imported transactions are skipped automatically.</p>
-    <form method="post" enctype="multipart/form-data">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit">Import</button>
-    </form>
+    <p class="muted" style="max-width:34rem">Upload a Posteringsdetaljer.csv export from
+        Sydjysk Sparekasse. Already-imported transactions are skipped
+        automatically.</p>
+    <div class="card" style="max-width:32rem;margin-top:1.5rem">
+        <form method="post" enctype="multipart/form-data" class="stack">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit">Import</button>
+        </form>
+    </div>
 {% endblock %}
