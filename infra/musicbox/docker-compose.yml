@@ -7,7 +7,12 @@
 #   (a) SoCo's Sonos discovery relies on SSDP multicast, which does not cross
 #       Docker's bridge network — host mode lets it see the speakers; and
 #   (b) it exposes the UI straight on the host, reachable at
-#       http://<home-server-ip>:8080.
+#       http://<home-server-ip>:8480.
+#
+# Port 8480 (not 8080) on purpose: with host networking the port is grabbed
+# directly on the host, and 8080 commonly collides with Traefik's dashboard.
+# Override with MUSICBOX_PORT if 8480 is taken — check with
+#   sudo ss -tlnp | grep ':8480'
 #
 # The image is built straight from the music-box GitHub repo — no source for
 # it lives in this repo. Editing the card map means editing cards.json in the
@@ -22,11 +27,11 @@ services:
     # Required for Sonos discovery + direct LAN exposure (see header).
     network_mode: host
     environment:
-      MUSICBOX_PORT: ${MUSICBOX_PORT:-8080}
+      MUSICBOX_PORT: ${MUSICBOX_PORT:-8480}
     healthcheck:
       # No curl in the slim image — use Python. start_period covers the
       # one-time Sonos discovery on boot.
-      test: ["CMD", "python", "-c", "import os,urllib.request; urllib.request.urlopen('http://127.0.0.1:'+os.environ.get('MUSICBOX_PORT','8080')+'/api/state', timeout=3)"]
+      test: ["CMD", "python", "-c", "import os,urllib.request; urllib.request.urlopen('http://127.0.0.1:'+os.environ.get('MUSICBOX_PORT','8480')+'/api/state', timeout=3)"]
       interval: 30s
       timeout: 5s
       retries: 3
