@@ -6,10 +6,10 @@ Sonos speakers** before the physical box exists.
 
 | Container | What it does |
 |---|---|
-| `musicbox` | The Flask faceplate (`software/web`) built from the music-box repo, served by gunicorn on port `8080`. Drives the real Sonos via [SoCo](https://github.com/SoCo/SoCo). |
+| `musicbox` | The Flask faceplate (`software/web`) built from the music-box repo, served by gunicorn on port `8480`. Drives the real Sonos via [SoCo](https://github.com/SoCo/SoCo). |
 
 This is **not** on the public site — no Cloudflare Tunnel, no Traefik. It's
-reachable only on the LAN at `http://<home-server-ip>:8080`.
+reachable only on the LAN at `http://<home-server-ip>:8480`.
 
 ## Why host networking
 
@@ -19,7 +19,7 @@ The compose uses `network_mode: host`, which is load-bearing:
   which does not cross Docker's bridge network. On the host network the
   container sees the speakers directly.
 - **It exposes the UI on the LAN** without port mapping — gunicorn binds the
-  host's `:8080`.
+  host's `:8480`.
 
 The flip side: the home server **must be on the same LAN/VLAN as the Sonos
 speakers**. If it isn't, the UI still loads but shows "not connected" and the
@@ -32,9 +32,9 @@ is a git URL), so nothing about the app lives in this repo.
 
 1. In Dokploy, create a new **Compose** application pointing at this repo,
    compose path `infra/musicbox/docker-compose.yml`.
-2. (Optional) set `MUSICBOX_PORT` if `8080` clashes with something on the host.
+2. (Optional) set `MUSICBOX_PORT` if `8480` clashes with something on the host.
 3. Deploy. First build clones music-box and builds `software/Dockerfile`.
-4. Open `http://<home-server-ip>:8080`.
+4. Open `http://<home-server-ip>:8480`.
 
 To pick up later changes to the web UI, **redeploy** (Dokploy re-clones and
 rebuilds). You can wire a GitHub webhook on the *music-box* repo to auto-redeploy,
