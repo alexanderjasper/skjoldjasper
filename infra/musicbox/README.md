@@ -31,8 +31,9 @@ controls won't drive anything.
 The image builds straight from the music-box GitHub repo (the `build.context`
 is a git URL), so nothing about the app lives in this repo.
 
-1. In Dokploy, create a new **Compose** application pointing at this repo,
-   compose path `infra/musicbox/docker-compose.yml`.
+1. In Dokploy, create a new **Compose** application (type **Compose**, *not*
+   "Application") pointing at this repo, compose path
+   `infra/musicbox/docker-compose.yml`.
 2. (Optional) set `MUSICBOX_PORT` if `8480` clashes with something on the host.
 3. Deploy. First build clones music-box and builds `software/Dockerfile`.
 4. Open `http://<home-server-ip>:8480` (or set up the alias below for `musicbox.local`).
@@ -71,6 +72,14 @@ The card → favorite map (`software/cards.json`) is **baked into the image**.
 To change it, edit `cards.json` in the music-box repo, push, and redeploy.
 (A later iteration could bind-mount it as a volume for live edits; for now a
 redeploy is fine while ironing out edges.)
+
+## Troubleshooting
+
+- **`Starting nixpacks build... Failed to read app source directory / Not a
+  directory`** — the service was created as a Dokploy **Application** (which
+  uses the Nixpacks auto-builder) instead of a **Compose** service. Nixpacks
+  ignores this compose file and the `Dockerfile`. Recreate the service as type
+  **Compose** with the compose path above.
 
 ## Notes
 
