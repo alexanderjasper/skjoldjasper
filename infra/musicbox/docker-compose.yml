@@ -1,0 +1,33 @@
+# Music Box — the web faceplate simulator from the music-box repo, deployed
+# locally on the home server so it can be tried out against the real Sonos
+# speakers before the physical box is built.
+#
+# Dokploy reads this compose file directly. Deliberately LAN-only: NO
+# Cloudflare/Traefik. The container uses host networking because
+#   (a) SoCo's Sonos discovery relies on SSDP multicast, which does not cross
+#       Docker's bridge network — host mode lets it see the speakers; and
+#   (b) it exposes the UI straight on the host, reachable at
+#       http://<home-server-ip>:8080.
+#
+# The image is built straight from the music-box GitHub repo — no source for
+# it lives in this repo. Editing the card map means editing cards.json in the
+# music-box repo and redeploying (see README).
+
+services:
+  musicbox:
+    build:
+      # <repo>#<ref>:<subdir> — Docker clones music-box and builds software/Dockerfile.
+      context: "https://github.com/alexanderjasper/music-box.git#main:software"
+    restart: unless-stopped
+    # Required for Sonos discovery + direct LAN exposure (see header).
+    network_mode: host
+    environment:
+      MUSICBOX_PORT: ${MUSICBOX_PORT:-8080}
+    healthcheck:
+      # No curl in the slim image — use Python. start_period covers the
+      # one-time Sonos discovery on boot.
+      test: ["CMD", "python", "-c", "import os,urllib.request; urllib.request.urlopen('http://127.0.0.1:'+os.environ.get('MUSICBOX_PORT','8080')+'/api/state', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
