@@ -42,6 +42,14 @@ services:
       # generates correct https:// URLs in shared links and OAuth callbacks.
       - "traefik.http.middlewares.immich-https.headers.customrequestheaders.X-Forwarded-Proto=https"
       - "traefik.http.routers.immich.middlewares=immich-https"
+      # LAN-direct access via mDNS. Same backend service, matched on immich.local,
+      # but deliberately WITHOUT the immich-https middleware: LAN traffic is plain
+      # http, so forcing X-Forwarded-Proto=https would make immich emit broken
+      # https:// asset/redirect URLs. Reachable at http://immich.local once the
+      # mDNS alias (infra/immich/immich-mdns.*) is installed on the host.
+      - "traefik.http.routers.immich-lan.rule=Host(`immich.local`)"
+      - "traefik.http.routers.immich-lan.entrypoints=web"
+      - "traefik.http.routers.immich-lan.service=immich"
 
   immich-machine-learning:
     image: ghcr.io/immich-app/immich-machine-learning:${IMMICH_VERSION:-release}
