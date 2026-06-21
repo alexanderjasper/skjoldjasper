@@ -3,10 +3,13 @@ Description=Advertise immich.local on the LAN via mDNS (Avahi)
 After=network-online.target avahi-daemon.service
 Wants=network-online.target
 Requires=avahi-daemon.service
+# Re-publish whenever avahi-daemon restarts; otherwise the CNAME silently
+# vanishes (the D-Bus entry group dies with the daemon, not with our process).
+PartOf=avahi-daemon.service
 
 [Service]
-# Long-running: avahi-publish keeps the record alive while it runs.
-ExecStart=/usr/local/sbin/immich-mdns.sh
+# Long-running: the publisher blocks to keep its D-Bus entry group alive.
+ExecStart=/usr/local/sbin/immich-mdns.py
 Restart=on-failure
 RestartSec=5
 
