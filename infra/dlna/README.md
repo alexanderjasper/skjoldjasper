@@ -63,11 +63,44 @@ server generates a fresh one each boot and TVs accumulate stale duplicates.
 
 - **Alpha.** 15 commits, one author, no release notes, MIT. Read the diff before
   bumping a version.
-- **No transcoding** — assets are proxied at native quality. HEIC/HEVC that the
-  TV refuses will still be refused; there is no `encoded-video/` fallback to
-  point at the way there was under Gerbera.
+- **HEIC stills need the build-time patch** (below). Upstream advertises the
+  original file and its real mime type, so iPhone HEIC reaches the TV as
+  undecodable bytes — it shows as a missing image, or "disconnected" on open.
+- **Video is not transcoded.** HEVC/10-bit the TV refuses stays refused, and
+  unlike Gerbera there is no `encoded-video/` directory to point at instead.
 - **All media flows through the Python proxy** rather than being served off disk.
   Fine on a LAN, but it is a hop that did not exist before.
+
+## The HEIC patch
+
+The image is **built, not pulled**: `Dockerfile` layers `patch-preview-jpeg.py`
+over the upstream release.
+
+`_to_media_item()` in `catalog.py` advertises `/media/asset/{id}` — the original
+file — with the asset's real mime type. `thumbnail_url` is only emitted as
+`<upnp:albumArtURI>`, the browse-grid icon, never as a playable resource. So a
+TV asking for an iPhone photo gets `image/heic` and gives up.
+
+The patch points stills whose format renderers cannot decode (HEIC/HEIF/AVIF/RAW)
+at the existing `/thumbnail` endpoint instead, declaring `image/jpeg`. That
+endpoint already requests Immich's `size=preview`, a full-size JPEG (1440px by
+default), so quality is fine for a TV. JPEG/PNG/GIF/BMP still stream as
+originals at full resolution.
+
+The patch script asserts on the upstream source text, so bumping
+`IMMICH_DLNA_VERSION` **fails the build** rather than silently reverting to
+broken behaviour. When that happens, re-read `catalog.py` upstream and update the
+patch.
+
+This is worth pushing upstream; it is a small change and the endpoint it needs
+already exists.
+
+### It depends on an Immich setting
+
+`web.py` falls back to streaming the *original* if Immich's preview does not come
+back as a non-WebP image. So if Immich is generating WebP previews, the patch
+silently achieves nothing. Check Admin → Settings → Image Settings and keep the
+**preview** format as JPEG.
 
 ## Troubleshooting
 
@@ -92,5 +125,10 @@ server generates a fresh one each boot and TVs accumulate stale duplicates.
   upstream 401s.
 - **Duplicate servers on the TV** — unpinned `IMMICH_DLNA_SERVER_UUID`. Pin it,
   then clear the TV's media-source cache.
+
+- **Photo opens then "disconnected"** — the HEIC patch is not in effect. Confirm
+  the deploy actually rebuilt, and check the advertised mime type:
+  `curl -s http://127.0.0.1:8200/media/asset/<asset-id>/thumbnail -o /dev/null -w '%{content_type}\n'`
+  should print `image/jpeg`.
 
 Prometheus metrics are at `:8200/metrics` if you ever want them.

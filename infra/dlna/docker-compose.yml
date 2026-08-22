@@ -6,7 +6,13 @@ name: dlna
 
 services:
   immich-dlna:
-    image: ghcr.io/semaicze/immich-dlna:${IMMICH_DLNA_VERSION:?required}
+    # Built, not pulled: upstream advertises HEIC stills to renderers at their
+    # original mime type, which no TV decodes. See patch-preview-jpeg.py.
+    build:
+      context: .
+      args:
+        IMMICH_DLNA_VERSION: ${IMMICH_DLNA_VERSION:?required}
+    image: immich-dlna-preview:${IMMICH_DLNA_VERSION:?required}
     # Load-bearing: SSDP discovery is multicast and does not cross Docker's
     # bridge network, and renderers must reach the exact media URLs the server
     # advertises about itself. Rules out routing this through Traefik.
