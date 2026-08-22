@@ -1,31 +1,38 @@
-# Gerbera — UPnP/DLNA media server in front of the Immich library (LAN-only).
-# Reads Immich's files read-only; nothing here writes to the library.
+# immich-dlna — exposes the Immich library over DLNA/UPnP for TVs (LAN-only).
+# Reads Immich through its REST API (read-only token), so albums and the
+# timeline mirror what Immich shows. No access to the library on disk.
 
 name: dlna
 
 services:
-  gerbera:
-    image: gerbera/gerbera:${GERBERA_VERSION:?required}
+  immich-dlna:
+    image: ghcr.io/semaicze/immich-dlna:${IMMICH_DLNA_VERSION:?required}
     # Load-bearing: SSDP discovery is multicast and does not cross Docker's
-    # bridge network, so on a bridge no renderer ever finds the server. Rules
-    # out routing this through Traefik like the other stacks.
+    # bridge network, and renderers must reach the exact media URLs the server
+    # advertises about itself. Rules out routing this through Traefik.
     network_mode: host
-    # Immich writes its library as root; the image's default `gerbera` user
-    # cannot read it.
-    user: ${GERBERA_USER:-root}
-    volumes:
-      - gerbera-config:/var/run/gerbera
-      - ${IMMICH_UPLOAD_LOCATION:?required}/library:/media/photos:ro
-      # Immich's H.264 transcodes. Separate from the originals on purpose: those
-      # may be HEVC/10-bit, which most renderers refuse.
-      - ${IMMICH_UPLOAD_LOCATION:?required}/encoded-video:/media/videos:ro
-      # JPEG previews, for libraries shot in HEIC/AVIF — no DLNA client renders
-      # either format.
-      - ${IMMICH_UPLOAD_LOCATION:?required}/thumbs:/media/previews:ro
-      - /etc/localtime:/etc/localtime:ro
     environment:
+      IMMICH_URL: ${IMMICH_URL:?required}
+      IMMICH_API_TOKEN: ${IMMICH_API_TOKEN:?required}
+      IMMICH_DLNA_FRIENDLY_NAME: ${IMMICH_DLNA_FRIENDLY_NAME:-Immich}
+      # Pinned, not auto-generated: a UUID that changes on restart leaves TVs
+      # holding stale entries, so the server shows up two or three times.
+      IMMICH_DLNA_SERVER_UUID: ${IMMICH_DLNA_SERVER_UUID:?required}
+      IMMICH_DLNA_HTTP_PORT: ${IMMICH_DLNA_HTTP_PORT:-8200}
+      IMMICH_DLNA_LOG_LEVEL: ${IMMICH_DLNA_LOG_LEVEL:-INFO}
       TZ: ${TZ:-Europe/Copenhagen}
     restart: unless-stopped
-
-volumes:
-  gerbera-config:
+    healthcheck:
+      # The image is python-slim; it has no curl or wget.
+      test:
+        - CMD
+        - python
+        - -c
+        - |
+          import urllib.request,os,sys
+          p=os.environ.get("IMMICH_DLNA_HTTP_PORT","8200")
+          sys.exit(0 if urllib.request.urlopen(f"http://127.0.0.1:{p}/health",timeout=5).status==200 else 1)
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
