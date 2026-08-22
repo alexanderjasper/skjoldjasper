@@ -1,16 +1,21 @@
 # `infra/dlna` — DLNA/UPnP in front of Immich (LAN-only)
 
-Immich ships no DLNA server. [Gerbera](https://gerbera.io) (the maintained
-MediaTomb/ReadyMedia successor) reads Immich's files straight off disk,
-**read-only**, and advertises them to TVs and other UPnP renderers.
+Immich ships no DLNA server. [immich-dlna](https://github.com/SemaiCZE/immich-dlna)
+reads Immich over its **REST API** and re-publishes it as a UPnP/DLNA media
+server, so the browse tree on the TV mirrors Immich: Timeline and Albums,
+including shared albums and partner content.
 
 | Container | What it does |
 |---|---|
-| `gerbera` | UPnP/DLNA media server. Web UI on `:49494`, SSDP on `:1900/udp`, media served over HTTP on the LAN. |
+| `immich-dlna` | DLNA server. SSDP on `:1900/udp`, HTTP (device description + media proxy) on `:8200`. |
 
-Not on the public site — no Cloudflare Tunnel, no Traefik. Reachable only on
-the LAN at `http://<home-server-ip>:49494` for the admin UI; the TV finds the
-server itself via SSDP.
+Not on the public site — no Cloudflare Tunnel, no Traefik. The TV discovers the
+server itself over SSDP; there is no UI to visit.
+
+> Earlier this directory ran [Gerbera](https://gerbera.io) against the library on
+> disk. That worked, but Immich albums are database rows with no filesystem
+> existence, so albums could not be browsed at all — which was the point of the
+> exercise. See git history if you need it back.
 
 ## Why host networking
 
@@ -18,68 +23,61 @@ server itself via SSDP.
 
 - **SSDP discovery is multicast** and does not cross Docker's bridge network.
   On a bridge the container runs fine and no renderer ever sees it.
-- **Renderers fetch media over plain HTTP** from an address Gerbera advertises
-  about itself. Behind NAT it would advertise a `172.x` bridge address the TV
-  cannot reach.
+- **Renderers fetch media over plain HTTP** from an address the server
+  advertises about itself. Behind NAT it advertises a `172.x` address the TV
+  cannot reach. (`IMMICH_DLNA_BASE_URL` can override this, but then multicast
+  still has to be solved separately.)
 
-The trade-off: port `49494` is open on the LAN with **no authentication**, and
-Dokploy's Traefik is bypassed entirely. Acceptable for a home LAN; if it isn't,
-Gerbera's `config.xml` has a `<ui>` account block you can enable after first run.
+## Reaching Immich
+
+Immich's port `2283` is not exposed to the LAN — traffic enters through Traefik,
+matched on `Host`. A host-networked container therefore cannot reach the API by
+container name, and hitting `127.0.0.1:80` sends a Host header matching neither
+router.
+
+So `infra/immich/docker-compose.yml` publishes `127.0.0.1:2283:2283` —
+loopback only, not LAN-visible — and `IMMICH_URL` points at that. Both stacks
+must be deployed for this to work.
+
+## Version compatibility
+
+`v0.2.0` fetches album assets via `POST /search/metadata` with `albumIds`, the
+**Immich v3** API. It does not work against Immich v2, which used
+`GET /albums/{id}?withoutAssets=false`. Pin `v0.1.1` for Immich v2.
 
 ## Deploy (Dokploy)
 
-1. In Dokploy, create a new **Compose** application — type **Compose**, *not*
-   "Application", or the deploy tries a Nixpacks build and fails with
-   `Failed to read app source directory` (see `infra/musicbox/README.md`).
-   Point it at this repo, compose path `infra/dlna/docker-compose.yml`.
-2. Set the env vars from `.env.example` in the Dokploy UI. `IMMICH_UPLOAD_LOCATION`
-   must match `UPLOAD_LOCATION` in `infra/immich/.env`.
-3. Deploy.
-4. Open `http://<home-server-ip>:49494` and add the content directories
-   (below) as **autoscan** dirs.
+1. Create a new **Compose** application — type **Compose**, *not* "Application",
+   or the deploy tries a Nixpacks build and fails with `Failed to read app source
+   directory` (see `infra/musicbox/README.md`). Compose path
+   `infra/dlna/docker-compose.yml`.
+2. Create a **read-only API key** in Immich (Account Settings → API Keys).
+3. Set the env vars from `.env.example` in the Dokploy UI, `IMMICH_API_TOKEN`
+   included. Leave **Isolated Deployment** off.
+4. Deploy, then look for the server in the TV's media-source list.
 
-## First-run configuration
+`IMMICH_DLNA_SERVER_UUID` must be **stable across restarts**. Left unset the
+server generates a fresh one each boot and TVs accumulate stale duplicates.
 
-The image ships no library config; the mounts alone do nothing until you add
-them in the web UI. Under **Filesystem**, for each directory you want, click the
-scan icon and add it as **Timed** or **Inotify**, recursive, ignore-unknown off:
+## Known rough edges
 
-| Mount | Contents | Add it when |
-|---|---|---|
-| `/media/photos` | Immich originals | Always — unless the library is mostly HEIC |
-| `/media/videos` | Immich's H.264 transcodes | Always, in preference to original video |
-| `/media/previews` | JPEG thumbnails | The phone shoots HEIC/AVIF |
+- **Alpha.** 15 commits, one author, no release notes, MIT. Read the diff before
+  bumping a version.
+- **No transcoding** — assets are proxied at native quality. HEIC/HEVC that the
+  TV refuses will still be refused; there is no `encoded-video/` fallback to
+  point at the way there was under Gerbera.
+- **All media flows through the Python proxy** rather than being served off disk.
+  Fine on a LAN, but it is a hop that did not exist before.
 
-Inotify on a large library costs a watch descriptor per directory; if the scan
-stalls, raise `fs.inotify.max_user_watches` on the host or switch to Timed.
+## Troubleshooting
 
-## Three things that will bite you
+- **TV finds nothing** — almost always networking. Confirm `network_mode: host`
+  took effect and that the server and TV are on the same LAN/VLAN (multicast
+  does not route between VLANs).
+- **Server appears, browsing is empty** — API token or URL. `curl
+  http://127.0.0.1:8200/health` on the host, then check the container logs for
+  upstream 401s.
+- **Duplicate servers on the TV** — unpinned `IMMICH_DLNA_SERVER_UUID`. Pin it,
+  then clear the TV's media-source cache.
 
-- **Filenames.** With Immich's storage template engine **off**, originals live at
-  `library/<user-id>/ab/cd/<uuid>.jpg` — indexable, but unnavigable on a TV
-  remote. Turn on Admin → Settings → Storage Template *first* (it rewrites
-  existing files) to get `library/<user>/2026/2026-08-22/IMG_1234.jpg`.
-- **HEIC/HEIF/AVIF do not render** on essentially any DLNA client. Mount
-  `/media/previews` instead of, or alongside, the originals.
-- **Video codecs.** Originals may be HEVC/10-bit. `/media/videos` holds Immich's
-  H.264 transcodes, which is why it is a separate mount — point the TV there.
-
-## Updating
-
-Bump `GERBERA_VERSION` in the Dokploy env and redeploy. The SQLite index in the
-`gerbera-config` volume survives; Gerbera migrates its schema on start.
-
-If an upgrade goes wrong, deleting the `gerbera-config` volume is safe — it
-costs a full rescan and the UI config, nothing else. The library is read-only.
-
-## The `-transcoding` variant
-
-`gerbera/gerbera:3.2.1-transcoding` bundles ffmpeg, letting Gerbera convert on
-the fly for renderers that refuse a format. It is **off by default** even in
-that image — it needs transcoding profiles written into `config.xml`, and it
-transcodes on the host CPU per stream.
-
-Reach for it only if a specific TV rejects specific files. If you find yourself
-writing several profiles, run Jellyfin instead: it does this properly, with
-hardware acceleration, at the cost of a much heavier service and a second media
-library to keep in sync.
+Prometheus metrics are at `:8200/metrics` if you ever want them.
