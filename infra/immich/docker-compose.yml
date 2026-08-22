@@ -6,7 +6,8 @@
 #     script (/usr/local/sbin/immich-backup.sh) does `docker exec immich_postgres
 #     pg_dump …`, so renaming would silently break nightly backups. Dropped on
 #     redis / immich-machine-learning where nothing external depends on the name.
-#   - host port 2283 unpublished (traffic enters via Traefik on dokploy-network)
+#   - host port 2283 published on loopback only (LAN/public traffic enters via
+#     Traefik on dokploy-network; loopback is for infra/dlna)
 #   - immich-server joined to dokploy-network with Host(`immich.skjoldjasper.dk`) labels
 #   - DB / Redis stay on the compose-default network (not exposed to other Dokploy stacks)
 #   - secrets pulled from env vars (Dokploy UI); image digests preserved from upstream
@@ -24,6 +25,11 @@ services:
       DB_PASSWORD: ${DB_PASSWORD:?required}
       DB_USERNAME: ${DB_USERNAME:-postgres}
       DB_DATABASE_NAME: ${DB_DATABASE_NAME:-immich}
+    # Loopback only: LAN/public traffic still enters via Traefik. This exists so
+    # host-networked stacks on this box (infra/dlna) can reach the API without a
+    # Host header that matches one of the routers below.
+    ports:
+      - "127.0.0.1:2283:2283"
     depends_on:
       - redis
       - database

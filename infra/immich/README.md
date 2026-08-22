@@ -10,9 +10,11 @@ stack and `BACKUP.md` for the backup strategy.
 | Public | `https://immich.skjoldjasper.dk` | Cloudflare Tunnel → Traefik → container |
 | LAN | `http://immich.local` | mDNS → Traefik (host `:80`) → container |
 
-The host port `2283` is **not** published — all traffic enters via Traefik. The
-old `http://<home-server-ip>:2283` direct address therefore no longer works; use
-one of the two routes above instead.
+The host port `2283` is published on **loopback only** (`127.0.0.1:2283`), for
+host-networked stacks on this box that need the API — see `infra/dlna`. All
+LAN and public traffic still enters via Traefik, so the old
+`http://<home-server-ip>:2283` direct address does not work; use one of the two
+routes above instead.
 
 ## Friendly LAN name: `immich.local`
 
