@@ -1,0 +1,31 @@
+# Gerbera — UPnP/DLNA media server in front of the Immich library (LAN-only).
+# Reads Immich's files read-only; nothing here writes to the library.
+
+name: dlna
+
+services:
+  gerbera:
+    image: gerbera/gerbera:${GERBERA_VERSION:?required}
+    # Load-bearing: SSDP discovery is multicast and does not cross Docker's
+    # bridge network, so on a bridge no renderer ever finds the server. Rules
+    # out routing this through Traefik like the other stacks.
+    network_mode: host
+    # Immich writes its library as root; the image's default `gerbera` user
+    # cannot read it.
+    user: ${GERBERA_USER:-root}
+    volumes:
+      - gerbera-config:/var/run/gerbera
+      - ${IMMICH_UPLOAD_LOCATION:?required}/library:/media/photos:ro
+      # Immich's H.264 transcodes. Separate from the originals on purpose: those
+      # may be HEVC/10-bit, which most renderers refuse.
+      - ${IMMICH_UPLOAD_LOCATION:?required}/encoded-video:/media/videos:ro
+      # JPEG previews, for libraries shot in HEIC/AVIF — no DLNA client renders
+      # either format.
+      - ${IMMICH_UPLOAD_LOCATION:?required}/thumbs:/media/previews:ro
+      - /etc/localtime:/etc/localtime:ro
+    environment:
+      TZ: ${TZ:-Europe/Copenhagen}
+    restart: unless-stopped
+
+volumes:
+  gerbera-config:
