@@ -19,6 +19,10 @@ services:
       # holding stale entries, so the server shows up two or three times.
       IMMICH_DLNA_SERVER_UUID: ${IMMICH_DLNA_SERVER_UUID:?required}
       IMMICH_DLNA_HTTP_PORT: ${IMMICH_DLNA_HTTP_PORT:-8200}
+      # Required, not left to auto-detection: the fallback resolves the hostname,
+      # which is 127.0.1.1 in /etc/hosts on Debian, and that address is what the
+      # periodic SSDP alive NOTIFY advertises. TVs then find nothing to fetch.
+      IMMICH_DLNA_BASE_URL: ${IMMICH_DLNA_BASE_URL:?required}
       IMMICH_DLNA_LOG_LEVEL: ${IMMICH_DLNA_LOG_LEVEL:-INFO}
       TZ: ${TZ:-Europe/Copenhagen}
     restart: unless-stopped

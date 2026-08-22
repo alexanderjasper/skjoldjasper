@@ -71,9 +71,22 @@ server generates a fresh one each boot and TVs accumulate stale duplicates.
 
 ## Troubleshooting
 
-- **TV finds nothing** — almost always networking. Confirm `network_mode: host`
-  took effect and that the server and TV are on the same LAN/VLAN (multicast
-  does not route between VLANs).
+- **TV finds nothing, but `/health` is ok** — check `IMMICH_DLNA_BASE_URL`
+  first. Unset, the fallback is `socket.gethostbyname(socket.gethostname())`,
+  which is `127.0.1.1` on Debian; the periodic SSDP alive NOTIFY advertises that
+  verbatim, so the TV has nothing reachable to fetch. (Unicast replies to an
+  active M-SEARCH get corrected by a separate code path, which is why this can
+  look intermittent.) Confirm with
+  `python3 -c 'import socket;print(socket.gethostbyname(socket.gethostname()))'`.
+- **Still nothing** — confirm `network_mode: host` took effect, that port 8200 is
+  open to the LAN (`ufw status`), and that server and TV share a LAN/VLAN
+  (multicast does not route between VLANs). Watch the announcements with
+  `sudo tcpdump -i wlo1 -n -A port 1900 | grep -i location`.
+- **Multicast joined on the wrong interface** — `ssdp.py` joins the group on
+  `0.0.0.0`, letting the kernel pick by route. On this host, with its many
+  `docker0`/`br-*`/`veth*` interfaces, that need not be `wlo1`, and there is no
+  env var to override it. Same class of problem as the Avahi gotcha in
+  `infra/immich/README.md`.
 - **Server appears, browsing is empty** — API token or URL. `curl
   http://127.0.0.1:8200/health` on the host, then check the container logs for
   upstream 401s.
