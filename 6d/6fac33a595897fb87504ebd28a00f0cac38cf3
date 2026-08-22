@@ -1,0 +1,23 @@
+infra/dlna/.env.example
+  s_97370da7654c64::t_112610316cbe19 2-4,6-9,11-16,18-21
+infra/dlna/README.md
+  s_97370da7654c64::t_aa40cf056c9950 3-6,10,12-18,26-42,44-46,50-83
+infra/dlna/docker-compose.yml
+  s_97370da7654c64::t_9710fd24c2d433 1-3,8-9,11-12,15-22,25-38
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "6d6fac33a595897fb87504ebd28a00f0cac38cf3",
+  "prompts": {},
+  "sessions": {
+    "s_97370da7654c64": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "125f84f4-ae56-4a85-86cd-02f3b09b774d",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Alexander Skjold Jasper <alexander.jasper@visma.com>"
+    }
+  }
+}
