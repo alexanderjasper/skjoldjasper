@@ -1,0 +1,19 @@
+infra/dlna/README.md
+  s_97370da7654c64::t_94e50c3edc640f 1-85
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "a1f6db376da42ba6350f10bedaa3b3e8ec2fd433",
+  "prompts": {},
+  "sessions": {
+    "s_97370da7654c64": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "125f84f4-ae56-4a85-86cd-02f3b09b774d",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Alexander Skjold Jasper <alexander.jasper@visma.com>"
+    }
+  }
+}
