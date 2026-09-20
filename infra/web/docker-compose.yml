@@ -3,6 +3,8 @@ x-app: &app
     context: ../../src
   environment:
     ConnectionStrings__Postgres: "Host=postgres;Port=5432;Database=skjoldjasper;Username=skjoldjasper;Password=${POSTGRES_PASSWORD:?required}"
+    ADMIN_USERNAME: ${ADMIN_USERNAME:-}
+    ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
 
 services:
   migrate:
@@ -11,7 +13,7 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    command: ["Skjoldjasper.Web.dll", "db-apply"]
+    command: ["Skjoldjasper.Web.dll", "migrate"]
 
   web:
     <<: *app

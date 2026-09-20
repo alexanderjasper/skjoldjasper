@@ -5,7 +5,7 @@
 - .NET 10 on Blazor Web App (static SSR, interactive server islands where needed)
 - [Marten](https://martendb.io) 9 for event sourcing and documents, on Postgres 18
 - [Wolverine](https://wolverinefx.net) 6 for command handling, with the Marten outbox
-- ASP.NET Core Identity for authentication (email + password, signup closed)
+- ASP.NET Core Identity for authentication (username + password, signup closed, no email)
 - Deployed behind Cloudflare Tunnel + Traefik via Dokploy
 
 ## Project Structure
@@ -17,6 +17,8 @@ src/
 ├── Directory.Build.props      # shared TFM and compiler settings
 ├── Dockerfile
 ├── Skjoldjasper.Web/          # the only deployable: host, layout, routing, wiring
+│   ├── Cli/                   # JasperFx CLI commands (migrate, users-add)
+│   └── Identity/              # sign-in: EF Core Identity in its own schema
 ├── Skjoldjasper.Finance/      # feature module: domain and pages
 └── Skjoldjasper.Finance.Tests/
 
@@ -55,13 +57,14 @@ Postgres 18 changed the convention and refuses to start against the old layout.
 
 ## Database schema
 
-Development uses `AutoCreate.CreateOrUpdate`; production uses `AutoCreate.None`
-with an explicit apply step at container boot.
+`identity` holds the EF Core Identity tables, `public` holds Marten's event
+store and Wolverine's message tables. The `migrate` command applies both and
+runs as a one-shot compose service before the app starts; the app never
+migrates itself.
 
 ```bash
-dotnet run --project Skjoldjasper.Web -- db-apply    # apply changes
-dotnet run --project Skjoldjasper.Web -- db-assert   # fail if drifted
-dotnet run --project Skjoldjasper.Web -- db-dump     # print the DDL
+dotnet run --project Skjoldjasper.Web -- migrate     # EF migrations + Marten/Wolverine
+dotnet run --project Skjoldjasper.Web -- db-assert   # fail if Marten has drifted
 ```
 
 ## Style
@@ -73,3 +76,8 @@ dotnet run --project Skjoldjasper.Web -- db-dump     # print the DDL
   `InteractiveServer` only where a page genuinely needs live behaviour.
 - Event sourcing is the default for domain state. Invariants belong in the
   aggregate, not in database constraints or UI validation.
+- One class per file, named after the class. This includes types that would
+  otherwise sit in a Razor component's `@code` block.
+- Domain modules are organised CQRS-style into `Commands/` and `Queries/`.
+  Auxiliary subsystems that are not event-sourced — Identity, for one — are
+  plain services and should not be forced behind the mediator.

@@ -1,8 +1,11 @@
 using JasperFx;
 using Marten;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Skjoldjasper.Finance;
 using Skjoldjasper.Web;
 using Skjoldjasper.Web.Components;
+using Skjoldjasper.Web.Identity;
 using Wolverine;
 using Wolverine.Marten;
 
@@ -27,6 +30,24 @@ builder.UseWolverine(opts =>
     opts.Discovery.IncludeAssembly(FinanceModule.Assembly);
 });
 
+builder.Services.AddDbContextFactory<IdentityContext>(opts => opts.UseNpgsql(
+    connectionString,
+    npgsql => npgsql.MigrationsHistoryTable("__EFMigrationsHistory", IdentityContext.Schema)));
+
+builder.Services.AddIdentityCore<AppUser>()
+    .AddEntityFrameworkStores<IdentityContext>()
+    .AddSignInManager();
+
+builder.Services.AddScoped<UserAccounts>();
+
+builder.Services.AddAuthentication(IdentityConstants.ApplicationScheme)
+    .AddIdentityCookies();
+
+builder.Services.AddAuthorization();
+builder.Services.AddCascadingAuthenticationState();
+
+builder.Services.AddHostedService<AdminSeeder>();
+
 builder.Services.AddFinance();
 
 builder.Services.AddRazorComponents()
@@ -43,6 +64,8 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
+app.UseAuthentication();
+app.UseAuthorization();
 app.UseAntiforgery();
 
 app.MapHealthChecks("/healthz");
@@ -50,5 +73,11 @@ app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode()
     .AddAdditionalAssemblies(FinanceModule.Assembly);
+
+app.MapPost("/logout", async (SignInManager<AppUser> signIn) =>
+{
+    await signIn.SignOutAsync();
+    return Results.Redirect("/");
+});
 
 await app.RunJasperFxCommands(args);

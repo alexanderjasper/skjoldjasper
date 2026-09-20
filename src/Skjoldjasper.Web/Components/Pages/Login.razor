@@ -1,0 +1,57 @@
+@page "/login"
+@using Microsoft.AspNetCore.Identity
+@using Skjoldjasper.Web.Identity
+@inject SignInManager<AppUser> SignInManager
+@inject NavigationManager Navigation
+
+<PageTitle>Sign in</PageTitle>
+
+<h1>Sign in</h1>
+
+<EditForm Model="Input" OnValidSubmit="SignIn" FormName="login">
+    <DataAnnotationsValidator />
+
+    <label>
+        Username
+        <InputText @bind-Value="Input!.UserName" autocomplete="username" />
+    </label>
+
+    <label>
+        Password
+        <InputText @bind-Value="Input!.Password" type="password" autocomplete="current-password" />
+    </label>
+
+    <ValidationSummary />
+    @if (failed)
+    {
+        <p>Wrong username or password.</p>
+    }
+
+    <button type="submit">Sign in</button>
+</EditForm>
+
+@code {
+    private bool failed;
+
+    [SupplyParameterFromForm]
+    private LoginInput? Input { get; set; }
+
+    [SupplyParameterFromQuery]
+    private string? ReturnUrl { get; set; }
+
+    protected override void OnInitialized() => Input ??= new LoginInput();
+
+    private async Task SignIn()
+    {
+        var result = await SignInManager.PasswordSignInAsync(
+            Input!.UserName, Input.Password, isPersistent: true, lockoutOnFailure: true);
+
+        if (result.Succeeded)
+        {
+            Navigation.NavigateTo(ReturnUrl ?? "/");
+            return;
+        }
+
+        failed = true;
+    }
+}

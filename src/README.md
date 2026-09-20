@@ -51,24 +51,43 @@ Then:
 
 ```bash
 cd src
-dotnet run --project Skjoldjasper.Web    # http://localhost:5199
+dotnet tool restore
+dotnet run --project Skjoldjasper.Web -- migrate
+ADMIN_USERNAME=you ADMIN_PASSWORD='...' dotnet run --project Skjoldjasper.Web
 dotnet test
 ```
 
+The app runs at http://localhost:5199.
+
 - `/` — placeholder home page
+- `/login` — sign in
 - `/finance` — placeholder, served from the Finance class library
 - `/healthz` — returns `Healthy` only if Postgres is actually reachable
 
-## Database schema
+## Accounts
 
-In development Marten creates schema objects on demand. In production it is
-configured with `AutoCreate.None` and the container applies changes explicitly
-at boot:
+Sign-in is username and password, no email anywhere. Registration is closed:
+`ADMIN_USERNAME`/`ADMIN_PASSWORD` seeds one account at boot if it does not
+exist, and further accounts come from the CLI.
 
 ```bash
-dotnet run --project Skjoldjasper.Web -- db-apply     # apply changes
-dotnet run --project Skjoldjasper.Web -- db-assert    # fail if drifted
-dotnet run --project Skjoldjasper.Web -- db-dump      # print the DDL
+dotnet run --project Skjoldjasper.Web -- users-add <username> <password>
 ```
 
-This is the `manage.py migrate` equivalent.
+## Database schema
+
+Two schemas in one database: `identity` holds the EF Core Identity tables,
+`public` holds Marten's event store and Wolverine's message tables. Both are
+applied by one command, which the container runs before serving:
+
+```bash
+dotnet run --project Skjoldjasper.Web -- migrate      # EF migrations + Marten/Wolverine
+dotnet run --project Skjoldjasper.Web -- db-assert    # fail if Marten has drifted
+dotnet run --project Skjoldjasper.Web -- db-dump      # print Marten's DDL
+```
+
+New Identity migrations:
+
+```bash
+dotnet dotnet-ef migrations add <Name> --project Skjoldjasper.Web --output-dir Identity/Migrations
+```

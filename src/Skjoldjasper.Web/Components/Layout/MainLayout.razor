@@ -1,4 +1,22 @@
-﻿@inherits LayoutComponentBase
+@inherits LayoutComponentBase
+
+<nav>
+    <a href="/">skjoldjasper</a>
+    <a href="/finance">Finance</a>
+
+    <AuthorizeView>
+        <Authorized>
+            <span>@context.User.Identity?.Name</span>
+            <form action="/logout" method="post">
+                <AntiforgeryToken />
+                <button type="submit">Sign out</button>
+            </form>
+        </Authorized>
+        <NotAuthorized>
+            <a href="/login">Sign in</a>
+        </NotAuthorized>
+    </AuthorizeView>
+</nav>
 
 @Body
 

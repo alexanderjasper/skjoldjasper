@@ -8,6 +8,11 @@
     <PackageReference Include="Marten" />
     <PackageReference Include="WolverineFx.Marten" />
     <PackageReference Include="WolverineFx.RuntimeCompilation" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
   </ItemGroup>
 
   <ItemGroup>
