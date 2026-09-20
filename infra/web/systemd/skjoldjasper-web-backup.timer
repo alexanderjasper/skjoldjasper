@@ -1,0 +1,11 @@
+[Unit]
+Description=Run skjoldjasper.dk backup nightly
+
+[Timer]
+# 03:30 UTC sits between nextcloud-backup (03:00) and immich-offsite (04:00).
+OnCalendar=*-*-* 03:30:00
+RandomizedDelaySec=1800
+Persistent=true
+
+[Install]
+WantedBy=timers.target

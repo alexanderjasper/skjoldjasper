@@ -7,35 +7,14 @@
 !**/.env.example
 !.env.example
 
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.egg-info/
-.venv/
-.pytest_cache/
-.ruff_cache/
-.mypy_cache/
-
-# Django
-db.sqlite3
-db.sqlite3-journal
-*.sqlite3
-*.sqlite3-shm
-*.sqlite3-wal
-/staticfiles/
-/media/
-
 # .NET
 bin/
 obj/
 *.user
 [Ll]ogs/
-.idea/.idea.*/
 
-# IDE — ignore IntelliJ/PyCharm state at any depth, keep only shared run configs
-**/.idea/*
-!**/.idea/runConfigurations/
+# IDE
+.idea/
 .vscode/
 
 # Playwright MCP verification artifacts (snapshots, screenshots, console logs)

@@ -1,78 +1,74 @@
 # `infra/web` — the website service stack
 
-Three containers serve `skjoldjasper.dk`:
+Two containers serve `skjoldjasper.dk`:
 
 | Container | What it does |
 |---|---|
-| `web` | The Django app built from `apps/web/Dockerfile`, served by gunicorn. Migrates on every boot. |
-| `litestream` | Watches `/data/db.sqlite3` and streams every WAL segment to the rclone S3 bridge below. |
-| `rclone` | Runs `rclone serve s3`, presenting the pCloud WebDAV remote as an S3-compatible endpoint that Litestream understands. Litestream does not speak WebDAV natively — this sidecar exists only to bridge the protocol gap. |
+| `web` | The .NET app built from `src/Dockerfile`. Applies database changes on boot, then serves. |
+| `postgres` | Postgres 18. Holds Marten's event store, its projections, and the Identity tables. |
 
-## Data flow
-
-```
-gunicorn ──writes──> /data/db.sqlite3
-                          │
-                          └─watched by litestream
-                                    │
-                              S3 PUT (HTTP, internal)
-                                    ▼
-                              rclone serve s3
-                                    │
-                            pCloud API
-                                    ▼
-                        pcloud:/.backups/web-litestream/
-```
+Backups are not a container. A host-side script dumps the database nightly and
+pushes it to pCloud, the same pattern `infra/nextcloud` and `infra/immich` use.
 
 ## One-time setup
 
-1. On pCloud, create a top-level folder `.backups` and inside it a `web-litestream` folder. (Litestream does not create the bucket itself.)
-2. Generate the rclone OAuth token from your laptop:
+1. Set `POSTGRES_PASSWORD` (see `.env.example`) on this service in Dokploy.
+2. Install the backup script and timer on the host:
    ```sh
-   docker run --rm -it -p 53682:53682 rclone/rclone authorize "pcloud"
+   sudo install -m 0755 infra/web/backup.sh /usr/local/sbin/skjoldjasper-web-backup.sh
+   sudo install -m 0644 infra/web/systemd/skjoldjasper-web-backup.* /etc/systemd/system/
+   sudo systemctl daemon-reload
+   sudo systemctl enable --now skjoldjasper-web-backup.timer
    ```
-   This opens a browser, you authorize pCloud once, and rclone prints a JSON
-   blob to stdout. That JSON is `RCLONE_PCLOUD_TOKEN`. The OAuth backend is
-   used instead of WebDAV because pCloud's WebDAV endpoint refuses logins
-   when account 2FA is enabled.
-3. In Dokploy, set the env vars from `.env.example` on this service.
+3. Create the `.backups/skjoldjasper-web/db` folder on the pCloud crypt remote.
 
-## Verifying the replica
+## Verifying backups
 
 ```sh
-docker compose exec litestream litestream snapshots /data/db.sqlite3
+sudo systemctl start skjoldjasper-web-backup.service
+sudo tail -40 /var/log/skjoldjasper-web-backup.log
+rclone --config /home/alexander/.config/rclone/rclone.conf \
+  lsl pcloudcrypt:.backups/skjoldjasper-web/db/
 ```
-
-Lists every snapshot stored on pCloud. Empty output means replication isn't happening.
 
 ## Restore drill
 
-Run this once after the first deploy and any time you change the replica config:
+Run this once after the first deploy and any time the backup config changes.
 
 ```sh
-# 1. Note the current DB hash.
-docker compose exec web sha256sum /data/db.sqlite3
+# 1. Pull the most recent dump down from the remote.
+rclone --config /home/alexander/.config/rclone/rclone.conf \
+  copy pcloudcrypt:.backups/skjoldjasper-web/db/ /var/tmp/restore/ --max-age 48h
 
-# 2. Stop the app so it can't write during restore.
-docker compose stop web
+# 2. Restore it into a scratch database, never over the live one.
+docker exec -i skjoldjasper_postgres createdb -U skjoldjasper restore_test
+docker exec -i skjoldjasper_postgres \
+  pg_restore -U skjoldjasper -d restore_test < /var/tmp/restore/<dump>
 
-# 3. Move the live DB aside, then restore from the replica.
-docker compose exec litestream sh -c 'mv /data/db.sqlite3 /data/db.sqlite3.predr'
-docker compose exec litestream litestream restore /data/db.sqlite3
+# 3. Confirm the event store came back.
+docker exec skjoldjasper_postgres \
+  psql -U skjoldjasper -d restore_test -c 'select count(*) from mt_events'
 
-# 4. Confirm the hash matches.
-docker compose exec litestream sha256sum /data/db.sqlite3
+# 4. Clean up.
+docker exec skjoldjasper_postgres dropdb -U skjoldjasper restore_test
+```
 
-# 5. Bring the app back.
-docker compose start web
+## Database schema changes
+
+The app runs with Marten's `AutoCreate.None`, so it never migrates itself. The
+boot command runs `db-apply` first, which is idempotent. To inspect before
+deploying:
+
+```sh
+docker compose exec web dotnet Skjoldjasper.Web.dll db-assert   # non-zero if drifted
+docker compose exec web dotnet Skjoldjasper.Web.dll db-dump     # print the DDL
 ```
 
 ## Auto-deploy on push to `main`
 
 Dokploy redeploys on every push via a **Git webhook** — no GitHub Actions
 workflow needed. GitHub POSTs to a Dokploy webhook URL, Dokploy pulls the new
-commit, rebuilds the image, and the boot command runs `migrate` and
-`ensure_superuser` as usual.
+commit, rebuilds the image, and the boot command runs `db-apply` as usual.
 
 This requires the Dokploy panel to be reachable by GitHub's servers. The
 panel sits on a public Cloudflare Tunnel hostname guarded by Dokploy's own
@@ -92,13 +88,10 @@ Access would block GitHub's unauthenticated webhook POST.
    webhook. Paste the URL, content type `application/json`, event "Just the
    push event". Make sure the branch Dokploy watches matches `main`.
 
-A push to `main` now triggers a rebuild automatically. You can confirm the
-first one fired under the webhook's "Recent Deliveries" in GitHub and in
-Dokploy's deployment logs.
+## Why nightly dumps rather than continuous replication
 
-## Why not just back up SQLite nightly with rclone copy?
-
-Litestream's continuous WAL streaming gives ~1s RPO; a nightly snapshot
-loses up to 24h. For a file that fits in a single rclone copy, the
-diference is "did I lose today's entries?" vs "no, I didn't." The cost
-is one extra container.
+The previous stack streamed SQLite's WAL to pCloud with Litestream for a ~1s
+RPO. Postgres has no equally cheap equivalent — continuous archiving means
+running pgBackRest or WAL-G and somewhere to ship segments to. For a household
+budget that is updated in bursts a few times a month, losing up to a day costs
+one CSV re-import, so a nightly `pg_dump` is the right trade.

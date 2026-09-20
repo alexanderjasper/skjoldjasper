@@ -1,0 +1,11 @@
+**/bin/
+**/obj/
+**/.idea/
+**/.vs/
+**/*.user
+**/Properties/launchSettings.json
+**/appsettings.Development.json
+*.slnx
+Skjoldjasper.Finance.Tests/
+compose.dev.yml
+README.md

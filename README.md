@@ -2,72 +2,60 @@
 
 Personal website at [skjoldjasper.dk](https://skjoldjasper.dk).
 
-A small Django site that will host a family finance module (modellen) and
-later other things — games, etc. Deployed behind Cloudflare Tunnel +
-Traefik via Dokploy.
+A small .NET site hosting a family finance module (modellen) and later other
+things — games, etc. Deployed behind Cloudflare Tunnel + Traefik via Dokploy.
+
+It was a Django app until September 2026; the rewrite onto .NET with event
+sourcing starts from an empty database. The old code is in the history.
 
 ## Stack
 
-- Django 6 on Python 3.13, managed with `uv`
-- `django-allauth` for auth (email + password, signup closed)
-- Whitenoise for static files, Gunicorn in production
-- SQLite locally; volume-mounted SQLite in production (Postgres available
-  via `DATABASE_URL` if/when needed)
+- .NET 10 on Blazor (static server rendering, interactive islands where needed)
+- [Marten](https://martendb.io) for event sourcing and document storage
+- [Wolverine](https://wolverinefx.net) for command handling and the outbox
+- ASP.NET Core Identity for sign-in (email + password, signup closed)
+- Postgres 18
 
 ## Layout
 
 ```text
-apps/web/           # The Django project
-  manage.py
-  pyproject.toml
-  skjoldjasper/     # Django config package (settings, urls, adapters)
-infra/              # Docker Compose, Dokploy, backups
+src/                     # the .NET solution
+  Skjoldjasper.Web/      # the only deployable — host, layout, routing, wiring
+  Skjoldjasper.Finance/  # the finance module: domain and pages
+infra/                   # Docker Compose, Dokploy, backups
 ```
 
-Future Django apps (finance, games, …) will live as packages inside
-`apps/web/`.
+Each feature module is a Razor class library owning both its domain and its
+pages, registered with one line in `Program.cs`.
 
 ## Local development
 
+See [`src/README.md`](src/README.md). Short version:
+
 ```bash
-cd apps/web
-uv sync
+podman run -d --name skjoldjasper-dev-db --replace \
+  -e POSTGRES_USER=skjoldjasper -e POSTGRES_PASSWORD=dev -e POSTGRES_DB=skjoldjasper \
+  -p 127.0.0.1:5433:5432 -v skjoldjasper-dev-db:/var/lib/postgresql \
+  docker.io/library/postgres:18
 
-# First time only
-SECRET_KEY=dev DEBUG=True .venv/bin/python manage.py migrate
-SECRET_KEY=dev DEBUG=True .venv/bin/python manage.py createsuperuser
-
-# Run the dev server
-SECRET_KEY=dev DEBUG=True .venv/bin/python manage.py runserver
+cd src
+dotnet run --project Skjoldjasper.Web    # http://localhost:5199
+dotnet test
 ```
-
-Then:
-
-- `/` — public landing page (placeholder)
-- `/accounts/login/` — sign in
-- `/admin/` — Django admin
-
-Public signup is disabled. Create the next user in the admin under
-**Users → Add user**.
-
-In `DEBUG=True` emails (password reset, etc.) print to the console.
 
 ## Configuration
 
-Settings read from `apps/web/.env` (see `apps/web/.env.example`). The
-production deployment supplies these via Dokploy:
+Production settings come from Dokploy's environment. See
+`infra/web/.env.example`.
 
-| Var                 | Purpose                                       |
-|---------------------|-----------------------------------------------|
-| `SECRET_KEY`        | Django signing key                            |
-| `DEBUG`             | `True` / `False`                              |
-| `ALLOWED_HOSTS`     | Comma-separated hostnames                     |
-| `CSRF_TRUSTED_ORIGINS` | Comma-separated origins                    |
-| `DATABASE_URL`      | Defaults to local SQLite                      |
-| `EMAIL_HOST`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `EMAIL_PORT`, `EMAIL_USE_TLS`, `DEFAULT_FROM_EMAIL` | SMTP for password reset etc. |
+| Var | Purpose |
+|---|---|
+| `POSTGRES_PASSWORD` | Database password, shared by both containers |
+| `ConnectionStrings__Postgres` | Built from the above in the compose file |
+| `ASPNETCORE_ENVIRONMENT` | `Production` |
 
 ## Deployment
 
-Built from `apps/web/Dockerfile` and rolled out by Dokploy. Production
-data lives on a volume mounted at `/data`; the SQLite file is at
-`/data/db.sqlite3`. Backups are documented in `infra/`.
+Built from `src/Dockerfile` and rolled out by Dokploy on push to `main`.
+Database changes are applied by `db-apply` at container boot. Nightly
+`pg_dump` backups go to pCloud; see [`infra/web/README.md`](infra/web/README.md).

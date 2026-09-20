@@ -7,9 +7,6 @@
   <ItemGroup>
     <PackageReference Include="Marten" />
     <PackageReference Include="WolverineFx.Marten" />
-    <!-- Roslyn codegen at runtime. Wolverine 6 moved this out of the core
-         package so production images can ship pre-generated code instead;
-         see the note in Program.cs. -->
     <PackageReference Include="WolverineFx.RuntimeCompilation" />
   </ItemGroup>
 
