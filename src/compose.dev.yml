@@ -1,0 +1,24 @@
+# Local development database. Production Postgres lives in infra/web/.
+#
+#   podman compose -f compose.dev.yml up -d
+#
+# Port 5433 to stay out of the way of anything already on 5432.
+services:
+  postgres:
+    image: postgres:18
+    environment:
+      POSTGRES_USER: skjoldjasper
+      POSTGRES_PASSWORD: dev
+      POSTGRES_DB: skjoldjasper
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - skjoldjasper-dev-db:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U skjoldjasper"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  skjoldjasper-dev-db:

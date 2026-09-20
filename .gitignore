@@ -26,6 +26,13 @@ db.sqlite3-journal
 /staticfiles/
 /media/
 
+# .NET
+bin/
+obj/
+*.user
+[Ll]ogs/
+.idea/.idea.*/
+
 # IDE — ignore IntelliJ/PyCharm state at any depth, keep only shared run configs
 **/.idea/*
 !**/.idea/runConfigurations/

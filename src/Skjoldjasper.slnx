@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="Skjoldjasper.Finance.Tests/Skjoldjasper.Finance.Tests.csproj" />
+  <Project Path="Skjoldjasper.Finance/Skjoldjasper.Finance.csproj" />
+  <Project Path="Skjoldjasper.Web/Skjoldjasper.Web.csproj" />
+</Solution>
